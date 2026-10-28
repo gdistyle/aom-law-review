@@ -1,0 +1,13 @@
+KAKAO_REST_KEY=""
+DATA_GO_KR_KEY=""
+VWORLD_KEY=""
+LAW_OC=""
+KAKAO_JS_KEY=""
+SITE_ORIGIN="http://localhost:8787"
+VWORLD_DOMAIN="http://localhost:8787"
+# 기관 문서로 사양 재확인할 곳. 확인한 서비스 ID/필드만 입력.
+VWORLD_BUILDING_LAYER=""
+VWORLD_BUILDING_HEIGHT_FIELD=""
+VWORLD_BUILDING_FLOORS_FIELD=""
+# 실제 필지 이동 확인 후 URL에서 PNU 자리만 {pnu}로 치환.
+EUM_PARCEL_URL_TEMPLATE=""

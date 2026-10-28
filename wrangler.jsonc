@@ -1,0 +1,29 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "aom-law-review",
+  "main": "src/worker.js",
+  "compatibility_date": "2025-10-01",
+  "workers_dev": true,
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
+  },
+  "observability": { "enabled": false },
+  "vars": {
+    "KAKAO_JS_KEY": "",
+    "SITE_ORIGIN": "",
+    "VWORLD_DOMAIN": "",
+    "VWORLD_BUILDING_LAYER": "",
+    "VWORLD_BUILDING_HEIGHT_FIELD": "",
+    "VWORLD_BUILDING_FLOORS_FIELD": "",
+    "EUM_PARCEL_URL_TEMPLATE": "",
+    "MAX_PAGE_SIZE": "100",
+    "MAX_RESPONSE_BYTES": "4000000",
+    "UPSTREAM_TIMEOUT_MS": "15000"
+  }
+  // Secret: KAKAO_REST_KEY, DATA_GO_KR_KEY, VWORLD_KEY, LAW_OC
+  // 기관 문서로 사양 재확인할 곳: VWorld 건물 레이어/속성, 토지이음 필지 직접 링크.
+  // 고정 버전 외부 SDK: three.js 0.180.0. 카카오 SDK는 기관 제공 동적 SDK.
+  // Workers Free 요금제 유지. 유료 전환/자동 업그레이드를 설정하지 않을 것.
+}

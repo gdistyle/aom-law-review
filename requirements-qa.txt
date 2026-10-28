@@ -1,0 +1,3 @@
+# 선택 사항. 사이트 실행/Node 단위 시험에는 Python 패키지가 필요 없음.
+playwright==1.57.0
+PyMuPDF==1.26.7

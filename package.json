@@ -1,0 +1,15 @@
+{
+  "name": "aom-law-review",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A.O.M 법규검토 · 문서 출력 · 지형/매스 · 도장 도구",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "dev": "node scripts/dev-server.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "check": "node scripts/check.mjs",
+    "cf:dev": "npx --yes wrangler@4.151.0 dev",
+    "deploy": "npx --yes wrangler@4.151.0 deploy"
+  }
+}

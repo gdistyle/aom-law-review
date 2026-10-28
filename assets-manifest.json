@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "assets": [
+    {
+      "original": "03_도장도구/index.html",
+      "path": "public/stamp/index.html",
+      "originalSha256": "9e0615743bdc5166cbd2d3fe51bd9cc92a00749995a47e4b2b468dfa98d73e58",
+      "sha256": "9e0615743bdc5166cbd2d3fe51bd9cc92a00749995a47e4b2b468dfa98d73e58",
+      "note": "바이트 동일"
+    },
+    {
+      "original": "01_빈양식/법규검토서_틀.docx",
+      "path": "public/templates/법규검토서_틀.docx",
+      "originalSha256": "ab966de24b60ee62cad54820a8f034a1e48c75b54d9edf47ae8836348e28bdc0",
+      "sha256": "ab966de24b60ee62cad54820a8f034a1e48c75b54d9edf47ae8836348e28bdc0",
+      "note": "바이트 동일"
+    },
+    {
+      "original": "01_빈양식/목차줄_서식.xml",
+      "path": "public/templates/목차줄_서식.xml",
+      "originalSha256": "9a751a1aa54c64ae68d466d6e77a5ab34589da1b22b0ce4f653d450fb9eb9c79",
+      "sha256": "9a751a1aa54c64ae68d466d6e77a5ab34589da1b22b0ce4f653d450fb9eb9c79",
+      "note": "바이트 동일"
+    },
+    {
+      "original": "01_빈양식/설계개요_빈양식.xlsx",
+      "path": "public/templates/설계개요_빈양식.xlsx",
+      "originalSha256": "f7392ed0833aaa2db669645d4dfec983a980d7bad1560c0dc1a16fdbff01705d",
+      "sha256": "57c281da98fe9ad05caa9ea1bded9bad03910859d11b841027d8d1e3b9a3a70e",
+      "note": "기존 작성자 귀속 공유 문자열 1개 공란 처리. 그 외 원본 유지"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "fixtureOnly": true,
+  "description": "인수인계서 8장 및 제공 PDF의 비개인정보 검수값. 실시간 API 응답을 대신하지 않음.",
+  "address": "경기도 하남시 감이동 440-2",
+  "zone": "일반상업지역",
+  "district": "지구단위계획구역",
+  "building": {
+    "platArea": 2374.1,
+    "totArea": 16551.31,
+    "archArea": 1591.75,
+    "vlRatEstmTotArea": 11848.9,
+    "bcRat": 67.0465,
+    "vlRat": 499.0902,
+    "strctCdNm": "철근콘크리트구조",
+    "ugrndFlrCnt": 3,
+    "grndFlrCnt": 8,
+    "heit": 29.59,
+    "useAprDay": "20221014",
+    "jiyukCdNm": "일반상업지역",
+    "guyukCdNm": "지구단위계획구역"
+  }
+}
