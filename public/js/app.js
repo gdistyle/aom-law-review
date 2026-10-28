@@ -133,3 +133,4 @@ export function drawTerrainMap(){const cv=$('terrainMap');if(!cv)return;const ct
 
 /* 지번 조회 직후: 법정 최대 건폐율·용적률로 지상 층수 자동 설정(최대 시작) */
 function autoMax(){p.legalMaxFloors=null;floorChips();floorGrid();const l=p.review?.limits;if(!l?.maxFootprint||!l?.maxGross)return;const cap=number(p.manual.floorLimit);const n=Math.min(80,cap>0?cap:Infinity,Math.ceil(l.maxGross/l.maxFootprint-1e-9));if(!(n>0))return;p.legalMaxFloors=n;p.floors=n;$('floors').value=n;const old=p.model.floorHeights||[];p.model.floorHeights=Array.from({length:n},(_,i)=>old[i]>0?old[i]:(i?3.3:4.3));p.model.maxFloors=n;floorGrid();floorChips();render();$('modelSelect').value='maximum';}
+for(const id of ['purpose','purpose2','operation'])$(id).addEventListener('change',()=>{inputs();render();updateModels(false);});

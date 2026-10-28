@@ -50,3 +50,4 @@ button[data-download]:hover,#downloadAll:hover{filter:brightness(1.12)}
 .subtabs button.on{color:var(--red);border-bottom-color:var(--red);font-weight:600}.subtabs button.on small{color:var(--red)}
 .layout{grid-template-columns:minmax(0,1fr)!important;max-width:1180px}.layout>.sidebar{display:none!important}
 @media(max-width:760px){.subtabs{top:100px;justify-content:flex-start;padding:0 8px}.subtabs button{padding:10px 10px;font-size:13px}}
+.plan-decide{border:1px solid #e3e3df;background:#fafaf8;border-radius:6px;padding:18px 20px;margin-bottom:20px}
