@@ -21,7 +21,7 @@ export function wordBody(p){
  plotRows.push(['합계',{text:area===null?'':fmt(area),align:'right',red:p.land.area.uncertain},{text:area===null?'':fmt(area*.3025,2),align:'right',red:p.land.area.uncertain},'','','','']);
  xml+=wordTable(['지번','면적 Sqm','면적 py','공시지가 원/㎡','기준연월','지역,지구','비고'],plotRows,[1800,1200,1100,1700,1300,4201,1500]);
  xml+=h('Ⅱ. 기존건축물 현황',true);
- if(p.building.status==='empty')xml+=para('해당 없음(나대지)',{red:!!p.building.manual});
+ if(p.building.status==='empty')xml+=para(p.building.manual?'해당 없음(나대지)':'건축물대장 조회 결과 0건 (나대지·대표 지번 등재·미등재 건축물 여부 대조 대상)',{red:true});
  else if(b){xml+=para('건축물명 : '+(b.bldNm||'')+' / '+(b.dongNm||''));xml+=wordTable(['항목','내용','항목','내용'],Array.from({length:Math.ceil(BUILDING_FIELDS.length/2)},(_,i)=>{const pair=BUILDING_FIELDS.slice(i*2,i*2+2);return pair.flatMap(([label,key,unit])=>[label,{text:key==='useAprDay'?displayDate(b[key]):number(b[key])!==null?fmt(b[key])+unit:String(b[key]??''),red:!!b._manual||b[key]==null,align:number(b[key])!==null?'right':'left'}]).concat(pair.length===1?['','']:[]);}),[2200,4200,2200,4201]);
   if(p.building.titles.length>1)xml+=para('선택 동 기준. 다른 동은 건축물대장 조회 자료에 포함.');
   const fs=p.building.floors.filter(f=>!b.mgmBldrgstPk||f.mgmBldrgstPk===b.mgmBldrgstPk);
