@@ -62,7 +62,7 @@ export function lawNamesFor(p) {
  const zones=p.land.zones.map(z=>z.name).join(' '), set=new Set([PLAN,DECREE,BLD,BD,PARK,PD,'토지이용규제 기본법']);
  if(['전','답','과수원'].includes(p.land.category.value))set.add('농지법');
  if(p.land.category.value==='임야')set.add('산지관리법');
- if(zones.includes('개발제한구역')){set.add(GREEN);set.add(GREEN+' 시행령');}
+ if(zones.includes('개발제한구역')){set.add(GREEN);set.add(GREEN+' 시행령');set.add(GREEN+' 시행규칙');}
  for(const z of p.land.zones){const match=zoneBasis(z.name);if(z.lawName)set.add(z.lawName);else if(match)set.add(match[0]);}
  return [...set];
 }
@@ -200,7 +200,25 @@ export function reviewProject(p){
  const farmland=['전','답','과수원'].includes(p.land.category.value), forest=p.land.category.value==='임야',green=p.land.zones.some(z=>z.name.includes('개발제한구역'));
  if(farmland)add('farmland','농지전용',[R('농지법',34)],articleText('농지법',34),p.land.category.value,true);
  if(forest)add('forest','산지전용',[R('산지관리법',14)],articleText('산지관리법',14),'임야',true);
- if(green)add('greenbelt','개발제한구역 행위제한 개별 검토',[R(GREEN,12),R(GREEN+' 시행령',13)],articleText(GREEN,12),'개발제한구역',true);
+ if(green)add('greenbelt','토지의 형질변경 · 행위제한',[R(GREEN,12),R(GREEN+' 시행령',13)],articleText(GREEN,12),'개발제한구역',true);
+ if(green){
+  const flat=t=>String(t||'').replace(/[┃│┠┨─┼━┏┓┗┛┯┷╂┿┣┫├┤]/g,' ').replace(/\s+/g,' ').trim();
+  const cut=(t,start,len=700,end=null)=>{t=flat(t);const i=t.search(start);if(i<0)return '';let s=t.slice(i,i+len);if(end){const j=s.slice(20).search(end);if(j>0)s=s.slice(0,j+20);}return s.trim();};
+  const GD=GREEN+' 시행령',GR=GREEN+' 시행규칙',gl=getLaw(p.laws,GD),an=n=>gl?.annexes?.find(a=>a.number===String(n)&&!a.branch)?.text||'';
+  const a2=an(2),a1=an(1);
+  const ratio=cut(a2,/나\.\s*가목에도 불구하고 주택 또는 근린생활시설/,900,/\s다\.\s/);
+  add('gb-ratio','건폐율 및 용적률 (개발제한구역)',[R(GD,22)],ratio||'시행령 별표2 원문 미수신',green?'적용':'',true);
+  const gArea=cut(a2,/주택 또는 근린생활시설의 건축을 위하여 대지를 조성하는 경우/,260,/\s\d\)\s|\s[가-하]\.\s/);
+  add('gb-grading-area','형질변경 면적',[R(GD,22)],gArea||'시행령 별표2 형질변경 면적 원문 자동 추출 불가',gArea.match(/(\d+)\s*제곱미터 이하/)?.[1]?gArea.match(/(\d+)\s*제곱미터 이하/)[1]+'제곱미터 이하':'',true);
+  const a14=cut(articleText(GD,14),/9\.\s*다음 각 목의 어느 하나에 해당하는 시설의 진입로/,700,/\s10\.\s/);
+  add('gb-road','건축물의 건축을 수반하지 않는 토지의 형질변경 범위 (진입로)',[R(GD,14)],a14||flat(articleText(GD,14)).slice(0,500),'진입로 설치 시',true);
+  const r6=flat(getArticle(getLaw(p.laws,GR),6)?.text||'');
+  add('gb-site','주택·근린생활시설 신축 입지기준',[R(GR,6)],r6?r6.slice(0,800):'시행규칙 원문 미수신','이축·공익사업 철거 등 해당 시',true);
+  const house=cut(a1,/다\.\s*주택\(/,500,/\s나\)\s/),shops=cut(a1,/라\.\s*근린생활시설/,1400,/\s마\.\s/);const items=[...shops.matchAll(/[①-⑳]\s*([^①-⑳(]{2,40})/g)].map(m=>m[1].trim()).slice(0,20);
+  add('gb-use','허용 용도 (개발제한구역)',[R(GD,13)],['주택 : '+(house||'별표1 원문 미수신'),items.length?'근린생활시설 : '+items.join(', '):''].filter(Boolean).join('\n'),'적용',true);
+  const a18=flat(articleText(GD,18));const park=cut(a18,/③/,400,/\s④/);
+  add('gb-change','용도변경 · 주차장 부지',[R(GD,18)],[a18.slice(0,600),park].filter(Boolean).join('\n'),'용도변경 시',true);
+ }
  for(const [i,z]of p.land.zones.entries()){
   if(ZONES.includes(z.name)||/^(도시지역|관리지역)$/.test(z.name)||/개발제한구역|지구단위계획/.test(z.name))continue;
   const basis=zoneBasis(z.name);const name=z.lawName||basis?.[0]||'토지이용규제 기본법',no=z.article||basis?.[1]||8;
