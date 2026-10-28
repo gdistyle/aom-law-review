@@ -4,6 +4,7 @@ import {buildModels,siteGeometry,sanitizeGeoJSON,fetchTerrain} from './geometry.
 import {showScene} from './scene.js';
 import {download,generateFile,exportAll} from './exports.js';
 import {fetchLawDirect} from './lawclient.js';
+import {vworldApi} from './vworldclient.js';
 const $=id=>document.getElementById(id);let p=blankProject(),config={services:{}},epoch=0,controller=new AbortController(),busy=0,modelResult={models:[],site:null},mapLoaded=null;
 const apiMessages=[];
 function toast(s){$('toast').textContent=s;$('toast').hidden=false;setTimeout(()=>$('toast').hidden=true,4200);}
@@ -11,7 +12,7 @@ function log(s,red=false){apiMessages.push(s);if(apiMessages.length>18)apiMessag
 function error(e){if(e.name!=='AbortError'){log(e.message||'처리 실패.',true);toast(e.message||'처리 실패.');}}
 function cancel(){epoch++;controller.abort();controller=new AbortController();}
 async function task(label,fn){busy++;document.querySelectorAll('[data-download],#downloadAll').forEach(b=>b.disabled=true);try{log(label);await fn();}catch(e){error(e);}finally{if(--busy===0)document.querySelectorAll('[data-download],#downloadAll').forEach(b=>b.disabled=false);}}
-async function api(path,params={},signal=controller.signal){const url=new URL(path,location.origin);for(const [k,v]of Object.entries(params))url.searchParams.set(k,v);const r=await fetch(url,{signal,cache:'no-store'});const d=await r.json();if(!r.ok)throw new Error(`${d.message||'자료 수신 실패'} (${d.code||r.status})`);return d;}
+async function api(path,params={},signal=controller.signal){if(path==='/api/land'||path==='/api/spatial'){const v=await vworldApi(path,params,config);if(v)return v;}const url=new URL(path,location.origin);for(const [k,v]of Object.entries(params))url.searchParams.set(k,v);const r=await fetch(url,{signal,cache:'no-store'});const d=await r.json();if(!r.ok)throw new Error(`${d.message||'자료 수신 실패'} (${d.code||r.status})`);return d;}
 function source(project,s){if(s&&!project.sources.some(x=>x.name===s.name&&x.retrievedAt===s.retrievedAt))project.sources.push(s);}
 async function paged(path,params,project){let items=[],page=1,total=null;for(;;){const d=await api(path,{...params,page});if(!d.ok)return d;source(project,d.source);if(!Array.isArray(d.items))throw new Error('기관 응답 항목 형식 오류.');items.push(...d.items);total=d.total??d.items.length;if(items.length>=total)return{ok:true,items,total};if(!d.items.length)throw new Error('기관 응답 총수와 페이지 자료가 일치하지 않음.');if(++page>1000)throw new Error('페이지 제한 초과. 전체 자료 수신 미완료.');}}
 async function pool(jobs,limit=3){let next=0;const results=[];await Promise.all(Array.from({length:Math.min(jobs.length,limit)},async()=>{while(next<jobs.length){const i=next++;try{results[i]=await jobs[i]();}catch(e){results[i]={error:e};}}}));return results;}
