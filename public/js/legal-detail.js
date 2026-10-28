@@ -6,7 +6,7 @@
  *  - 계산은 원문에서 뽑은 비율 × 대지면적만 수행한다.
  */
 import {norm,fmt,number,totalArea} from './core.js';
-import {getLaw,getArticle,DECREE,BLD,BD,PARK,PD,PLAN,APPENDIX_BY_ZONE,shortLaw} from './legal.js';
+import {getLaw,getArticle,DECREE,BLD,BD,PARK,PD,PLAN,APPENDIX_BY_ZONE,shortLaw,USES,GREEN} from './legal.js';
 
 const PY = 0.3025;
 const plainLines = t => String(t || '').split('\n').map(s => s.replace(/\s+/g, ' ').trim()).filter(Boolean);
@@ -159,4 +159,24 @@ export function detailRows(p, review, ordinPlanName = '') {
     s.text = out.join('\n');
   }
   return review;
+}
+
+/** 법령상 건축 가능한 용도만 추림. 용도지역 별표(허용·금지 목록) + 개발제한구역 시행령 별표1. 원문 미수신이면 null. */
+export function allowedUses(p) {
+  const zone = p.land.zone.value, no = APPENDIX_BY_ZONE[zone];
+  const an = getLaw(p.laws, DECREE)?.annexes?.find(a => a.number === String(no) && !a.branch);
+  if (!zone || !an?.text) return null;
+  const neg = /할수없는/.test(norm(an.title));
+  const gb = (p.land.zones || []).some(z => z.name.includes('개발제한구역'));
+  const gbText = gb ? norm(getLaw(p.laws, GREEN + ' 시행령')?.annexes?.find(a => a.number === '1' && !a.branch)?.text || '') : '';
+  const out = [];
+  for (const u of USES) {
+    const c = useClass(an.text, u);
+    let ok, cond = false;
+    if (neg) { ok = !(c && c.cls === 1); cond = !!c; }
+    else { ok = !!c; cond = c ? (c.cls === 2 || c.conditional) : false; }
+    if (ok && gb) { if (!gbText) cond = true; else if (!gbText.includes(norm(u.replace(/^제[12]종\s*/, '')))) ok = false; else cond = true; }
+    if (ok) out.push({use: u, cond});
+  }
+  return out;
 }
