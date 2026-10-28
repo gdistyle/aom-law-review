@@ -101,9 +101,7 @@ export function detailRows(p, review, ordinPlanName = '') {
       }
       case 'landscape': {
         lines = pickLines(art(L, BLD, 42)?.text, [/제곱미터이상/, /조경/], 2);
-        const v = review.limits.landscape;
-        if (v != null && area != null) lines.push(`${review.limits.landscapeTier ? '(가정: ' + review.limits.planLabel + ' ' + fmt(review.limits.landscapeTier.gross, 2) + ' ㎡ 구간) ' : ''}조경 기준 대지면적의 ${fmt(v)}% → ${fmt(area, 2)} ㎡ × ${fmt(v)}% = ${area2(area * v / 100)} 이상`);
-        else lines.push('건축조례 조경 비율 자동 추출 불가 — 조례 원문 대조 대상');
+        lines.push('산식 : ' + (review.limits.landscapeFormula || '산정 불가'));
         break;
       }
       case 'setback': {
@@ -120,7 +118,7 @@ export function detailRows(p, review, ordinPlanName = '') {
         const u = review.limits.parkingUnit;
         const Lm = review.limits;
         if (u) lines.push(`적용 기준 시설면적 ${fmt(u)} ㎡당 1대${Lm.parkingBasis ? ' [' + Lm.parkingBasis + ']' : ''}`);
-        if (Lm.parking != null) lines.push(`(가정) ${Lm.parkingPurpose} · 시설면적 ${fmt(Lm.parkingArea, 2)} ㎡${Lm.parkingAreaAssumed ? '(' + Lm.planLabel + ')' : ''} ÷ ${fmt(u)} = ${fmt(Lm.parkingArea / u, 2)} → ${fmt(Lm.parking)}대 이상`);
+        if (Lm.parkingFormula) lines.push('산식 : ' + Lm.parkingFormula);
         lines.push('주차장 설치 및 관리 조례로 설치기준이 강화될 수 있음');
         break;
       }
@@ -175,7 +173,8 @@ export function allowedUses(p) {
     let ok, cond = false;
     if (neg) { ok = !(c && c.cls === 1); cond = !!c; }
     else { ok = !!c; cond = c ? (c.cls === 2 || c.conditional) : false; }
-    if (ok && gb) { if (!gbText) cond = true; else if (!gbText.includes(norm(u.replace(/^제[12]종\s*/, '')))) ok = false; else cond = true; }
+    // 개발제한구역 대지 신축 허용: 별표1 제5호 다목(주택=단독주택)·라목(근린생활시설)만. 그 밖의 시설은 별도 입지·공익 요건 시설로 제외.
+    if (ok && gb) { ok = ['단독주택', '제1종 근린생활시설', '제2종 근린생활시설'].includes(u) && (!gbText || gbText.includes(norm(u === '단독주택' ? '단독주택' : '근린생활시설'))); cond = true; }
     if (ok) out.push({use: u, cond});
   }
   return out;
