@@ -31,7 +31,6 @@ export function wordBody(p){
  xml+=wordTable(['구 분','항 목','대 상','법규내용','비 고'],p.review.rows.map(r=>[{text:r.group,fill:'D9D9D9',italic:true,align:'center',red:r.refs.some(x=>!x.current)},{text:r.item,align:'center'},{text:r.target,align:'center',red:r.uncertain},{text:r.text,red:!r.verified},{text:r.judgment|| (r.uncertain?r.refs.map(x=>shortLaw(x.name)+' '+x.article).join('\n'):''),red:r.uncertain||!!r.judgment}]),[1821,1440,1080,7020,1440]);
  if(p.issue)xml+=h('판단 내용')+para(p.issue,{red:true});
  xml+=h('Ⅳ. 법적 제재 유의사항',true)+wordTable(['위반 유형','근거 조문 및 내용'],p.review.sanctions.map(s=>[{text:s.item,align:'center'},{text:s.text,red:/현행 원문 미수신/.test(s.text)}]),[3300,9501]);
- xml+=para('조회일시 : '+kstTime(p.queriedAt))+para('작성자 : '+p.author);
  return xml;
 }
 async function template(path){const r=await fetch('/templates/'+encodeURIComponent(path));if(!r.ok)throw new Error('빈 양식 읽기 실패');return r.arrayBuffer();}
@@ -46,6 +45,7 @@ function coverPage(xml,p){const b=xml.indexOf('<w:body>')+8,brk=xml.indexOf('<w:
   +para(run('{{TITLE}}',36,{color:'222222'}),{jc:'right',before:1100,after:120})
   +para(run('법규검토서',36,{color:'222222'}),{jc:'right',after:0})
   +para(run('{{DATE}}',20,{bold:true,color:'222222'}),{jc:'right',before:360})
+  +para(run(`조회 ${esc(kstTime(p.queriedAt))} · 작성 ${esc(p.author||'')}`,15,{color:'8A8A8A'}),{jc:'right',before:80})
   +para(logo,{before:1000,after:80})
   +para(run('Copyright © 2020 by AOM Architects &amp; Developers Co.,Ltd All. RIGHTS RESERVED.',12,{color:g}))
   +para(run('No part of this publication may be reproduced, stored in a retrieval system, or transmitted in any form or by any means — electronic, mechanical, photocopying, recording, or otherwise — without the permission of AOM A&amp;D.',12,{color:g}))
