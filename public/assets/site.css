@@ -9,7 +9,7 @@
 /* 받기 버튼: 파일 종류별 색상 */
 button[data-download],#downloadAll{color:#fff!important;border:0!important;font-weight:600;border-radius:6px}
 button[data-download]::before{content:"⬇ ";}
-button[data-download="land"],button[data-download="building"]{background:#D93025!important}
+button[data-download="land"],button[data-download="building"],button[data-download^="b"]{background:#D93025!important}
 button[data-download="word"]{background:#2B579A!important}
 button[data-download="excel"]{background:#1E7145!important}
 button[data-download="dxf"]{background:#C55A11!important}
