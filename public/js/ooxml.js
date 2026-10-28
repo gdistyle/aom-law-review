@@ -39,14 +39,14 @@ async function template(path){const r=await fetch('/templates/'+encodeURICompone
 function coverPage(xml,p){const b=xml.indexOf('<w:body>')+8,brk=xml.indexOf('<w:br w:type="page"/>');if(b<8||brk<0)return xml;const pStart=Math.max(xml.lastIndexOf('<w:p>',brk),xml.lastIndexOf('<w:p ',brk));if(pStart<b)return xml;
  const F='<w:rFonts w:ascii="맑은 고딕" w:hAnsi="맑은 고딕" w:eastAsia="맑은 고딕" w:cs="맑은 고딕"/>';
  const run=(t,sz,{bold=false,color='222222',spacing=0}={})=>`<w:r><w:rPr>${F}${bold?'<w:b/>':''}<w:color w:val="${color}"/>${spacing?`<w:spacing w:val="${spacing}"/>`:''}<w:sz w:val="${sz}"/><w:szCs w:val="${sz}"/></w:rPr><w:t xml:space="preserve">${t}</w:t></w:r>`;
- const para=(inner,{jc='left',before=0,after=0,border=false,keep=true}={})=>`<w:p><w:pPr>${keep?'<w:keepNext/>':''}${border?'<w:pBdr><w:top w:val="single" w:sz="6" w:space="2" w:color="222222"/><w:bottom w:val="single" w:sz="6" w:space="2" w:color="222222"/></w:pBdr>':''}<w:spacing w:before="${before}" w:after="${after}" w:line="240" w:lineRule="auto"/><w:ind w:left="0" w:right="0"/><w:jc w:val="${jc}"/></w:pPr>${inner}</w:p>`;
+ const para=(inner,{jc='left',before=0,after=0,border=false,keep=false}={})=>`<w:p><w:pPr>${keep?'<w:keepNext/>':''}${border?'<w:pBdr><w:top w:val="single" w:sz="6" w:space="2" w:color="222222"/><w:bottom w:val="single" w:sz="6" w:space="2" w:color="222222"/></w:pBdr>':''}<w:spacing w:before="${before}" w:after="${after}" w:line="240" w:lineRule="auto"/><w:ind w:left="0" w:right="0"/><w:jc w:val="${jc}"/></w:pPr>${inner}</w:p>`;
  const logo=`<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="1381760" cy="570865"/><wp:docPr id="9001" name="AOM 로고"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="9001" name="aom-logo.png"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="rId2"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="1381760" cy="570865"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`;
  const g='8A8A8A';
  const cover=para(run('Strictly Confidential',15,{color:'222222',spacing:10}),{jc:'right',border:true})
-  +para(run('{{TITLE}}',36,{color:'222222'}),{jc:'right',before:1700,after:120})
+  +para(run('{{TITLE}}',36,{color:'222222'}),{jc:'right',before:1100,after:120})
   +para(run('법규검토서',36,{color:'222222'}),{jc:'right',after:0})
   +para(run('{{DATE}}',20,{bold:true,color:'222222'}),{jc:'right',before:360})
-  +para(logo,{before:1900,after:100})
+  +para(logo,{before:1000,after:80})
   +para(run('Copyright © 2020 by AOM Architects &amp; Developers Co.,Ltd All. RIGHTS RESERVED.',12,{color:g}))
   +para(run('No part of this publication may be reproduced, stored in a retrieval system, or transmitted in any form or by any means — electronic, mechanical, photocopying, recording, or otherwise — without the permission of AOM A&amp;D.',12,{color:g}))
   +para(run('This document provides an outline of a presentation and is incomplete without the accompanying oral commentary and discussion.',12,{color:g}),{keep:false});
