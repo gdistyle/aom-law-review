@@ -43,3 +43,10 @@ button[data-download]:hover,#downloadAll:hover{filter:brightness(1.12)}
 .terrain-map{width:100%;max-width:640px;height:auto;border:1px solid #ddd;border-radius:5px;display:block;background:#f4f4f0}
 
 .center-table td{text-align:center;vertical-align:middle}
+
+.subtabs{position:sticky;top:80px;z-index:45;background:#fff;border-bottom:1px solid var(--line);display:flex;justify-content:center;gap:2px;padding:0 24px;overflow-x:auto}
+.subtabs button{border:0;border-bottom:3px solid transparent;border-radius:0;background:transparent;padding:13px 16px 11px;white-space:nowrap;color:#555;font-size:14px}
+.subtabs button small{color:#aaa;font-size:11px;margin-right:6px}.subtabs button:hover{background:#f6f6f4}
+.subtabs button.on{color:var(--red);border-bottom-color:var(--red);font-weight:600}.subtabs button.on small{color:var(--red)}
+.layout{grid-template-columns:minmax(0,1fr)!important;max-width:1180px}.layout>.sidebar{display:none!important}
+@media(max-width:760px){.subtabs{top:100px;justify-content:flex-start;padding:0 8px}.subtabs button{padding:10px 10px;font-size:13px}}
