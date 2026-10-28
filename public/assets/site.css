@@ -16,3 +16,5 @@ button[data-download="dxf"]{background:#C55A11!important}
 button[data-download="volume"],button[data-download="terrain"]{background:#6B3FA0!important}
 #downloadAll{background:#222!important}
 button[data-download]:hover,#downloadAll:hover{filter:brightness(1.12)}
+
+.bview-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 10px;border-bottom:2px solid #e3e3e3}.bview{background:none!important;color:#555!important;border:0!important;padding:8px 14px;font-weight:600;border-bottom:3px solid transparent!important;margin-bottom:-2px;cursor:pointer}.bview.on{color:#D93025!important;border-bottom-color:#D93025!important}.bview small{color:#999;font-weight:400}
