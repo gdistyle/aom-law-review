@@ -135,7 +135,7 @@ const kn=t=>String(t).replace(/(\d+)천(\d+)?/g,(_,a,b)=>String(+a*1000+(b?+b:0)
 /** 「주차장법 시행령」 별표1 표에서 예정 용도 행의 '시설면적 N㎡당 1대'. */
 export function nationalParking(law,purpose){const an=law?.annexes?.find(a=>a.number==='1'&&!a.branch);if(!an?.text||!purpose)return null;const key=norm(purpose).replace(/^제[12]종/,m=>m);const rows=an.text.split(/\n[┠┣├][─━┼┿╂]+[┨┫┤]?/);for(const r of rows){const L=[],R=[];for(const line of r.split('\n')){const m=line.match(/^\s*┃(.*?)│(.*?)┃\s*$/);if(m){L.push(m[1].trim());R.push(m[2].trim());}}const left=norm(L.join('')),right=norm(R.join(''));if(!left)continue;const hit=left.includes(key)&&!new RegExp(key.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'[^,]{0,40}?은제외').test(left);if(!hit)continue;const u=[...right.matchAll(/시설면적(\d+(?:\.\d+)?)(?:㎡|m2)당1대/g)].map(x=>+x[1]);if(u.length===1)return{unit:u[0],row:(L.join(' ').match(/^(\d+)\./)||[])[1]?L.join(' ').match(/^(\d+)\./)[1]+'호':''};return null;}return null;}
 /** 건축조례 조경 조항의 연면적 구간별 비율. 연면적은 법정 최대 연면적(가정)으로 판정. */
-export function landscapeTier(law,gross){if(!law?.current||gross==null)return null;for(const a of law.articles.filter(a=>/조경/.test(norm(a.title||'')))){const t=kn(norm(a.text).split('②')[0]);const tiers=[];for(const m of t.matchAll(/연면적(?:\([^)]*\))?(?:이)?(\d+)제곱미터(이상|미만)(?:(\d+)제곱미터미만)?인건축물:대지면적의(\d+(?:\.\d+)?)(?:%|퍼센트)/g)){const lo=m[2]==='이상'?+m[1]:0,hi=m[2]==='미만'?+m[1]:(m[3]?+m[3]:Infinity);tiers.push({lo,hi,value:+m[4]});}const hit=tiers.filter(x=>gross>=x.lo&&gross<x.hi);if(hit.length===1)return{...hit[0],article:a,gross};}return null;}
+export function landscapeTier(law,gross,site=null){if(!law?.current||gross==null)return null;for(const a of law.articles.filter(a=>/조경/.test(norm(a.title||'')))){const all=kn(norm(a.text));if(site!=null){for(const m of all.matchAll(/면적(\d+)제곱미터이상(\d+)제곱미터미만인대지에건축하는건축물의조경면적은대지면적의(\d+(?:\.\d+)?)(?:%|퍼센트)/g))if(site>=+m[1]&&site<+m[2])return{lo:0,hi:Infinity,value:+m[3],article:a,gross,small:[+m[1],+m[2]]};}const t=kn(norm(a.text).split('②')[0]);const tiers=[];for(const m of t.matchAll(/연면적(?:\([^)]*\))?(?:이)?(\d+)제곱미터(이상|미만)(?:(\d+)제곱미터미만)?인건축물:대지면적의(\d+(?:\.\d+)?)(?:%|퍼센트)/g)){const lo=m[2]==='이상'?+m[1]:0,hi=m[2]==='미만'?+m[1]:(m[3]?+m[3]:Infinity);tiers.push({lo,hi,value:+m[4]});}const hit=tiers.filter(x=>gross>=x.lo&&gross<x.hi);if(hit.length===1)return{...hit[0],article:a,gross};}return null;}
 const boxClean=t=>String(t||'').replace(/[┃│┠┨─┼━┏┓┗┛┯┷╂┿┣┫├┤]/g,' ');
 /** 법령 원문에서 층수·연면적 상한 추출(개발제한구역 시행령 별표2, 용도지역별 건축제한 별표 머리글). */
 export function legalHeight(p,purpose){const out=[];const zones=p.land.zones.map(z=>z.name).join(' ');
@@ -228,12 +228,12 @@ export function reviewProject(p){
  limits.parkingPurposeAssumed=!purpose;limits.parkingPurpose=parkPurpose;
  const planG=number(p.planGross);limits.planLabel=planG!=null?(p.planLabel||'계획 연면적'):'법정 최대 연면적';limits.parkingArea=number(p.manual.parkingArea)??planG??limits.maxGross??null;limits.parkingAreaAssumed=number(p.manual.parkingArea)==null;
  limits.parking=limits.parkingUnit>0&&limits.parkingArea!==null?Math.ceil(limits.parkingArea/limits.parkingUnit):null;
- const tier=landscapeAuto?null:landscapeTier(o.building,planG??limits.maxGross);limits.landscapeTier=tier;
+ const tier=landscapeAuto?null:landscapeTier(o.building,planG??limits.maxGross,area);limits.landscapeTier=tier;
  limits.landscape=number(p.manual.landscape)??landscapeAuto?.value??tier?.value??null;
  {const t27=norm(articleText(BD,27));limits.landscapeExempt=null;
   if(number(p.manual.landscape)==null){
    if(area!==null&&landscapeThreshold!==null&&area<landscapeThreshold){limits.landscape=0;limits.landscapeExempt=`「건축법」 제42조 : 면적 ${fmt0(landscapeThreshold)}㎡ 미만 대지 → 조경 의무 없음`;}
-   else if(/녹지지역/.test(p.land.zone.value||'')&&t27.includes('녹지지역에건축하는건축물')){limits.landscape=0;limits.landscapeExempt='「건축법 시행령」 제27조제1항제1호 : 녹지지역에 건축하는 건축물 → 조경 등의 조치를 하지 아니할 수 있음';}}}
+   else if(/녹지지역/.test(p.land.zone.value||'')&&t27.includes('녹지지역에건축하는건축물')){const ref=limits.landscape;limits.landscapeRef=ref!=null&&area!=null?{rate:ref,area:area*ref/100}:null;limits.landscape=0;limits.landscapeExempt='「건축법 시행령」 제27조제1항제1호 : 녹지지역에 건축하는 건축물은 조경 등의 조치를 하지 않을 수 있음'+(limits.landscapeRef?` (면제를 적용하지 않을 경우 조례 기준 대지면적의 ${limits.landscapeRef.rate}% = ${limits.landscapeRef.area.toFixed(2)}㎡)`:'');}}}
  limits.landscapeArea=area!==null&&limits.landscape!==null?area*limits.landscape/100:null;
  limits.north=residential?extractNorth(getLaw(p.laws,BD)):null;
  limits.residential=residential;
