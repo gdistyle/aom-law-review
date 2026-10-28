@@ -33,3 +33,5 @@ button[data-download]:hover,#downloadAll:hover{filter:brightness(1.12)}
 .edge-svg .edge.both .vis{stroke:#7B3FA0;stroke-width:5}.edge-svg .edge:hover .vis{stroke-width:7}
 .edge-svg .north-arrow path{fill:#333}.edge-svg .north-arrow text{font:700 12px sans-serif;text-anchor:middle}
 .c-road{color:#1565C0}.c-north{color:#E67E00}
+
+.pager{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin:8px 0}.pager button{min-width:34px;padding:4px 8px;font-size:12.5px}.pager button.on{background:#222;color:#fff;border-color:#222}.pager .small{margin-left:6px}
