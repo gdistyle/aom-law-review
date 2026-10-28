@@ -148,6 +148,7 @@ export function legalHeight(p,purpose){const out=[];const zones=p.land.zones.map
  if(an?.text){const head=norm(boxClean(an.text)).split(/1\.(?=[가-힣「])/)[0];const m=[...head.matchAll(/(\d+)층이하/g)].map(x=>+x[1]);if(m.length)out.push({floors:Math.min(...m),gross:null,text:`[「국토계획법 시행령」 제71조 별표${no}] ${zone} 안에서 건축할 수 있는 건축물 : ${Math.min(...m)}층 이하`});}
  const fl=out.map(x=>x.floors).filter(x=>x>0),gr=out.map(x=>x.gross).filter(x=>x>0);
  return {floors:fl.length?Math.min(...fl):null,gross:gr.length?Math.min(...gr):null,lines:out.map(x=>x.text)};}
+const fmt0=v=>Number(v).toLocaleString('ko-KR');
 function zoneBasis(name){
  const map=[[/개발제한구역/,GREEN,12],[/군사|비행안전|대공방어/,'군사기지 및 군사시설 보호법',13],
  [/문화유산|문화재|역사문화환경/,'문화유산의 보존 및 활용에 관한 법률',13],[/자연유산/,'자연유산의 보존 및 활용에 관한 법률',10],
@@ -229,6 +230,10 @@ export function reviewProject(p){
  limits.parking=limits.parkingUnit>0&&limits.parkingArea!==null?Math.ceil(limits.parkingArea/limits.parkingUnit):null;
  const tier=landscapeAuto?null:landscapeTier(o.building,planG??limits.maxGross);limits.landscapeTier=tier;
  limits.landscape=number(p.manual.landscape)??landscapeAuto?.value??tier?.value??null;
+ {const t27=norm(articleText(BD,27));limits.landscapeExempt=null;
+  if(number(p.manual.landscape)==null){
+   if(area!==null&&landscapeThreshold!==null&&area<landscapeThreshold){limits.landscape=0;limits.landscapeExempt=`「건축법」 제42조 : 면적 ${fmt0(landscapeThreshold)}㎡ 미만 대지 → 조경 의무 없음`;}
+   else if(/녹지지역/.test(p.land.zone.value||'')&&t27.includes('녹지지역에건축하는건축물')){limits.landscape=0;limits.landscapeExempt='「건축법 시행령」 제27조제1항제1호 : 녹지지역에 건축하는 건축물 → 조경 등의 조치를 하지 아니할 수 있음';}}}
  limits.landscapeArea=area!==null&&limits.landscape!==null?area*limits.landscape/100:null;
  limits.north=residential?extractNorth(getLaw(p.laws,BD)):null;
  limits.residential=residential;
