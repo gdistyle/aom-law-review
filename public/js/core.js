@@ -33,7 +33,7 @@ export function blankProject() {
     building:{status:'unavailable',titles:[],recaps:[],floors:[],exclusive:[],changes:[],selected:0},
     laws:[],sources:[],geometry:{parcels:[],buildings:[]},judgments:{},issue:'',
     manual:{district:false,districtResolved:false,bcr:null,far:null,landscape:null,parkingUnit:null,parkingArea:null,setback:null,roadSetback:null,height:null,northLow:null,northThreshold:null,northSlope:null,frontage:null,roadWidth:null,deadEndLength:null,rural:false,grading:false},
-    model:{floorHeight:3.3,maxFloors:80,courtyardWidth:null,northEdges:[],roadEdges:[],confirmed:false,terrain:null},
+    model:{floorHeight:3.3,floorHeights:[4.3,3.3,3.3,3.3,3.3,3.3,3.3,3.3,3.3,3.3],baseElevation:0,maxFloors:15,courtyardWidth:null,northEdges:[],roadEdges:[],confirmed:false,terrain:null},
     review:{rows:[],sanctions:[],limits:{}},queriedAt:null};
 }
 export const titleOf = p => `${p.address || '대지'} ${p.purpose || ''} ${p.operation || '신축'}`.replace(/\s+/g,' ').trim();

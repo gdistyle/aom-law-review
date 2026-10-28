@@ -22,7 +22,7 @@ function clearParcelInputs(){
  ['district','districtResolved','grading','rural','modelConfirmed','manualEmpty'].forEach(id=>$(id).checked=false);
  for(const id of ['parcelFile','buildingFile'])$(id).value='';
  for(const id of ['mapNormal','mapSky','mapRoad'])$(id).textContent='자료 연결 전';
- $('floorHeight').value='3.3';toInputs();
+ $('floorHeight').value='3.3';floorGrid();toInputs();
 }
 function inputs(){const address=$('address').value.trim();if(p.address&&address!==p.address){cancel();p=blankProject();clearParcelInputs();render();updateModels();log('주소 변경으로 이전 필지의 조회·판단·도형 자료 삭제.');}p.address=address;p.author=$('author').value.trim()||'이오상';p.date=$('date').value||p.date;p.purpose=$('purpose').value;p.floors=number($('floors').value);p.operation=$('operation').value;}
 function manualSource(){source(p,{name:'사용자 입력 자료',url:'',retrievedAt:new Date().toISOString()});p.queriedAt||=new Date().toISOString();}
@@ -83,7 +83,12 @@ $('legalTable').addEventListener('input',e=>{if(e.target.dataset.row){p.judgment
 $('copyJudgment').onclick=async()=>{try{await navigator.clipboard.writeText(judgmentPacket(p));toast('판단용 자료 복사 완료.');}catch{error(new Error('클립보드 접근 실패. HTTPS 또는 localhost에서 실행하십시오.'));}};
 $('copyPnu').onclick=async()=>{try{await navigator.clipboard.writeText(p.pnu);toast('PNU 복사 완료.');}catch{toast('클립보드 접근 실패.');}};
 $('applyJudgment').onclick=()=>{const text=redactFreeText($('judgments').value),parsed=parseJudgments(text,p.review.rows.map(r=>r.id));Object.assign(p.judgments,parsed);p.issue=Object.keys(parsed).length?'':text;manualSource();render();toast('판단 내용 반영.');};
-$('buildModel').onclick=()=>{try{p.model.floorHeight=number($('floorHeight').value);p.model.courtyardWidth=number($('courtWidth').value);if(!(p.model.floorHeight>0))throw new Error('층고 입력값 오류.');for(const id of ['northEdges','roadEdges']){const s=$(id).value.trim();p.model[id]=s?s.split(',').map(v=>{if(!/^\d+$/.test(v.trim()))throw new Error('경계 번호는 쉼표로 구분한 0 이상의 정수.');return+v.trim();}):[];}p.model.confirmed=$('modelConfirmed').checked;inputs();render();updateModels();}catch(e){error(e);}};
+function floorGrid(){const g=$('floorGrid');if(!g)return;const hs=p.model.floorHeights||[];let html='';for(let i=0;i<15;i++)html+=`<label class="fl"><span>${i+1}층</span><input type="number" step="0.1" min="0" data-fl="${i}" value="${hs[i]??''}"><small data-cum="${i}"></small></label>`;g.innerHTML=html;$('baseElev').value=p.model.baseElevation??0;cum();for(const el of g.querySelectorAll('[data-fl]'))el.oninput=cum;$('baseElev').oninput=cum;}
+function readFloors(){const hs=[];for(const el of document.querySelectorAll('[data-fl]')){const v=number(el.value);hs.push(v>0?v:null);}return hs;}
+function cum(){let t=number($('baseElev').value)||0,stop=false;readFloors().forEach((h,i)=>{const c=document.querySelector(`[data-cum="${i}"]`);if(!c)return;if(!stop&&h>0){t+=h;c.textContent=`누적 ${t.toFixed(2)} m`;}else{stop=true;c.textContent='';}});}
+$('fillStd')&&($('fillStd').onclick=()=>{for(const el of document.querySelectorAll('[data-fl]'))if(+el.dataset.fl>0&&!(number(el.value)>0))el.value='3.3';cum();});
+floorGrid();
+$('buildModel').onclick=()=>{try{p.model.floorHeights=readFloors();p.model.baseElevation=number($('baseElev').value)||0;if(!(p.model.floorHeights[0]>0))throw new Error('1층 층고를 입력하십시오.');p.model.courtyardWidth=number($('courtWidth').value);for(const id of ['northEdges','roadEdges']){const s=$(id).value.trim();p.model[id]=s?s.split(',').map(v=>{if(!/^\d+$/.test(v.trim()))throw new Error('경계 번호는 쉼표로 구분한 0 이상의 정수.');return+v.trim();}):[];}p.model.confirmed=$('modelConfirmed').checked;inputs();render();updateModels();}catch(e){error(e);}};
 $('modelSelect').onchange=()=>showScene($('viewer'),p,modelResult,$('modelSelect').value);
 for(const [id,kind]of [['parcelFile','parcels'],['buildingFile','buildings']])$(id).onchange=()=>task('경계 파일 읽기',async()=>{const file=$(id).files[0];if(!file)return;if(file.size>8_000_000)throw new Error('GeoJSON 파일 제한 8MB.');const parsed=sanitizeGeoJSON(JSON.parse(await file.text()));p.geometry[kind]=parsed;p.model.terrain=null;manualSource();render();updateModels();log(`실제 좌표 도형 ${parsed.length}개 입력.`);});
 $('fetchGeometry').onclick=()=>task('주변 경계 조회',async()=>{await loadSpatial(p);render();updateModels();});
