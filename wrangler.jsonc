@@ -10,10 +10,11 @@
     "run_worker_first": ["/api/*"]
   },
   "observability": { "enabled": false },
+  "keep_vars": true,
   "vars": {
-    "KAKAO_JS_KEY": "",
-    "SITE_ORIGIN": "",
-    "VWORLD_DOMAIN": "",
+    "KAKAO_JS_KEY": "5ae39dc559dab11bdddd8243509cc8ff",
+    "SITE_ORIGIN": "https://aom-law-review.gdistyle.workers.dev",
+    "VWORLD_DOMAIN": "https://aom-law-review.gdistyle.workers.dev",
     "VWORLD_BUILDING_LAYER": "",
     "VWORLD_BUILDING_HEIGHT_FIELD": "",
     "VWORLD_BUILDING_FLOORS_FIELD": "",
