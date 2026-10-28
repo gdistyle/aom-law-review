@@ -33,13 +33,14 @@ export function normalizeLaw(payload,{kind='law',name='',effectiveDate='',retrie
  const actualName=info?.법령명_한글||info?.법령명한글||info?.자치법규명||name;
  const effective=String(info?.시행일자||effectiveDate||'');
  const articles=walkObjects(root,x=>x.조문번호!==undefined&&(x.조문내용!==undefined||x.조내용!==undefined)).map(a=>({
-   number:String(+a.조문번호||a.조문번호),branch:+a.조문가지번호>0?String(+a.조문가지번호):'',
+   ...artNo(a),hang1:textContent([].concat(a.항||[])[0]||''),
    title:plain(a.조문제목||a.조제목||''),text:textContent(a),effectiveDate:String(a.조문시행일자||effective),
    isArticle:a.조문여부!=='N'&&a.조문여부!=='전문'
  })).filter(a=>a.isArticle && currentByDate(a.effectiveDate));
  const annexes=walkObjects(root,x=>x.별표번호!==undefined).map(a=>({number:String(+a.별표번호||a.별표번호),branch:+a.별표가지번호>0?String(+a.별표가지번호):'',title:plain(a.별표제목||''),text:textContent(a)}));
  return {name:actualName,kind,effectiveDate:effective,retrievedAt,current:!!current&&currentByDate(effective),articles,annexes};
 }
+function artNo(a){let n=Array.isArray(a.조문번호)?a.조문번호[0]:a.조문번호;n=String(n??'');if(/^\d{6}$/.test(n))return {number:String(+n.slice(0,4)),branch:+n.slice(4)>0?String(+n.slice(4)):''};return {number:String(+n||n),branch:+a.조문가지번호>0?String(+a.조문가지번호):''};}
 export function lawLink(name,article='',kind='law',branch='') {
  const slug=encodeURIComponent(norm(name));
  return `https://www.law.go.kr/${kind==='ordin'?'자치법규':'법령'}/${slug}${article?'/제'+article+'조'+(branch?'의'+branch:''):''}`;
@@ -84,7 +85,7 @@ export function extractRatio(text,zone,range=false) {
 function ratioFrom(law,zone,type) {
  if(!law?.current)return null;
  const patterns=type==='bcr'?/용도지역.*건폐율|지역.*건폐율/:/용도지역.*용적률|지역.*용적률/;
- const articles=law.articles.filter(a=>patterns.test(norm(a.title)));
+ const articles=law.articles.filter(a=>patterns.test(norm(a.title))&&!/완화|특례|예외/.test(norm(a.title)));
  const result=[];
  for(const a of articles){
   const val=extractRatio(a.text,zone,false);
@@ -103,7 +104,7 @@ export function resolveRatios(p){
  const zone=p.land.zone.value, o=ordinances(p), d=getLaw(p.laws,DECREE), district=p.manual.district||p.land.zones.some(z=>z.name.includes('지구단위계획'));
  const out={bcr:datum(),far:datum(),district,upperBcr:null,upperFar:null};
  for(const [type,no,baseIndex] of [['bcr',84,0],['far',85,2]]){
-  const a=getArticle(d,no), upper=a?extractRatio(a.text,zone,type==='far'):null;out[type==='bcr'?'upperBcr':'upperFar']=upper;
+  const a=getArticle(d,no), upper=a?extractRatio(a.hang1||a.text,zone,type==='far'):null;out[type==='bcr'?'upperBcr':'upperFar']=upper;
   const loc=ratioFrom(o.plan,zone,type), baseline=BASELINES[zone]?.[baseIndex];
   if(district&&(!p.manual.districtResolved||number(p.manual[type])===null)){out[type]=datum(null,'지구단위계획 시행지침 우선 적용',true);continue;}
   if(number(p.manual[type])!==null){out[type]=datum(number(p.manual[type]),'사용자 입력',true);continue;}

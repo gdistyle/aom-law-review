@@ -30,7 +30,7 @@ export function wordBody(p){
  xml+=h('Ⅲ. 법규검토',true);
  xml+=wordTable(['구 분','항 목','대 상','법규내용','비 고'],p.review.rows.map(r=>[{text:r.group,fill:'D9D9D9',italic:true,align:'center',red:r.refs.some(x=>!x.current)},{text:r.item,align:'center'},{text:r.target,align:'center',red:r.uncertain},{text:r.text,red:!r.verified},{text:r.judgment|| (r.uncertain?r.refs.map(x=>shortLaw(x.name)+' '+x.article).join('\n'):''),red:r.uncertain||!!r.judgment}]),[1821,1440,1080,7020,1440]);
  if(p.issue)xml+=h('판단 내용')+para(p.issue,{red:true});
- xml+=h('Ⅳ. 법적 제재 유의사항',true)+wordTable(['위반 유형','근거 조문'],p.review.sanctions.map(s=>[s.item,{text:s.text,red:s.uncertain}]),[3300,9501]);
+ xml+=h('Ⅳ. 법적 제재 유의사항',true)+wordTable(['위반 유형','근거 조문 및 내용'],p.review.sanctions.map(s=>[{text:s.item,align:'center'},{text:s.text,red:/현행 원문 미수신/.test(s.text)}]),[3300,9501]);
  xml+=para('조회일시 : '+kstTime(p.queriedAt))+para('작성자 : '+p.author);
  return xml;
 }

@@ -144,5 +144,17 @@ export function detailRows(p, review, ordinPlanName = '') {
     const text = lines.filter(Boolean).join('\n');
     if (text) row.text = text;
   }
+  // 법적 제재 유의사항: 조문마다 제목과 제1항 원문
+  for (const s of review.sanctions) {
+    const out = [];
+    for (const ref of s.refs) {
+      const m = String(ref.article).match(/제(\d+)조(?:의(\d+))?/);
+      const a = m ? art(L, ref.name, m[1], m[2] || '') : null;
+      const head = `「${shortLaw(ref.name)}」 ${ref.article}${a?.title ? '(' + a.title + ')' : ''}`;
+      const body = a ? (a.hang1 || pickLines(a.text, [], 1)[0] || '') : '';
+      out.push(body ? `${head} : ${body.replace(/^제\d+조(?:의\d+)?\([^)]*\)\s*/, '')}` : `${head} : 현행 원문 미수신`);
+    }
+    s.text = out.join('\n');
+  }
   return review;
 }
