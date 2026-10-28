@@ -22,7 +22,8 @@ function allowedOrigin(request,env){const origin=request.headers.get('Origin');i
 async function upstream(url,env,headers={}){
  const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),Math.min(Number(env.UPSTREAM_TIMEOUT_MS)||15000,25000));
  try{
-  const r=await fetch(url,{headers,signal:ctl.signal,redirect:'error',cache:'no-store'});
+  const r=await fetch(url,{headers,signal:ctl.signal,redirect:'manual'});
+  if(r.status>=300&&r.status<400)throw new Error('UPSTREAM_REDIRECT');
   if(!r.ok)throw new Error('UPSTREAM_HTTP_'+r.status);
   const max=Math.min(Number(env.MAX_RESPONSE_BYTES)||4000000,8000000);
   if(Number(r.headers.get('Content-Length'))>max)throw new Error('RESPONSE_TOO_LARGE');
