@@ -20,7 +20,7 @@ function positivePage(u){const n=number(u.searchParams.get('page')||1);if(!Numbe
 function rateLimit(req){const id=req.headers.get('CF-Connecting-IP')||'local';const slot=Math.floor(Date.now()/60000),key=id+':'+slot;const n=(counts.get(key)||0)+1;counts.set(key,n);if(counts.size>5000)counts.clear();return n<=180;}
 function allowedOrigin(request,env){const origin=request.headers.get('Origin');if(!origin)return request.headers.get('Sec-Fetch-Site')!=='cross-site';const here=new URL(request.url).origin;return origin===here||!!env.SITE_ORIGIN&&origin===env.SITE_ORIGIN;}
 async function upstream(url,env,headers={}){
- const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),Math.min(Number(env.UPSTREAM_TIMEOUT_MS)||15000,25000));
+ const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),Math.min(Number(env.UPSTREAM_TIMEOUT_MS)||25000,28000));
  try{
   const r=await fetch(url,{headers,signal:ctl.signal,redirect:'manual'});
   if(r.status>=300&&r.status<400)throw new Error('UPSTREAM_REDIRECT');
