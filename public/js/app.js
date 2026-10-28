@@ -101,3 +101,12 @@ $('downloadAll').onclick=()=>task('전체 출력 구성',async()=>{inputs();p.re
 for(const b of document.querySelectorAll('[data-tab]'))b.onclick=()=>{const tab=b.dataset.tab;document.querySelectorAll('[data-tab]').forEach(x=>{const on=x===b;x.classList.toggle('active',on);x.setAttribute('aria-selected',String(on));});$('reviewView').hidden=tab!=='review';$('downloadBar').hidden=tab!=='review';$('stampView').hidden=tab==='review';if(tab!=='review'){const frame=$('stampFrame'),activate=()=>{const button=frame.contentDocument?.getElementById(tab==='make'?'t-make':'t-cut');button?.click();};if(frame.getAttribute('src')==='about:blank'){frame.onload=activate;frame.src='/stamp/index.html';}else activate();}};
 render();api('/api/config').then(d=>{config=d;$('connection').innerHTML=[['kakao','주소·지도'],['land','토지'],['building','건축물대장'],['law','법령']].map(([k,label])=>`<span class="${d.services?.[k]?'connected':''}">${label} · ${d.services?.[k]?'키 설정':'자료 연결 전'}</span>`).join('');render();}).catch(error);
 try{const c=document.createElement('canvas').getContext('2d'),s='가나다라마바사ABC012345';c.font='16px monospace';const a=c.measureText(s).width;c.font='16px "Malgun Gothic", "맑은 고딕", monospace';$('fontWarning').hidden=Math.abs(a-c.measureText(s).width)>.1;}catch{}
+
+/* 구역 탭: 왼쪽(모바일은 위쪽) 목록을 누르면 해당 구역만 표시 */
+const SECS=['s0','s1','s2','s3','s4','s5','s6','s7'];
+function showSec(id){if(!SECS.includes(id))id='s0';for(const k of SECS){const el=$(k);if(el)el.hidden=k!==id;}for(const a of document.querySelectorAll('.sidebar nav a'))a.classList.toggle('on',a.getAttribute('href')==='#'+id);try{history.replaceState(null,'','#'+id);}catch{}window.scrollTo({top:0});if(id==='s1')maps();if(id==='s6')updateModels();}
+for(const a of document.querySelectorAll('.sidebar nav a'))a.onclick=e=>{e.preventDefault();showSec(a.getAttribute('href').slice(1));};
+for(const [i,k] of SECS.entries()){const el=$(k);if(!el)continue;const nav=document.createElement('div');nav.className='sec-nav';const t=n=>document.querySelector(`.sidebar nav a[href="#${SECS[n]}"] span`)?.textContent||'';nav.innerHTML=(i>0?`<button type="button" data-go="${SECS[i-1]}">← ${t(i-1)}</button>`:'<span></span>')+(i<SECS.length-1?`<button type="button" class="primary" data-go="${SECS[i+1]}">다음 : ${t(i+1)} →</button>`:'');el.append(nav);}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(b)showSec(b.dataset.go);});
+document.querySelector('.skip')?.addEventListener('click',()=>showSec('s0'));
+showSec((location.hash||'#s0').slice(1));
