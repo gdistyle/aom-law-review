@@ -71,7 +71,7 @@ export async function exportExcel(p){
  let s1=await zip.file('xl/worksheets/sheet1.xml').async('string'),s6=await zip.file('xl/worksheets/sheet6.xml').async('string'),s7=await zip.file('xl/worksheets/sheet7.xml').async('string');
  const put=(xml,address,value,red)=>setSheetCell(xml,address,value,red?styles.get(getStyle(xml,address)):null);
  const L=p.review.limits;
- for(const [cell,value,red]of [['C7',titleOf(p),false],['D8',p.address,false],['D17',p.land.road.value,p.land.road.uncertain],['D18',p.purpose,false],['D19',p.floors?`지상 ${p.floors}층`:'',true],['F24',L.bcr.value===null?null:L.bcr.value/100,L.bcr.uncertain],['F25',L.far.value===null?null:L.far.value/100,L.far.uncertain],['AD5',p.date,false]])s1=put(s1,cell,value,red);
+ for(const [cell,value,red]of [['C7',titleOf(p),false],['D8',p.address,false],['D17',p.land.road.value,p.land.road.uncertain],['D18',[p.purpose,p.purpose2].filter(Boolean).join(', '),false],['D19',p.floors?`${p.basement?'지하 '+p.basement+'층, ':''}지상 ${p.floors}층`:'',true],['E34',L.landscape==null?null:L.landscape/100,true],['F24',L.bcr.value===null?null:L.bcr.value/100,L.bcr.uncertain],['F25',L.far.value===null?null:L.far.value/100,L.far.uncertain],['AD5',p.date,false]])s1=put(s1,cell,value,red);
  const parcels=p.parcels.length?p.parcels:[{name:p.location?.region3||'',lot:p.address,area:p.land.area,price:p.land.price}];
  if(parcels.length>23)throw new Error('원본 토지내역의 공제·합계 행 보존을 위해 23필지 초과 입력 불가.');
  parcels.forEach((x,i)=>{const r=3+i;for(const [col,v,red]of [['A',x.dong||x.name||'',!!x.area?.uncertain],['B',x.lot||'',!!x.area?.uncertain],['C',x.area?.value??null,x.area?.uncertain!==false],['E',x.price?.value??null,x.price?.uncertain!==false]])s6=put(s6,col+r,v,red);});

@@ -131,6 +131,11 @@ function specialRate(law,titlePattern,purpose,unitPattern){
  }
  return vals.length&&new Set(vals.map(x=>x.value)).size===1?vals[0]:null;
 }
+const kn=t=>String(t).replace(/(\d+)천(\d+)?/g,(_,a,b)=>String(+a*1000+(b?+b:0))).replace(/,/g,'');
+/** 「주차장법 시행령」 별표1 표에서 예정 용도 행의 '시설면적 N㎡당 1대'. */
+export function nationalParking(law,purpose){const an=law?.annexes?.find(a=>a.number==='1'&&!a.branch);if(!an?.text||!purpose)return null;const key=norm(purpose).replace(/^제[12]종/,m=>m);const rows=an.text.split(/\n[┠┣├][─━┼┿╂]+[┨┫┤]?/);for(const r of rows){const L=[],R=[];for(const line of r.split('\n')){const m=line.match(/^\s*┃(.*?)│(.*?)┃\s*$/);if(m){L.push(m[1].trim());R.push(m[2].trim());}}const left=norm(L.join('')),right=norm(R.join(''));if(!left)continue;const hit=left.includes(key)&&!new RegExp(key.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'[^,]{0,40}?은제외').test(left);if(!hit)continue;const u=[...right.matchAll(/시설면적(\d+(?:\.\d+)?)(?:㎡|m2)당1대/g)].map(x=>+x[1]);if(u.length===1)return{unit:u[0],row:(L.join(' ').match(/^(\d+)\./)||[])[1]?L.join(' ').match(/^(\d+)\./)[1]+'호':''};return null;}return null;}
+/** 건축조례 조경 조항의 연면적 구간별 비율. 연면적은 법정 최대 연면적(가정)으로 판정. */
+export function landscapeTier(law,gross){if(!law?.current||gross==null)return null;for(const a of law.articles.filter(a=>/조경/.test(norm(a.title||'')))){const t=kn(norm(a.text).split('②')[0]);const tiers=[];for(const m of t.matchAll(/연면적(?:\([^)]*\))?(?:이)?(\d+)제곱미터(이상|미만)(?:(\d+)제곱미터미만)?인건축물:대지면적의(\d+(?:\.\d+)?)(?:%|퍼센트)/g)){const lo=m[2]==='이상'?+m[1]:0,hi=m[2]==='미만'?+m[1]:(m[3]?+m[3]:Infinity);tiers.push({lo,hi,value:+m[4]});}const hit=tiers.filter(x=>gross>=x.lo&&gross<x.hi);if(hit.length===1)return{...hit[0],article:a,gross};}return null;}
 function zoneBasis(name){
  const map=[[/개발제한구역/,GREEN,12],[/군사|비행안전|대공방어/,'군사기지 및 군사시설 보호법',13],
  [/문화유산|문화재|역사문화환경/,'문화유산의 보존 및 활용에 관한 법률',13],[/자연유산/,'자연유산의 보존 및 활용에 관한 법률',10],
@@ -200,12 +205,16 @@ export function reviewProject(p){
  if(landscapeApplies)penal('s-landscape','조경 미설치',[R(BLD,42),R(BLD,79)]);
  limits.area=area;limits.maxFootprint=area!==null&&limits.bcr.value!==null?area*limits.bcr.value/100:null;
  limits.maxGross=area!==null&&limits.far.value!==null?area*limits.far.value/100:null;
- const parkAuto=specialRate(o.parking,/부설주차장|설치기준/,purpose,new RegExp('시설면적'+NUM+'(?:제곱미터|㎡)당1대','g'));
+ const parkAuto=specialRate(o.parking,/부설주차장|설치기준/,purpose,new RegExp('시설면적'+NUM+'(?:제곱미터|㎡|m2)당1대','g'));
  const landscapeAuto=specialRate(o.building,/조경/,'',new RegExp('대지면적의'+NUM+'(?:퍼센트|%)','g'));
- limits.parkingUnit=number(p.manual.parkingUnit)??parkAuto?.value??null;
- limits.parkingArea=number(p.manual.parkingArea);
+ const parkPurpose=purpose||'제2종 근린생활시설';const parkNat=parkAuto?null:nationalParking(getLaw(p.laws,PD),parkPurpose);
+ limits.parkingUnit=number(p.manual.parkingUnit)??parkAuto?.value??parkNat?.unit??null;
+ limits.parkingBasis=number(p.manual.parkingUnit)!=null?'수동 입력':parkAuto?'조례':parkNat?`「주차장법 시행령」 별표1 ${parkNat.row}`:'';
+ limits.parkingPurposeAssumed=!purpose;limits.parkingPurpose=parkPurpose;
+ limits.parkingArea=number(p.manual.parkingArea)??limits.maxGross??null;limits.parkingAreaAssumed=number(p.manual.parkingArea)==null;
  limits.parking=limits.parkingUnit>0&&limits.parkingArea!==null?Math.ceil(limits.parkingArea/limits.parkingUnit):null;
- limits.landscape=number(p.manual.landscape)??landscapeAuto?.value??null;
+ const tier=landscapeAuto?null:landscapeTier(o.building,limits.maxGross);limits.landscapeTier=tier;
+ limits.landscape=number(p.manual.landscape)??landscapeAuto?.value??tier?.value??null;
  limits.landscapeArea=area!==null&&limits.landscape!==null?area*limits.landscape/100:null;
  limits.north=residential?extractNorth(getLaw(p.laws,BD)):null;
  limits.residential=residential;
