@@ -244,7 +244,7 @@ export function reviewProject(p){
  limits.parkingUnit=number(p.manual.parkingUnit)??parkAuto?.value??parkNat?.unit??null;
  limits.parkingBasis=number(p.manual.parkingUnit)!=null?'수동 입력':parkAuto?'조례':parkNat?`「주차장법 시행령」 별표1 ${parkNat.row}`:'';
  limits.parkingPurposeAssumed=!purpose;limits.parkingPurpose=parkPurpose;
- const planG=number(p.planGross);limits.planLabel=planG!=null?(p.planLabel||'계획 연면적'):'법정 최대 연면적';limits.parkingArea=number(p.manual.parkingArea)??planG??limits.maxGross??null;limits.parkingAreaAssumed=number(p.manual.parkingArea)==null;
+ const fsel=number(p.floors),useF=fsel>0&&p.legalMaxFloors&&fsel<p.legalMaxFloors&&limits.maxFootprint!=null&&limits.maxGross!=null;const planG=useF?Math.min(limits.maxGross,limits.maxFootprint*fsel):null;limits.planLabel=useF?`선택 층수 ${fsel}층 × 최대 건축면적`:'법정 최대 연면적';limits.parkingArea=number(p.manual.parkingArea)??planG??limits.maxGross??null;limits.parkingAreaAssumed=number(p.manual.parkingArea)==null;
  {const A=limits.parkingArea,f2=v=>(Math.round(v*100)/100).toLocaleString('ko-KR');let raw=null,how='';
   if(A!=null&&parkNat?.house&&number(p.manual.parkingUnit)==null){const h=parkNat.house;if(A<=h.min){raw=A/100;how=`시설면적 ${f2(A)}㎡ ≤ ${h.min}㎡ → 비고4: ${f2(A)} ÷ 100 = ${f2(raw)}대`;}else if(A<=h.base){raw=1;how=`시설면적 ${f2(A)}㎡ (${h.min}㎡ 초과 ${h.base}㎡ 이하) → 1대`;}else{raw=1+(A-h.base)/h.step;how=`1 + (시설면적 ${f2(A)}㎡ − ${h.base}㎡) ÷ ${h.step}㎡ = ${f2(raw)}대`;}limits.parkingBasis=`「주차장법 시행령」 별표1 ${parkNat.row} 단독주택`;}
   else if(A!=null&&limits.parkingUnit>0){raw=A/limits.parkingUnit;how=`시설면적 ${f2(A)}㎡ ÷ ${f2(limits.parkingUnit)}㎡ = ${f2(raw)}대`;}
