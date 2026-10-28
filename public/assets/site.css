@@ -118,3 +118,8 @@ body{background:#F3F3F1}
  .top{height:auto;min-height:64px}
  .map-ctl button{padding:7px 12px}
 }
+.reload-btn{font-size:12.5px;padding:6px 12px;margin-left:auto;margin-right:8px;color:#555}
+.tools .ld{text-decoration:none;font-size:11px;color:#8A8D92;margin-top:2px}.tools .ld:empty{display:none}
+.tools .ld.loading{color:#B26A00}.tools .ld.loading::before{content:'';display:inline-block;width:9px;height:9px;margin-right:5px;border:2px solid #E8B36B;border-top-color:transparent;border-radius:50%;vertical-align:-1px;animation:spin .8s linear infinite}
+.tools .ld.fail{color:#E00000}
+@keyframes spin{to{transform:rotate(360deg)}}
