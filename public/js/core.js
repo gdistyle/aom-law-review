@@ -32,7 +32,7 @@ export function blankProject() {
     location:null,parcels:[],land:{area:datum(),category:datum(),price:datum(),priceDate:datum(),road:datum(),zones:[],zone:datum()},
     building:{status:'unavailable',titles:[],recaps:[],floors:[],exclusive:[],changes:[],selected:0},
     laws:[],sources:[],geometry:{parcels:[],buildings:[]},judgments:{},issue:'',
-    manual:{district:false,districtResolved:false,bcr:null,far:null,landscape:null,parkingUnit:null,parkingArea:null,setback:null,roadSetback:null,height:null,northLow:null,northThreshold:null,northSlope:null,frontage:null,roadWidth:null,deadEndLength:null,rural:false,grading:false},
+    manual:{district:false,districtResolved:false,bcr:null,far:null,landscape:null,parkingUnit:null,parkingArea:null,setback:null,roadSetback:null,height:null,floorLimit:null,northLow:null,northThreshold:null,northSlope:null,frontage:null,roadWidth:null,deadEndLength:null,rural:false,grading:false},
     model:{floorHeight:3.3,floorHeights:[4.3,3.3,3.3,3.3,3.3,3.3,3.3,3.3,3.3,3.3],baseElevation:0,maxFloors:15,courtyardWidth:null,northEdges:[],roadEdges:[],confirmed:false,terrain:null},
     review:{rows:[],sanctions:[],limits:{}},queriedAt:null};
 }
