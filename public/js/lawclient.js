@@ -8,12 +8,23 @@ import {normalizeLaw} from './legal.js';
 
 const BASE = 'https://www.law.go.kr/DRF/';
 
+const CACHE = new Map();
+/** 법제처는 짧은 시간 다수 요청 시 일시 거부(CORS 헤더 없는 오류)하므로 간격을 두고 재시도. 같은 주소는 재사용. */
 async function getJSON(url) {
-  const r = await fetch(url, {cache: 'no-store'});
-  if (!r.ok) throw new Error('법제처 응답 오류 ' + r.status);
-  const data = await r.json();
-  if (data && data.result && data.msg) throw new Error('법제처: ' + data.msg);
-  return data;
+  const key = String(url);
+  if (CACHE.has(key)) return CACHE.get(key);
+  let last;
+  for (let t = 0; t < 5; t++) {
+    try {
+      const r = await fetch(url, {cache: 'no-store'});
+      if (!r.ok) throw new Error('법제처 응답 오류 ' + r.status);
+      const data = await r.json();
+      if (data && data.result && data.msg) throw new Error('법제처: ' + data.msg);
+      CACHE.set(key, data);
+      return data;
+    } catch (e) { last = e; await new Promise(res => setTimeout(res, 600 * 2 ** t)); }
+  }
+  throw last;
 }
 
 export async function fetchLawDirect(oc, name, kind = 'law') {

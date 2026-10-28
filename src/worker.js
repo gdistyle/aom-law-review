@@ -130,7 +130,7 @@ async function law(u,env){
 }
 async function terrain(path,env){
  const m=path.match(/^\/api\/terrain\/(\d{1,2})\/(\d+)\/(\d+)\.png$/);if(!m)return fail('INVALID_INPUT','타일 경로 오류');
- const [z,x,y]=m.slice(1).map(Number);if(z!==12||x<0||y<0||x>=2**z||y>=2**z)return fail('INVALID_INPUT','허용 타일 범위 오류');
+ const [z,x,y]=m.slice(1).map(Number);if(z<12||z>14||x<0||y<0||x>=2**z||y>=2**z)return fail('INVALID_INPUT','허용 타일 범위 오류');
  const {bytes,contentType}=await upstream(`https://s3.amazonaws.com/elevation-tiles-prod/terrarium/${z}/${x}/${y}.png`,env);
  if(!contentType.includes('png')||bytes[0]!==137||bytes[1]!==80)throw new Error('UPSTREAM_FORMAT');
  return new Response(bytes,{headers:{'Content-Type':'image/png','Cache-Control':'public, max-age=86400','X-Content-Type-Options':'nosniff'}});
