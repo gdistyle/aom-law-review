@@ -117,7 +117,7 @@ async function law(u,env){
  const total=number((result.LawSearch||result.OrdinSearch)?.totalCnt);
  if(total>100)throw new Error('LAW_SEARCH_AMBIGUOUS');
  records=records.filter(r=>norm(r.법령명한글||r.자치법규명)===norm(name)&&currentByDate(r.시행일자)&&!String(r.현행연혁코드||'').includes('연혁')&&!String(r.현행연혁코드||'').includes('예정')).sort((a,b)=>date8(b.시행일자).localeCompare(date8(a.시행일자)));
- const chosen=records[0];if(!chosen){const raw=listRecords(result,kind);return json({ok:false,code:'NO_CURRENT_TEXT',message:'현행 원문 수신 없음',name,debug:{rootKeys:Object.keys(result||{}),total,count:raw.length,sample:raw.slice(0,4).map(r=>({n:r.법령명한글||r.자치법규명,d:r.시행일자,c:r.현행연혁코드,keys:Object.keys(r).slice(0,20)}))}});}
+ const chosen=records[0];if(!chosen){const raw=listRecords(result,kind);return json({ok:false,code:'NO_CURRENT_TEXT',message:'현행 원문 수신 없음',name,debug:{rootKeys:Object.keys(result||{}),result:result?.result,msg:result?.msg,total,count:raw.length,sample:raw.slice(0,4).map(r=>({n:r.법령명한글||r.자치법규명,d:r.시행일자,c:r.현행연혁코드,keys:Object.keys(r).slice(0,20)}))}});}
  const id=chosen.법령ID||chosen.자치법규ID,mst=chosen.법령일련번호||chosen.자치법규일련번호;
  if(!id&&!mst)throw new Error('UPSTREAM_FORMAT');
  const detail=new URL('https://www.law.go.kr/DRF/lawService.do');
