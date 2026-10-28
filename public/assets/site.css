@@ -123,3 +123,6 @@ body{background:#F3F3F1}
 .tools .ld.loading{color:#B26A00}.tools .ld.loading::before{content:'';display:inline-block;width:9px;height:9px;margin-right:5px;border:2px solid #E8B36B;border-top-color:transparent;border-radius:50%;vertical-align:-1px;animation:spin .8s linear infinite}
 .tools .ld.fail{color:#E00000}
 @keyframes spin{to{transform:rotate(360deg)}}
+
+.top .brand{cursor:pointer;user-select:none}.top .brand:hover span{opacity:.85}
+#drawerClose::before{content:'← ';}
