@@ -68,7 +68,7 @@ export function lawNamesFor(p) {
 }
 /** 첫 항 본문/호에서 정확히 일치하는 지역 행만 추출. 조건부·복수 수치는 자동 채택하지 않음. */
 export function extractRatio(text,zone,range=false) {
- const lines=plain(text).replace(/(\d+)\s*천\s*(\d{0,3})(?=\s*퍼센트)/g,(m,a,b)=>String(+a*1000+(+b||0))).split(/\n|(?=\s\d+\.\s)/).map(s=>s.trim()).filter(Boolean);
+ const lines=plain(text).replace(/([^\d\s])(\d{1,2}\.\s)/g,'$1\n$2').replace(/([①-⑳])/g,'\n$1').replace(/(\d+)\s*천\s*(\d{0,3})(?=\s*퍼센트)/g,(m,a,b)=>String(+a*1000+(+b||0))).split(/\n|(?=\s\d+\.\s)/).map(s=>s.trim()).filter(Boolean);
  const target=norm(zone); const matches=[];
  for(const line of lines){
   const clean=norm(line); const idx=clean.indexOf(target);
@@ -84,11 +84,11 @@ export function extractRatio(text,zone,range=false) {
 }
 function ratioFrom(law,zone,type) {
  if(!law?.current)return null;
- const patterns=type==='bcr'?/용도지역.*건폐율|지역.*건폐율/:/용도지역.*용적률|지역.*용적률/;
+ const patterns=type==='bcr'?/용도지역.*건폐율/:/용도지역.*용적률/;
  const articles=law.articles.filter(a=>patterns.test(norm(a.title))&&!/완화|특례|예외/.test(norm(a.title)));
  const result=[];
  for(const a of articles){
-  const val=extractRatio(a.text,zone,false);
+  const val=extractRatio((a.hang1||a.text).split(/②/)[0],zone,false);
   if(val!==null)result.push({value:val,article:a});
   // 별표 본문이 실제로 제공된 경우에만 사용. 이미지/PDF 별표의 숫자는 추정하지 않음.
   for(const m of a.text.matchAll(/별표\s*(\d+)(?:의\s*(\d+))?/g)){
@@ -106,8 +106,8 @@ export function resolveRatios(p){
  for(const [type,no,baseIndex] of [['bcr',84,0],['far',85,2]]){
   const a=getArticle(d,no), upper=a?extractRatio(a.hang1||a.text,zone,type==='far'):null;out[type==='bcr'?'upperBcr':'upperFar']=upper;
   const loc=ratioFrom(o.plan,zone,type), baseline=BASELINES[zone]?.[baseIndex];
-  if(district&&(!p.manual.districtResolved||number(p.manual[type])===null)){out[type]=datum(null,'지구단위계획 시행지침 우선 적용',true);continue;}
-  if(number(p.manual[type])!==null){out[type]=datum(number(p.manual[type]),'사용자 입력',true);continue;}
+  if(district&&(!p.manual.districtResolved||number(p.manual[type])===null)){out[type]=datum(null,'지구단위계획 시행지침 우선 적용',true);out[type].local=loc;out[type].upper=upper;out[type].baseline=baseline;continue;}
+  if(number(p.manual[type])!==null){out[type]=datum(number(p.manual[type]),'사용자 입력',true);out[type].local=loc;out[type].upper=upper;out[type].baseline=baseline;continue;}
   if(loc && upper!==null && loc.value<=upper)out[type]=datum(loc.value,o.plan.name,loc.value!==undefined&&upper!==baseline);
   else if(upper!==null)out[type]=datum(upper,`${DECREE} 제${no}조 상한`,true);
   out[type].local=loc;out[type].upper=upper;out[type].baseline=baseline;
@@ -147,7 +147,7 @@ export function reviewProject(p){
  const articleText=(name,no,branch='')=>getArticle(getLaw(p.laws,name),no,branch)?.text||'';
  if(limits.district)add('district','지구단위계획',[R(PLAN,54)],'지구단위계획 시행지침 우선 적용','',true);
  for(const [type,item,no,lawNo]of[['bcr','건폐율',84,77],['far','용적률',85,78]]){
-  const v=limits[type]; const refs=[R(DECREE,no),R(PLAN,lawNo),local('plan',type==='bcr'?/건폐율/:/용적률/)];
+  const v=limits[type]; const refs=[R(DECREE,no),R(PLAN,lawNo),local('plan',type==='bcr'?/용도지역.*건폐율/:/용도지역.*용적률/)];
   const txt=v.value!==null?`적용값 ${v.value}퍼센트 이하${v.upper!==null&&v.upper!==undefined?` / 시행령 상한 ${v.upper}퍼센트`:''}`:'';
   add(type,item,refs,txt,p.land.zone.value||'',v.uncertain||p.land.zone.uncertain||limits.district,{value:v.value});
  }
