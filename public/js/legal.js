@@ -211,9 +211,9 @@ export function reviewProject(p){
  limits.parkingUnit=number(p.manual.parkingUnit)??parkAuto?.value??parkNat?.unit??null;
  limits.parkingBasis=number(p.manual.parkingUnit)!=null?'수동 입력':parkAuto?'조례':parkNat?`「주차장법 시행령」 별표1 ${parkNat.row}`:'';
  limits.parkingPurposeAssumed=!purpose;limits.parkingPurpose=parkPurpose;
- limits.parkingArea=number(p.manual.parkingArea)??limits.maxGross??null;limits.parkingAreaAssumed=number(p.manual.parkingArea)==null;
+ const planG=number(p.planGross);limits.planLabel=planG!=null?(p.planLabel||'계획 연면적'):'법정 최대 연면적';limits.parkingArea=number(p.manual.parkingArea)??planG??limits.maxGross??null;limits.parkingAreaAssumed=number(p.manual.parkingArea)==null;
  limits.parking=limits.parkingUnit>0&&limits.parkingArea!==null?Math.ceil(limits.parkingArea/limits.parkingUnit):null;
- const tier=landscapeAuto?null:landscapeTier(o.building,limits.maxGross);limits.landscapeTier=tier;
+ const tier=landscapeAuto?null:landscapeTier(o.building,planG??limits.maxGross);limits.landscapeTier=tier;
  limits.landscape=number(p.manual.landscape)??landscapeAuto?.value??tier?.value??null;
  limits.landscapeArea=area!==null&&limits.landscape!==null?area*limits.landscape/100:null;
  limits.north=residential?extractNorth(getLaw(p.laws,BD)):null;

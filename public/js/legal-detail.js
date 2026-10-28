@@ -102,7 +102,7 @@ export function detailRows(p, review, ordinPlanName = '') {
       case 'landscape': {
         lines = pickLines(art(L, BLD, 42)?.text, [/제곱미터이상/, /조경/], 2);
         const v = review.limits.landscape;
-        if (v != null && area != null) lines.push(`${review.limits.landscapeTier ? '(가정: 법정 최대 연면적 ' + fmt(review.limits.landscapeTier.gross, 2) + ' ㎡ 구간) ' : ''}조경 기준 대지면적의 ${fmt(v)}% → ${fmt(area, 2)} ㎡ × ${fmt(v)}% = ${area2(area * v / 100)} 이상`);
+        if (v != null && area != null) lines.push(`${review.limits.landscapeTier ? '(가정: ' + review.limits.planLabel + ' ' + fmt(review.limits.landscapeTier.gross, 2) + ' ㎡ 구간) ' : ''}조경 기준 대지면적의 ${fmt(v)}% → ${fmt(area, 2)} ㎡ × ${fmt(v)}% = ${area2(area * v / 100)} 이상`);
         else lines.push('건축조례 조경 비율 자동 추출 불가 — 조례 원문 대조 대상');
         break;
       }
@@ -120,7 +120,7 @@ export function detailRows(p, review, ordinPlanName = '') {
         const u = review.limits.parkingUnit;
         const Lm = review.limits;
         if (u) lines.push(`적용 기준 시설면적 ${fmt(u)} ㎡당 1대${Lm.parkingBasis ? ' [' + Lm.parkingBasis + ']' : ''}`);
-        if (Lm.parking != null) lines.push(`(가정) ${Lm.parkingPurpose} · 시설면적 ${fmt(Lm.parkingArea, 2)} ㎡${Lm.parkingAreaAssumed ? '(법정 최대 연면적)' : ''} ÷ ${fmt(u)} = ${fmt(Lm.parkingArea / u, 2)} → ${fmt(Lm.parking)}대 이상`);
+        if (Lm.parking != null) lines.push(`(가정) ${Lm.parkingPurpose} · 시설면적 ${fmt(Lm.parkingArea, 2)} ㎡${Lm.parkingAreaAssumed ? '(' + Lm.planLabel + ')' : ''} ÷ ${fmt(u)} = ${fmt(Lm.parkingArea / u, 2)} → ${fmt(Lm.parking)}대 이상`);
         lines.push('주차장 설치 및 관리 조례로 설치기준이 강화될 수 있음');
         break;
       }
