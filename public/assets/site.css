@@ -51,3 +51,8 @@ button[data-download]:hover,#downloadAll:hover{filter:brightness(1.12)}
 .layout{grid-template-columns:minmax(0,1fr)!important;max-width:1180px}.layout>.sidebar{display:none!important}
 @media(max-width:760px){.subtabs{top:100px;justify-content:flex-start;padding:0 8px}.subtabs button{padding:10px 10px;font-size:13px}}
 .plan-decide{border:1px solid #e3e3df;background:#fafaf8;border-radius:6px;padding:18px 20px;margin-bottom:20px}
+
+.max-summary{border:2px solid var(--red);border-radius:8px;padding:18px 20px;margin:18px 0;background:#fffaf9}.max-summary h3{margin:0 0 12px;font-size:16px;color:var(--red)}
+.max-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}.max-grid>div{background:#fff;border:1px solid #eee;border-radius:6px;padding:12px;text-align:center}
+.max-grid span{display:block;font-size:12px;color:#777}.max-grid b{font-size:24px;color:#e00000;letter-spacing:-.5px}.max-grid small{margin-left:3px;color:#e00000}.max-grid em{display:block;font-style:normal;font-size:11px;color:#e00000;margin-top:3px}
+.max-grid>div:first-child{border-color:var(--red)}.max-grid>div:first-child b{font-size:30px}
