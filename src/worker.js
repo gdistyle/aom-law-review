@@ -149,6 +149,6 @@ export default {async fetch(request,env){
   if(u.pathname.startsWith('/api/terrain/'))return await terrain(u.pathname,env);
   return fail('NOT_FOUND','경로 없음',404);
  }catch(e){const code=e?.name==='AbortError'?'UPSTREAM_TIMEOUT':String(e.message||'').startsWith('INVALID_')?e.message:/^(UPSTREAM_|LAW_SEARCH_|RESPONSE_)/.test(e.message||'')?e.message:'UPSTREAM_UNAVAILABLE';
-  return fail(code,code.startsWith('INVALID_')?'입력 또는 설정 형식 오류':'기관 자료 수신 실패',code.startsWith('INVALID_')?400:502);}
+  const r=fail(code,code.startsWith('INVALID_')?'입력 또는 설정 형식 오류':'기관 자료 수신 실패',code.startsWith('INVALID_')?400:502);if(code==='UPSTREAM_UNAVAILABLE'){const detail=String(e?.name||'')+': '+String(e?.message||'').replace(/[0-9a-f]{20,}/gi,'***').slice(0,160);return json({ok:false,code,message:'기관 자료 수신 실패',detail},502);}return r;}
 }};
 function publicEumTemplate(template){if(!template||!template.includes('{pnu}'))return '';try{const u=new URL(template.replace('{pnu}','4145011500104400002'));if(u.protocol==='https:'&&['eum.go.kr','www.eum.go.kr'].includes(u.hostname)&&!u.username&&!u.password)return template;}catch{}return '';}
