@@ -151,3 +151,5 @@ function sortZones(zs){const rank=n=>ZONES.includes(n)?0:/^(도시|관리|농림
 
 async function loadBuildings(project){const kinds=['title','recap','floors','exclusive'];const r=await pool(kinds.map(kind=>()=>paged('/api/buildings',{kind,pnu:project.pnu},project)));r.forEach((d,i)=>{if(d.ok)project.building[{title:'titles',recap:'recaps',floors:'floors',exclusive:'exclusive'}[kinds[i]]]=d.items;});project.building.status=r[0].ok?(r[0].total===0?'empty':'loaded'):'unavailable';for(const x of r)if(x.error)log(x.error.message,true);}
 document.addEventListener('click',e=>{if(e.target.id!=='reloadBuilding'||!p.pnu)return;task('건축물대장 다시 불러오기',async()=>{await loadBuildings(p);render();toast('건축물대장 다시 조회 완료.');});});
+/* 점검용: 현재 프로젝트 읽기 전용 참조 */
+Object.defineProperty(window,'__aom',{value:{get p(){return p;},get model(){return modelResult;}}});
