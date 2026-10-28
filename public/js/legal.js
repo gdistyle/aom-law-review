@@ -106,7 +106,7 @@ export function resolveRatios(p){
  for(const [type,no,baseIndex] of [['bcr',84,0],['far',85,2]]){
   const a=getArticle(d,no), upper=a?extractRatio(a.hang1||a.text,zone,type==='far'):null;out[type==='bcr'?'upperBcr':'upperFar']=upper;
   const loc=ratioFrom(o.plan,zone,type), baseline=BASELINES[zone]?.[baseIndex];
-  if(district&&(!p.manual.districtResolved||number(p.manual[type])===null)){out[type]=datum(null,'지구단위계획 시행지침 우선 적용',true);out[type].local=loc;out[type].upper=upper;out[type].baseline=baseline;continue;}
+  if(district&&(!p.manual.districtResolved||number(p.manual[type])===null)){out[type]=datum(loc&&upper!==null&&loc.value<=upper?loc.value:(upper??null),'조례 기준 가정치 · 지구단위계획 시행지침 우선 적용',true);out[type].provisional=true;out[type].local=loc;out[type].upper=upper;out[type].baseline=baseline;continue;}
   if(number(p.manual[type])!==null){out[type]=datum(number(p.manual[type]),'사용자 입력',true);out[type].local=loc;out[type].upper=upper;out[type].baseline=baseline;continue;}
   if(loc && upper!==null && loc.value<=upper)out[type]=datum(loc.value,o.plan.name,loc.value!==undefined&&upper!==baseline);
   else if(upper!==null)out[type]=datum(upper,`${DECREE} 제${no}조 상한`,true);

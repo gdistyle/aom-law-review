@@ -141,7 +141,7 @@ export default {async fetch(request,env){
  if(!allowedOrigin(request,env))return fail('FORBIDDEN','동일 사이트 요청만 허용',403);
  if(!rateLimit(request))return fail('RATE_LIMIT','요청 횟수 제한',429);
  try{
-  if(u.pathname==='/api/config')return json({ok:true,kakaoJsKey:env.KAKAO_JS_KEY||'',lawOc:env.LAW_OC||'',vworldKey:env.VWORLD_KEY||'',vworldDomain:env.VWORLD_DOMAIN||'',vworldBuildingLayer:env.VWORLD_BUILDING_LAYER||'',services:{kakao:configured(env,'KAKAO_REST_KEY'),building:configured(env,'DATA_GO_KR_KEY'),land:configured(env,'VWORLD_KEY'),law:configured(env,'LAW_OC')},eumTemplate:publicEumTemplate(env.EUM_PARCEL_URL_TEMPLATE),buildingLayer:!!env.VWORLD_BUILDING_LAYER});
+  if(u.pathname==='/api/config')return json({ok:true,kakaoJsKey:env.KAKAO_JS_KEY||'',lawOc:env.LAW_OC||'',vworldKey:env.VWORLD_KEY||'',vworldDomain:env.VWORLD_DOMAIN||'',vworldBuildingLayer:env.VWORLD_BUILDING_LAYER||'',vworldFloorsField:env.VWORLD_BUILDING_FLOORS_FIELD||'',services:{kakao:configured(env,'KAKAO_REST_KEY'),building:configured(env,'DATA_GO_KR_KEY'),land:configured(env,'VWORLD_KEY'),law:configured(env,'LAW_OC')},eumTemplate:publicEumTemplate(env.EUM_PARCEL_URL_TEMPLATE),buildingLayer:!!env.VWORLD_BUILDING_LAYER});
   if(u.pathname==='/api/address')return await address(u,env);
   if(u.pathname==='/api/buildings')return await buildings(u,env);
   if(u.pathname==='/api/land')return await land(u,env);

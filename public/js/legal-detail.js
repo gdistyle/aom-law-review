@@ -50,7 +50,7 @@ function ratioText(p, r, type) {
   const area = totalArea(p);
   if (v.value != null && area != null) {
     const x = area * v.value / 100;
-    out.push(`적용 ${word} ${fmt(v.value)}% → 법정 최대 ${type === 'bcr' ? '건축면적' : '용적률 산정용 연면적'} = ${fmt(area, 2)} ㎡ × ${fmt(v.value)}% = ${area2(x)}`);
+    out.push(`${v.provisional ? '(가정) 조례 기준 ' : '적용 '}${word} ${fmt(v.value)}% → 법정 최대 ${type === 'bcr' ? '건축면적' : '용적률 산정용 연면적'} = ${fmt(area, 2)} ㎡ × ${fmt(v.value)}% = ${area2(x)}`);
   }
   return out.join('\n');
 }

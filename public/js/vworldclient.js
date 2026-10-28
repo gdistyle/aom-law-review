@@ -67,7 +67,7 @@ export async function vworldApi(path, params, cfg) {
     for (const [k, v] of Object.entries({service: 'data', request: 'GetFeature', version: '2.0', data: layer, key, domain, format: 'json', crs: 'EPSG:4326', geomFilter: `BOX(${b.join(',')})`, geometry: 'true', attribute: 'true', size: '100', page})) u.searchParams.set(k, v);
     const data = await jsonp(u), r = data?.response;
     if (!r || !['OK', 'NOT_FOUND'].includes(r.status)) throw new Error('브이월드 공간자료 수신 실패');
-    const items = array(r.result?.featureCollection?.features).map(f => ({type: 'Feature', id: String(f.id || ''), geometry: geoClean(f.geometry), properties: {pnu: String(f.properties?.pnu || ''), jibun: String(f.properties?.jibun || ''), category: String(f.properties?.jimok || f.properties?.lndcgrCodeNm || ''), height: null, floors: null}})).filter(f => f.geometry);
+    const items = array(r.result?.featureCollection?.features).map(f => ({type: 'Feature', id: String(f.id || ''), geometry: geoClean(f.geometry), properties: {pnu: String(f.properties?.pnu || ''), jibun: String(f.properties?.jibun || ''), category: String(f.properties?.jimok || f.properties?.lndcgrCodeNm || ''), height: null, floors: cfg?.vworldFloorsField ? number(f.properties?.[cfg.vworldFloorsField]) : null}})).filter(f => f.geometry);
     const total = r.status === 'NOT_FOUND' ? 0 : (number(r.record?.total) ?? items.length);
     return {ok: true, items, total, page: Number(page), pageSize: 100, source: src('브이월드 ' + layer)};
   }

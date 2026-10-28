@@ -18,3 +18,5 @@ button[data-download="volume"],button[data-download="terrain"]{background:#6B3FA
 button[data-download]:hover,#downloadAll:hover{filter:brightness(1.12)}
 
 .bview-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 10px;border-bottom:2px solid #e3e3e3}.bview{background:none!important;color:#555!important;border:0!important;padding:8px 14px;font-weight:600;border-bottom:3px solid transparent!important;margin-bottom:-2px;cursor:pointer}.bview.on{color:#D93025!important;border-bottom-color:#D93025!important}.bview small{color:#999;font-weight:400}
+
+.pick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:4px 12px;max-height:220px;overflow:auto;padding:8px;border:1px solid #e3e3e3;background:#fafafa;margin:6px 0 12px;font-size:13px}.pick-grid label{display:flex;gap:6px;align-items:center;white-space:nowrap}.pick-actions{display:flex;gap:6px;margin-top:6px}.pick-actions button{font-size:12.5px;padding:4px 10px}
