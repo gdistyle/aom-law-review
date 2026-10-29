@@ -48,7 +48,6 @@ export function dxf(p){const site=siteGeometry(p),d=new DxfWriter();d.setUnits(U
  const text=(x,y,h,str,layer)=>{const t=d.addText(point3d(P(x),P(y),0),h,String(str),{horizontalAlignment:TextHorizontalAlignment.Center,verticalAlignment:TextVerticalAlignment.Middle,secondAlignmentPoint:point3d(P(x),P(y),0),layerName:layer});t.textStyle='KOR';};
  if(site)for(const [features,isBuilding]of[[p.geometry.parcels||[],false],[p.geometry.buildings||[],true]])for(const f of features){const g=f.geometry;if(!g)continue;const polys=g.type==='Polygon'?g.coordinates:g.type==='MultiPolygon'?g.coordinates.flat():g.type==='LineString'?[g.coordinates]:g.coordinates;const target=(f.properties?.pnu===p.pnu&&p.pnu)||f.properties?.target,layer=isBuilding?'주변건물':target?'대상필지':f.properties?.category==='도로'||/도$/.test(String(f.properties?.jibun||'').trim())?'도로':'주변필지';for(const r of polys){const ps=r.map(site.project).filter(a=>Number.isFinite(a[0])&&Number.isFinite(a[1]));if(ps.length>2&&ps[0][0]===ps.at(-1)[0]&&ps[0][1]===ps.at(-1)[1])ps.pop();poly(ps,layer,!g.type.includes('Line'));}
   const ps=polys[0]?.map(site.project);if(!ps?.length)continue;const x=ps.reduce((s,a)=>s+a[0],0)/ps.length,y=ps.reduce((s,a)=>s+a[1],0)/ps.length;if(!Number.isFinite(x)||!Number.isFinite(y))continue;
-  if(!isBuilding&&f.properties?.jibun)text(x,y,target?2.5:1.8,jibunLabel(f.properties.jibun),'지번문자');
-  if(isBuilding&&f.properties?.floors>0)text(x,y,1.5,`${f.properties.floors}층`,'주변건물');}
+  if(!isBuilding&&f.properties?.jibun)text(x,y,target?2.5:1.8,jibunLabel(f.properties.jibun),'지번문자');}
  if(site){const b=site.bounds;d.document.setViewCenter?.(point3d(P((b.minX+b.maxX)/2),P((b.minY+b.maxY)/2),0));}
  return d.stringify();}
