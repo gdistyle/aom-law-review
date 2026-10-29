@@ -8,7 +8,7 @@ import {drawEdgePicker,suggestEdges} from './edgepicker.js';
 import {allowedUses} from './legal-detail.js';
 import {readGuideline,searchGuideline} from './guideline.js';
 import {vworldApi} from './vworldclient.js';
-const LOAD={};let guidePages=null,guideName='';
+const LOAD={};let usesKey='';let guidePages=null,guideName='';
 const $=id=>document.getElementById(id);let p=blankProject(),config={services:{}},epoch=0,controller=new AbortController(),busy=0,modelResult={models:[],site:null},mapLoaded=null;
 const apiMessages=[];
 function toast(s){$('toast').textContent=s;$('toast').hidden=false;setTimeout(()=>$('toast').hidden=true,4200);}
@@ -155,7 +155,6 @@ function maxSummary(){const el=$('maxSummary');if(!el)return;const l=p.review?.l
  el.innerHTML=`<h3>이 대지의 법정 최대</h3><div class="max-grid">${box('지상 최대 층수',fmt(n),'층',cap?'적용 최고층수 기준':lh?.floors?'법령 층수 제한':'건폐율 가득 채워 쌓을 때',!(cap||lh?.floors))}${box('건폐율',fmt(l.bcr.value),'%','',!!l.bcr.uncertain)}${box('용적률',fmt(l.far.value),'%','',!!l.far.uncertain)}${box('최대 건축면적',fmt(l.maxFootprint,2),'㎡','',rr)}${box('최대 연면적',fmt(l.maxGross,2),'㎡','',rr)}${box('부설주차',l.parking!=null?fmt(l.parking):'',l.parking!=null?'대':'',l.parking==null?'산정 불가':l.parkingPurposeAssumed?'주용도 미선택 · '+esc(l.parkingPurpose)+' 가정':esc(l.parkingPurpose),l.parking==null||rr||!!l.parkingPurposeAssumed)}${box('조경면적',l.landscapeArea!=null?fmt(l.landscapeArea,2):'',l.landscapeArea!=null?'㎡':'',l.landscapeExempt?'조경 의무 면제 대상':l.landscapeArea==null?'조례 비율 추출 불가':l.landscapeOptional?'조례 기준 · 녹지지역 면제 선택 가능':'',l.landscapeArea==null||(rr&&!l.landscapeExempt))}</div><p class="small" style="margin:10px 0 2px"><b>부설주차 산식</b> ${esc(l.parkingFormula||'')}</p><p class="small" style="margin:0 0 8px"><b>조경면적 산식</b> ${esc(l.landscapeFormula||'')}</p><p class="uncertain small">${l.district?'지구단위계획구역 : 시행지침의 높이·층수·용적률이 우선 적용되므로 실제 최대는 이보다 낮을 수 있음. ':''}${lh?.lines?.length?lh.lines.join(' / ')+'. ':''}${cap||lh?.floors?'':'층수는 법정 높이 제한이 아닌 비율 산정치(대지 안의 공지·건축선 후퇴 미반영). '}05 설계 개요에서 층수·용도를 바꾸면 다시 계산됨.</p>`;el.hidden=false;}
 
 /* 용도 선택 칸: 법령상 건축 가능한 용도만 표시 */
-let usesKey='';
 function refreshUses(){const list=allowedUses(p);const key=JSON.stringify(list)+p.land.zone.value;if(key===usesKey)return;usesKey=key;for(const [id,empty] of [['purpose','선택하지 않음'],['purpose2','없음']]){const sel=$(id),cur=sel.value;const items=list?list:USES.map(u=>({use:u,cond:true}));sel.innerHTML=`<option value="">${empty}</option>`+items.map(x=>`<option value="${esc(x.use)}"${x.cond?' style="color:#e00000"':''}>${esc(x.use)}${x.cond?' (조건부·조례 대조)':''}</option>`).join('');if(items.some(x=>x.use===cur))sel.value=cur;else if(cur){sel.value='';}}
  const note=$('usesNote');if(note)note.innerHTML=list?`<span class="uncertain">${esc(p.land.zone.value)}${p.land.zones.some(z=>z.name.includes('개발제한구역'))?'·개발제한구역':''}에서 법령상 건축 가능한 용도 ${list.length}개만 표시. 빨간 항목은 조건부(조례·입지 요건) 허용.</span>`:'<span class="uncertain">용도지역 건축제한 원문 수신 전 — 전체 용도 표시</span>';}
 

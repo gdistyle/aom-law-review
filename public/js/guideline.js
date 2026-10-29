@@ -93,10 +93,20 @@ function loadCfb() {
   });
   return cfbLoaded;
 }
+let pakoLoaded = null;
+function loadPako() {
+  pakoLoaded ??= new Promise((resolve, reject) => {
+    if (window.pako) return resolve(window.pako);
+    const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js';
+    s.onload = () => resolve(window.pako); s.onerror = () => reject(new Error('압축 해제 도구를 불러오지 못했습니다.')); document.head.append(s);
+  });
+  return pakoLoaded;
+}
+/** 한글 본문은 끝에 여분 바이트가 붙는 경우가 있어, 여분을 허용하는 방식(pako)으로 풀고 실패 시 브라우저 기본 기능 사용. */
 async function inflateRawBrowser(u8) {
+  try { const pako = await loadPako(); const inf = new pako.Inflate({raw: true}); inf.push(u8, true); if (inf.result && inf.result.length) return inf.result; } catch {}
   const ds = new DecompressionStream('deflate-raw');
-  const out = new Response(new Blob([u8]).stream().pipeThrough(ds));
-  return new Uint8Array(await out.arrayBuffer());
+  return new Uint8Array(await new Response(new Blob([u8]).stream().pipeThrough(ds)).arrayBuffer());
 }
 const EXT = new Set([1, 2, 3, 11, 12, 14, 15, 16, 17, 18, 21, 22, 23]), INL = new Set([4, 5, 6, 7, 8, 9, 19, 20]);
 function paraText(u8) {
