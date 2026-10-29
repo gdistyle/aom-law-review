@@ -122,12 +122,25 @@ export async function exportExcel(p,result=null){
  // 건설규모
  const fa=floorAreas(p,result),nB=number(p.basement)||0,nF=fa.areas.length;
  W('D18',uses.join(', '));W('D19',nF?`${nB?'지하 '+nB+'층, ':''}지상 ${nF}층`:'',true);
- if(nF)W('D20',fa.areas[0],true);
+ W('D20',{f:'IF(MAX(P9:P28)=0,"",MAX(P9:P28))'});
  W('F24',L.bcr.value===null?null:L.bcr.value/100,L.bcr.uncertain);W('F25',L.far.value===null?null:L.far.value/100,L.far.uncertain);
  // 주차
- if(L.parking!=null){W('D26',L.parkingPurpose||p.purpose||'',!p.purpose);W('E26',number(L.parkingArea),L.parkingAreaAssumed);W('G26',L.parking);W('D30','계');W('G30',L.parking);W('G31',L.parking,true);}
+ // 주차 — 연면적(E23)이 바뀌면 대수가 다시 계산되도록 법령 산식 그대로 수식으로 넣음
+ {const H=L.parkingHouse,U=number(L.parkingUnit);let raw=null;
+  if(H)raw=`IF(E26<=${H.min},E26/100,IF(E26<=${H.base},1,1+(E26-${H.base})/${H.step}))`;else if(U>0)raw=`E26/${U}`;
+  if(raw){W('D26',L.parkingPurpose||p.purpose||'',!p.purpose);W('E26',{f:'E23'});W('G26',{f:`IF(E26="","",IF(${raw}<1,0,IF(${raw}-INT(${raw})>=0.5,INT(${raw})+1,INT(${raw}))))`});W('G30',{f:'G26'});W('G31',{f:'G30'},true);
+   W('D27',H?`단독주택 50㎡ 초과 ${H.base}㎡ 이하 1대, ${H.base}㎡ 초과 시 1 + (시설면적 − ${H.base}) ÷ ${H.step}`:`시설면적 ${U}㎡당 1대`);W('D28','소수점 0.5 이상 1대, 1대 미만 0대 (주차장법 시행령 별표1 비고6)');}}
  // 조경
- if(L.landscape!=null&&!L.landscapeExempt)W('E34',L.landscape/100,true);
+ // 조경 — 조례 연면적 구간이 있으면 연면적(E23)에 따라 비율이 바뀌는 수식
+ {const T=L.landscapeTier;
+  if(L.landscapeExempt){W('E34',0);W('D35','대지면적 기준 조경 의무 없음');}
+  else if(T?.tiers?.length&&!T.small&&number(p.manual.landscape)==null){const ts=[...T.tiers].sort((a,b)=>a.lo-b.lo);let f='""';for(const t of ts)f=`IF(E23>=${t.lo},${t.value/100},${f})`;W('E34',{f});W('D35','건축조례 연면적 구간별 비율 (연면적 합계 기준)');}
+  else if(L.landscape!=null){W('E34',L.landscape/100,number(p.manual.landscape)!=null);if(T?.small)W('D35',`건축조례: 대지 ${T.small[0]}㎡ 이상 ${T.small[1]}㎡ 미만 → ${T.value}%`);}}
+ // 법정 최대(적용 기준) 요약표
+ W('D2',{f:'IF(OR(E15="",F24=""),"",E15*F24)'});W('E2',{f:'IF(D2="","",D2*0.3025)'});W('F2',{f:'IF(D2="","","대지 "&TEXT(E15,"#,##0.00")&"㎡ × 건폐율 "&TEXT(F24*100,"General")&"%")'});
+ {const cap=L.grossCapped?number(L.maxGross):null;W('D3',{f:cap?`IF(OR(E15="",F25=""),"",MIN(E15*F25,${cap}))`:'IF(OR(E15="",F25=""),"",E15*F25)'});W('E3',{f:'IF(D3="","",D3*0.3025)'});
+  W('F3',{f:`IF(D3="","","대지 "&TEXT(E15,"#,##0.00")&"㎡ × 용적률 "&TEXT(F25*100,"General")&"%"${cap?`&" (연면적 상한 ${cap}㎡ 적용)"`:''})`});}
+ if(p.legalMaxFloors)W('D4',p.legalMaxFloors);{const ln=(L.legalHeight?.lines||[]).find(x=>/\d+층\s*이하/.test(x)),src=ln?.match(/^\[([^\]]+)\]/)?.[1];if(src&&p.legalMaxFloors)W('F4',`${src} : ${p.legalMaxFloors}층 이하`);}
  // ③ 층별면적표 — 머리글을 실제 용도로, 지상은 최상층부터 1층(28행)까지, 지하는 30행부터
  W('J7',p.purpose||'주용도');W('L7',p.purpose2||'-');
  if(nF>20)throw new Error('층별면적표는 지상 20층까지 들어갑니다.');

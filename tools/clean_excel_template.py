@@ -60,7 +60,24 @@ ws['E26'].number_format='#,##0.00"㎡"'; ws['G26'].number_format='0" 대"'; ws['
 ws['D9'].number_format='@'
 for a in ['D9','D10','D11','D12']: ws[a].number_format='@'
 ws['C6'].number_format='@'; ws['AD5'].number_format='@'
-ws.print_area='B5:AD38'
+# 법정 최대(적용 면적) 요약표 — 표 위 1~4행
+from openpyxl.styles import Border, Side, Font, Alignment as AL
+th=Side(style='thin'); BD=Border(left=th,right=th,top=th,bottom=th); GRAY=PatternFill('solid',fgColor='FFC0C0C0')
+for r in range(1,5):
+    for col in 'BCDEFGH':
+        c=ws[f'{col}{r}']; c.border=BD; c.font=Font(name='맑은 고딕',size=11,bold=(r==1)); c.alignment=AL(horizontal='center',vertical='center')
+        c.fill=GRAY if r==1 else NOFILL
+    ws.merge_cells(f'B{r}:C{r}'); ws.merge_cells(f'F{r}:H{r}')
+    ws[f'F{r}'].alignment=AL(horizontal='center' if r==1 else 'left',vertical='center')
+    ws.row_dimensions[r].height=20
+for k,v in {'B1':'법정 최대 (적용 기준)','D1':'㎡','E1':'평','F1':'산식 · 근거','B2':'건축면적','B3':'연면적','B4':'지상 층수'}.items(): ws[k].value=v
+for r in (2,3): ws[f'D{r}'].number_format='#,##0.00'; ws[f'E{r}'].number_format='#,##0.00'; ws[f'D{r}'].alignment=AL(horizontal='right',vertical='center'); ws[f'E{r}'].alignment=AL(horizontal='right',vertical='center')
+ws['D4'].number_format='0"층"'; ws.merge_cells('D4:E4')
+ws.print_area='B1:AD38'
+for a in ('D27','D28','D35'):
+    c=ws[a]; c.alignment=AL(horizontal='left',vertical='center'); f=copy.copy(c.font); c.font=Font(name=f.name,size=9,color='FF595959')
+for a in ('D24','D25','F24','F25','E34','E36'):
+    f=ws[a].font; ws[a].font=Font(name=f.name,size=f.sz,bold=f.b)
 # 토지내역: 표(A1:I29) 밖 보조 계산 제거, 평 환산·평당가 수식 정리
 for row in land.iter_rows(min_row=30,max_row=max(land.max_row,40)):
     for c in row: clear(c)
