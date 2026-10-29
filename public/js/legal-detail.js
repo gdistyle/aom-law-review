@@ -103,6 +103,7 @@ export function detailRows(p, review, ordinPlanName = '') {
       case 'landscape': {
         lines = pickLines(art(L, BLD, 42)?.text, [/제곱미터이상/, /조경/], 2);
         lines.push('산식 : ' + (review.limits.landscapeFormula || '산정 불가'));
+        { const Lx = review.limits; row.target = Lx.landscapeArea != null ? `조경 ${fmt(Lx.landscapeArea, 2)}㎡ 이상` + (Lx.landscapeOptional ? ' (면제 선택 가능)' : '') : Lx.landscapeExempt ? '조경 의무 없음' : ''; }
         break;
       }
       case 'setback': {
