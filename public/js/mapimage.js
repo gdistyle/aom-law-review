@@ -4,7 +4,7 @@
  *  ② 항공사진: 브이월드 영상지도 + 대상 필지 빨간 테두리
  * 이용자 브라우저에서만 만들며 서버로 보내지 않는다.
  */
-const W = 760, H = 500;
+const W = 760, H = 740; // 위치도 한 쪽을 두 장이 꽉 채우도록 거의 정사각형
 const px = (lon, lat, z) => { const n = 256 * 2 ** z, r = lat * Math.PI / 180; return [(lon + 180) / 360 * n, (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * n]; };
 const polysOf = f => { const g = f.geometry; return g?.type === 'Polygon' ? [g.coordinates] : g?.type === 'MultiPolygon' ? g.coordinates : []; };
 const isTarget = (p, f) => f.properties?.target || (p.pnu && f.properties?.pnu === p.pnu);
