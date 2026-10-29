@@ -36,7 +36,7 @@ export function blankProject() {
     model:{floorHeight:3.3,floorHeights:[4.3,3.3,3.3,3.3,3.3,3.3,3.3,3.3,3.3,3.3],baseElevation:0,maxFloors:15,courtyardWidth:null,northEdges:[],roadEdges:[],confirmed:false,terrain:null},
     review:{rows:[],sanctions:[],limits:{}},queriedAt:null};
 }
-export const titleOf = p => `${p.address || '대지'} ${p.purpose || ''} ${p.operation || '신축'}`.replace(/\s+/g,' ').trim();
+export const titleOf = p => `${p.address || '대지'}${p.extra?.length ? ` 외 ${p.extra.length}필지` : ''} ${p.purpose || ''} ${p.operation || '신축'}`.replace(/\s+/g,' ').trim();
 export function kstTime(iso){if(!iso)return '';const d=new Date(iso);if(!Number.isFinite(d.getTime()))return String(iso);const k=new Date(d.getTime()+9*3600000),z=n=>String(n).padStart(2,'0');return `${k.getUTCFullYear()}. ${z(k.getUTCMonth()+1)}. ${z(k.getUTCDate())}. ${z(k.getUTCHours())}:${z(k.getUTCMinutes())}`;}
 export function currentByDate(date, today = kstToday()) { const d=date8(date), t=date8(today); const parsedDate=new Date(`${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}T00:00:00Z`); return /^\d{8}$/.test(d) && Number.isFinite(parsedDate.getTime()) && parsedDate.toISOString().slice(0,10).replaceAll('-','')===d && d <= t && d >= '19000101'; }
 export function redactFreeText(v) { return String(v ?? '').replace(/\b\d{6}\s*[-‐–]\s*[\d*]{7}\b/g,'').replace(/https?:\/\/[^\s<]+/gi,''); }

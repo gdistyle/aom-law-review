@@ -135,3 +135,7 @@ body{background:#F3F3F1}
 .gb-topic{margin:8px 0;padding-top:6px}.gb-hit{display:grid;grid-template-columns:minmax(44px,140px) minmax(0,1fr) auto;gap:8px;align-items:start;padding:6px 0;border-bottom:1px solid #F0F0EE;font-size:12.5px}
 .gb-hit.in{background:#FFF4F3}.gb-hit .pg{color:#E8382F;font-weight:600}.gb-hit button{font-size:12px;padding:4px 8px;margin-left:4px;white-space:nowrap}
 @media(max-width:760px){.gb-row{grid-template-columns:1fr}}
+.extra-parcels{display:flex;flex-direction:column;gap:6px}.extra-parcels:empty{display:none}
+.xp-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:4px;align-items:center}.xp-row input{margin:0;min-height:38px;font-size:13.5px}.xp-row button{padding:7px 10px;font-size:12.5px}.xp-x{border:0;background:none;color:#999}
+.xp-st{grid-column:1/-1;margin:-2px 0 2px 4px}.xp-st:empty{display:none}
+.add-parcel{border:1.5px dashed #C9C9C6;background:#fff;color:#555;border-radius:8px;padding:8px;font-size:13px}.add-parcel:hover{border-color:var(--red);color:var(--red);background:#FFF8F7}
