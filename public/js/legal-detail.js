@@ -47,6 +47,7 @@ function ratioText(p, r, type) {
   if (v.local) { const a = v.local.article; out.push(`[「${r.ordinPlanName || '도시계획 조례'}」${a ? ' 제' + a.number + '조' + (a.branch ? '의' + a.branch : '') : ''}${v.local.annex ? ' 별표' + v.local.annex : ''}] ${zone} : ${fmt(v.local.value)}퍼센트 이하`); }
   else out.push('[도시계획 조례] 해당 용도지역 수치 자동 추출 불가 — 조례 원문 대조 대상');
   if (r.limits.district) out.push(`지구단위계획구역 : 지구단위계획(시행지침)에서 정한 ${word}이 우선 적용됨`);
+  if (v.gbRule) out.push(`[「개발제한구역법 시행령」 제22조 별표2 제2호나목] 주택·근린생활시설 : ${word} ${fmt(v.value)}% 이하 적용(용도지역 ${fmt(type === 'bcr' ? r.limits.bcrZone : r.limits.farZone)}%보다 우선) · 높이 3층 이하 · 기존 면적 포함 연면적 ${fmt(r.limits.legalHeight?.gb?.gross)}㎡ 이하 / 또는 건폐율 20%·용적률 100% 선택`);
   const area = totalArea(p);
   if (v.value != null && area != null) {
     const x = area * v.value / 100;

@@ -147,7 +147,7 @@ export function legalHeight(p,purpose){const out=[];const zones=p.land.zones.map
  const zone=p.land.zone.value,no=APPENDIX_BY_ZONE[zone],an=getLaw(p.laws,DECREE)?.annexes?.find(a=>a.number===String(no)&&!a.branch);
  if(an?.text){const head=norm(boxClean(an.text)).split(/1\.(?=[가-힣「])/)[0];const m=[...head.matchAll(/(\d+)층이하/g)].map(x=>+x[1]);if(m.length)out.push({floors:Math.min(...m),gross:null,text:`[「국토계획법 시행령」 제71조 별표${no}] ${zone} 안에서 건축할 수 있는 건축물 : ${Math.min(...m)}층 이하`});}
  const fl=out.map(x=>x.floors).filter(x=>x>0),gr=out.map(x=>x.gross).filter(x=>x>0);
- return {floors:fl.length?Math.min(...fl):null,gross:gr.length?Math.min(...gr):null,lines:out.map(x=>x.text)};}
+ const gb=out.find(x=>x.bcr!=null&&x.far!=null);return {floors:fl.length?Math.min(...fl):null,gross:gr.length?Math.min(...gr):null,gb:gb?{bcr:gb.bcr,far:gb.far,gross:gb.gross}:null,lines:out.map(x=>x.text)};}
 const fmt0=v=>Number(v).toLocaleString('ko-KR');
 function zoneBasis(name){
  const map=[[/개발제한구역/,GREEN,12],[/군사|비행안전|대공방어/,'군사기지 및 군사시설 보호법',13],
@@ -237,7 +237,9 @@ export function reviewProject(p){
  if(landscapeApplies)penal('s-landscape','조경 미설치',[R(BLD,42),R(BLD,79)]);
  limits.area=area;limits.maxFootprint=area!==null&&limits.bcr.value!==null?area*limits.bcr.value/100:null;
  limits.maxGross=area!==null&&limits.far.value!==null?area*limits.far.value/100:null;
- const LH=legalHeight(p,purpose);limits.legalHeight=LH;if(LH.gross!=null&&limits.maxGross!=null&&LH.gross<limits.maxGross){limits.maxGross=LH.gross;limits.grossCapped=true;}
+ const LH=legalHeight(p,purpose);limits.legalHeight=LH;
+ // 개발제한구역: 시행령 별표2의 건폐율·용적률(주택·근린생활시설 60%·300%, 연면적 상한)이 용도지역(예: 자연녹지 20%·100%)보다 우선
+ if(LH.gb&&area!==null&&number(p.manual.bcr)==null&&number(p.manual.far)==null){limits.bcrZone=limits.bcr.value;limits.farZone=limits.far.value;limits.bcr={...limits.bcr,value:LH.gb.bcr,uncertain:!purpose,gbRule:true};limits.far={...limits.far,value:LH.gb.far,uncertain:!purpose,gbRule:true};limits.maxFootprint=area*LH.gb.bcr/100;limits.maxGross=area*LH.gb.far/100;}if(LH.gross!=null&&limits.maxGross!=null&&LH.gross<limits.maxGross){limits.maxGross=LH.gross;limits.grossCapped=true;}
  const parkAuto=specialRate(o.parking,/부설주차장|설치기준/,purpose,new RegExp('시설면적'+NUM+'(?:제곱미터|㎡|m2)당1대','g'));
  const landscapeAuto=specialRate(o.building,/조경/,'',new RegExp('대지면적의'+NUM+'(?:퍼센트|%)','g'));
  const gbZone=p.land.zones.some(z=>z.name.includes('개발제한구역'));const parkPurpose=purpose||(gbZone?'단독주택':'제2종 근린생활시설');const parkNat=parkAuto?null:nationalParking(getLaw(p.laws,PD),parkPurpose);
