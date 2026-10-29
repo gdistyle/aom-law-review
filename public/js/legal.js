@@ -252,13 +252,13 @@ export function reviewProject(p){
   else{limits.parking=null;limits.parkingFormula=A==null?'시설면적(연면적) 미산정':'주차 설치기준 원문 미수신 — 산정 불가';}}
  const tier=landscapeAuto?null:landscapeTier(o.building,planG??limits.maxGross,area);limits.landscapeTier=tier;
  limits.landscape=number(p.manual.landscape)??landscapeAuto?.value??tier?.value??null;
- {const t27=norm(articleText(BD,27));limits.landscapeExempt=null;
+ {const t27=norm(articleText(BD,27));limits.landscapeExempt=null;limits.landscapeOptional=null;
   if(number(p.manual.landscape)==null){
    if(area!==null&&landscapeThreshold!==null&&area<landscapeThreshold){limits.landscape=0;limits.landscapeExempt=`「건축법」 제42조 : 면적 ${fmt0(landscapeThreshold)}㎡ 미만 대지 → 조경 의무 없음`;}
-   else if(/녹지지역/.test(p.land.zone.value||'')&&t27.includes('녹지지역에건축하는건축물')){const ref=limits.landscape;limits.landscapeRef=ref!=null&&area!=null?{rate:ref,area:area*ref/100}:null;limits.landscape=0;limits.landscapeExempt='「건축법 시행령」 제27조제1항제1호 : 녹지지역에 건축하는 건축물은 조경 등의 조치를 하지 않을 수 있음'+(limits.landscapeRef?` (면제를 적용하지 않을 경우 조례 기준 대지면적의 ${limits.landscapeRef.rate}% = ${limits.landscapeRef.area.toFixed(2)}㎡)`:'');}}}
+   else if(/녹지지역/.test(p.land.zone.value||'')&&t27.includes('녹지지역에건축하는건축물')){limits.landscapeOptional='「건축법 시행령」 제27조제1항제1호 : 녹지지역 건축물은 조경 등의 조치를 하지 않을 수 있음(면제 선택 가능). 실무·허가 협의상 조례 기준 적용 시 아래 면적';}}}
  limits.landscapeArea=area!==null&&limits.landscape!==null?area*limits.landscape/100:null;
  {const f2=v=>(Math.round(v*100)/100).toLocaleString('ko-KR');const T=limits.landscapeTier;
-  limits.landscapeFormula=limits.landscapeExempt?limits.landscapeExempt:limits.landscapeArea!=null?`[${number(p.manual.landscape)!=null?'수동 입력 비율':T?`건축조례 제${T.article.number}조${T.small?` · 대지 ${T.small[0]}㎡ 이상 ${T.small[1]}㎡ 미만`:` · 연면적 ${T.lo?f2(T.lo)+'㎡ 이상 ':''}${T.hi!==Infinity?f2(T.hi)+'㎡ 미만':''} 구간(${limits.planLabel} ${f2(T.gross)}㎡ 기준)`}`:'건축조례'}] 대지면적 ${f2(area)}㎡ × ${limits.landscape}% = ${f2(limits.landscapeArea)}㎡ 이상`:'건축조례 조경 비율 원문 자동 추출 불가 — 04 적용값 입력 대상';}
+  limits.landscapeFormula=(limits.landscapeOptional?limits.landscapeOptional+' · ':'')+(limits.landscapeExempt?limits.landscapeExempt:limits.landscapeArea!=null?`[${number(p.manual.landscape)!=null?'수동 입력 비율':T?`건축조례 제${T.article.number}조${T.small?` · 대지 ${T.small[0]}㎡ 이상 ${T.small[1]}㎡ 미만`:` · 연면적 ${T.lo?f2(T.lo)+'㎡ 이상 ':''}${T.hi!==Infinity?f2(T.hi)+'㎡ 미만':''} 구간(${limits.planLabel} ${f2(T.gross)}㎡ 기준)`}`:'건축조례'}] 대지면적 ${f2(area)}㎡ × ${limits.landscape}% = ${f2(limits.landscapeArea)}㎡ 이상`:'건축조례 조경 비율 원문 자동 추출 불가 — 04 적용값 입력 대상');}
  limits.north=residential?extractNorth(getLaw(p.laws,BD)):null;
  limits.residential=residential;
  const out={rows,sanctions,limits};detailRows(p,out,o.plan?.name||'');assertRowLinks(rows);assertRowLinks(sanctions);return out;
