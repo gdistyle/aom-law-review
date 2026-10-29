@@ -1,0 +1,4 @@
+#!/bin/sh
+# 정답 사례·전체 검사 통과 시에만 올림
+npm test --silent >/dev/null 2>&1 || { echo "검사 실패: 올리지 않음 (npm test)"; exit 1; }
+npm run check --silent >/dev/null 2>&1 || { echo "검사 실패: 올리지 않음 (npm run check)"; exit 1; }
