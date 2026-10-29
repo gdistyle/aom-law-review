@@ -79,8 +79,8 @@ export function setSheetCell(xml,address,value,styleOverride=null){
  const reg=cellRegex(address),match=xml.match(reg);let attrs=match?match[0].match(/^<c\b([^>]*?)(?:\/?>)/)[1]:` r="${address}"`;
  attrs=attrs.replace(/\s+t="[^"]*"/g,'').replace(/\/$/,'');
  if(styleOverride!==null)attrs=attrs.replace(/\s+s="[^"]*"/g,'')+` s="${styleOverride}"`;
- const val=value===null||value===undefined||value===''?'':typeof value==='number'?`<v>${value}</v>`:`<is><t xml:space="preserve">${esc(value)}</t></is>`;
- const replacement=`<c${attrs}${typeof value==='number'?'':' t="inlineStr"'}>${val}</c>`;
+ const isF=value&&typeof value==='object'&&'f' in value,val=value===null||value===undefined||value===''?'':isF?`<f>${esc(value.f.replace(/^=/,''))}</f>`:typeof value==='number'?`<v>${value}</v>`:`<is><t xml:space="preserve">${esc(value)}</t></is>`;
+ const replacement=`<c${attrs}${typeof value==='number'||isF||val===''?'':' t="inlineStr"'}>${val}</c>`;
  if(match)return xml.replace(reg,()=>replacement);
  const rowN=Number(address.match(/\d+$/)[0]),rowRE=new RegExp(`(<row\\b(?=[^>]*\\br="${rowN}")[^>]*>)([\\s\\S]*?)(<\\/row>)`);
  if(rowRE.test(xml))return xml.replace(rowRE,(_,a,body,c)=>{const cells=body.match(/<c\b[^>]*?(?:\/>|>[\s\S]*?<\/c>)/g)||[];cells.push(replacement);const col=t=>{const letter=t.match(/\br="([A-Z]+)\d+"/)[1];return [...letter].reduce((n,c)=>n*26+c.charCodeAt(0)-64,0);};cells.sort((a,b)=>col(a)-col(b));return a+cells.join('')+c;});
@@ -91,20 +91,51 @@ function redStyleFactory(styleXML){
  const d=new DOMParser().parseFromString(styleXML,'application/xml'),fonts=d.getElementsByTagNameNS(S,'fonts')[0],xfs=d.getElementsByTagNameNS(S,'cellXfs')[0],map=new Map();
  return {get(style){if(map.has(style))return map.get(style);const xf=xfs.children[style].cloneNode(true),originalFont=fonts.children[Number(xf.getAttribute('fontId')||0)].cloneNode(true);for(const c of [...originalFont.children])if(c.localName==='color')c.remove();const color=d.createElementNS(S,'color');color.setAttribute('rgb','FFE00000');originalFont.appendChild(color);const fontId=fonts.children.length;fonts.appendChild(originalFont);fonts.setAttribute('count',String(fonts.children.length));xf.setAttribute('fontId',String(fontId));xf.setAttribute('applyFont','1');const id=xfs.children.length;xfs.appendChild(xf);xfs.setAttribute('count',String(xfs.children.length));map.set(style,id);return id;},xml(){return new XMLSerializer().serializeToString(d);}};
 }
-export async function exportExcel(p){
- const zip=await JSZip.loadAsync(await template('설계개요_빈양식.xlsx')),styles=redStyleFactory(await zip.file('xl/styles.xml').async('string'));
- let s1=await zip.file('xl/worksheets/sheet1.xml').async('string'),s6=await zip.file('xl/worksheets/sheet6.xml').async('string'),s7=await zip.file('xl/worksheets/sheet7.xml').async('string');
+/** 층별 면적: 3D 볼륨에서 고른 안(없으면 최대 볼륨)의 층별 바닥면적. 3D가 없으면 건폐율 최대 면적을 연면적 상한까지 아래층부터 채움. */
+export function floorAreas(p,result){
+ const m=result?.models?.find(x=>x.id===p.model?.selectedId)||result?.models?.[0];
+ if(m?.layers?.length)return {areas:m.layers.map(l=>Math.round(l.area*100)/100),source:m.name};
+ const L=p.review.limits,fp=number(L.maxFootprint),g=number(L.maxGross),n=number(p.floors)||number(p.legalMaxFloors);
+ if(!(fp>0)||!(g>0)||!(n>0))return {areas:[],source:''};
+ const out=[];let left=g;for(let i=0;i<n&&left>1e-6;i++){const a=Math.min(fp,left);out.push(Math.round(a*100)/100);left-=a;}
+ return {areas:out,source:'법정 최대'};
+}
+export async function exportExcel(p,result=null){
+ const zip=await JSZip.loadAsync(await template('설계개요_양식.xlsx')),styles=redStyleFactory(await zip.file('xl/styles.xml').async('string'));
+ let s1=await zip.file('xl/worksheets/sheet1.xml').async('string'),s2=await zip.file('xl/worksheets/sheet2.xml').async('string');
  const put=(xml,address,value,red)=>setSheetCell(xml,address,value,red?styles.get(getStyle(xml,address)):null);
- const L=p.review.limits;
- for(const [cell,value,red]of [['C7',titleOf(p),false],['D8',p.address,false],['D17',p.land.road.value,p.land.road.uncertain],['D18',[p.purpose,p.purpose2].filter(Boolean).join(', '),false],['D19',p.floors?`${p.basement?'지하 '+p.basement+'층, ':''}지상 ${p.floors}층`:'',true],['E34',L.landscape==null?null:L.landscape/100,true],['F24',L.bcr.value===null?null:L.bcr.value/100,L.bcr.uncertain],['F25',L.far.value===null?null:L.far.value/100,L.far.uncertain],['AD5',p.date,false]])s1=put(s1,cell,value,red);
- const parcels=p.parcels.length?p.parcels:[{name:p.location?.region3||'',lot:p.address,area:p.land.area,price:p.land.price}];
- if(parcels.length>23)throw new Error('원본 토지내역의 공제·합계 행 보존을 위해 23필지 초과 입력 불가.');
- parcels.forEach((x,i)=>{const r=3+i;for(const [col,v,red]of [['A',x.dong||x.name||'',!!x.area?.uncertain],['B',x.lot||'',!!x.area?.uncertain],['C',x.area?.value??null,x.area?.uncertain!==false],['E',x.price?.value??null,x.price?.uncertain!==false]])s6=put(s6,col+r,v,red);});
- s7=put(s7,'D3',p.land.priceDate.value,p.land.priceDate.uncertain);s7=put(s7,'E4',p.land.zones.map(x=>x.name).join(', '),p.land.zones.some(x=>x.uncertain));
- zip.file('xl/worksheets/sheet1.xml',s1);zip.file('xl/worksheets/sheet6.xml',s6);zip.file('xl/worksheets/sheet7.xml',s7);zip.file('xl/styles.xml',styles.xml());
- // 수식 자체는 보존. 원본 11개 시트의 과거 cached 값만 제거하고 Excel 재계산 요청.
- for(const name of Object.keys(zip.files).filter(n=>/^xl\/worksheets\/sheet\d+\.xml$/.test(n))){let s=await zip.file(name).async('string');s=s.replace(/<c\b[^>]*?(?:\/>|>[\s\S]*?<\/c>)/g,c=>/<f\b/.test(c)?c.replace(/<v(?:\s[^>]*)?>[\s\S]*?<\/v>/g,''):c);zip.file(name,s);}
- let wb=await zip.file('xl/workbook.xml').async('string');wb=wb.replace(/<calcPr\b[^>]*\/>/,'<calcPr calcId="0" calcMode="auto" fullCalcOnLoad="1" forceFullCalc="1"/>');zip.file('xl/workbook.xml',wb);
- // 원본 수식 범위(예: E15의 두 필지 합계)는 변경하지 않음. 3필지 이상 화면/README에 별도 고지.
+ const W=(a,v,red=false)=>{s1=put(s1,a,v,red);},WL=(a,v,red=false)=>{s2=put(s2,a,v,red);};
+ const L=p.review.limits,uses=[p.purpose,p.purpose2].filter(Boolean);
+ // ① 토지내역(전체 필지)
+ const parcels=p.parcels.length?p.parcels:[{dong:p.location?.region3||'',lot:p.address,area:p.land.area,price:p.land.price}];
+ if(parcels.length>26)throw new Error('토지내역 표는 26필지까지 들어갑니다.');
+ parcels.forEach((x,i)=>{const r=3+i,av=x.area?.value??null,pv=x.price?.value??null;
+  WL('A'+r,x.dong||x.name||'',false);WL('B'+r,x.lot||'',false);WL('C'+r,av,x.area?.uncertain!==false&&av!=null);
+  if(av!=null)WL('D'+r,{f:`ROUND(C${r}*0.3025,2)`});WL('E'+r,pv,x.price?.uncertain!==false&&pv!=null);if(pv!=null)WL('F'+r,{f:`ROUND(E${r}/0.3025,0)`});
+  if(x.category)WL('I'+r,x.category);});
+ // ② 설계개요 — 대지현황
+ W('AD5',displayDate(p.date));W('C6',uses.length?`[${uses.join(' · ')}]`:'');W('C7',titleOf(p));W('D8',p.address);
+ const name=x=>[x.dong||x.name,x.lot].filter(Boolean).join(' ').trim(),shown=parcels.length>4?parcels.slice(0,3):parcels;
+ shown.forEach((x,i)=>{const r=9+i,av=x.area?.value??null;W('D'+r,name(x));W('E'+r,av,x.area?.uncertain!==false&&av!=null);if(av!=null)W('F'+r,{f:`E${r}*0.3025`});});
+ if(parcels.length>4){const rest=parcels.slice(3);W('D12',`외 ${rest.length}필지`);W('E12',{f:`SUM(토지내역!C6:C${2+parcels.length})`});W('F12',{f:'E12*0.3025'});}
+ W('D16',zoneList(p.land.zones).join(', '),p.land.zones.some(x=>x.uncertain));{const t=zoneList(p.land.zones).join(', '),n=Math.max(1,Math.ceil([...t].reduce((w,c)=>w+(c.charCodeAt(0)>255?1:.55),0)/27));s1=s1.replace(/<row\b([^>]*?)\br="16"([^>]*)>/,(m,a,b)=>`<row${(a+' r="16"'+b).replace(/\s(?:ht|customHeight)="[^"]*"/g,'')} ht="${Math.max(20,n*16+6)}" customHeight="1">`);}W('D17',p.land.road.value||'',p.land.road.uncertain);
+ // 건설규모
+ const fa=floorAreas(p,result),nB=number(p.basement)||0,nF=fa.areas.length;
+ W('D18',uses.join(', '));W('D19',nF?`${nB?'지하 '+nB+'층, ':''}지상 ${nF}층`:'',true);
+ if(nF)W('D20',fa.areas[0],true);
+ W('F24',L.bcr.value===null?null:L.bcr.value/100,L.bcr.uncertain);W('F25',L.far.value===null?null:L.far.value/100,L.far.uncertain);
+ // 주차
+ if(L.parking!=null){W('D26',L.parkingPurpose||p.purpose||'',!p.purpose);W('E26',number(L.parkingArea),L.parkingAreaAssumed);W('G26',L.parking);W('D30','계');W('G30',L.parking);W('G31',L.parking,true);}
+ // 조경
+ if(L.landscape!=null&&!L.landscapeExempt)W('E34',L.landscape/100,true);
+ // ③ 층별면적표 — 머리글을 실제 용도로, 지상은 최상층부터 1층(28행)까지, 지하는 30행부터
+ W('J7',p.purpose||'주용도');W('L7',p.purpose2||'-');
+ if(nF>20)throw new Error('층별면적표는 지상 20층까지 들어갑니다.');
+ fa.areas.forEach((a,i)=>{const r=28-i;W('I'+r,`${i+1}층`);W('J'+r,a,true);for(const [c,f]of [['K',`J${r}*0.3025`],['P',`J${r}+L${r}+N${r}`],['Q',`P${r}*0.3025`]])W(c+r,{f});});
+ for(let i=0;i<Math.min(nB,6);i++){const r=30+i;W('I'+r,`지하${i+1}층`);for(const [c,f]of [['K',`J${r}*0.3025`],['P',`J${r}+L${r}+N${r}`],['Q',`P${r}*0.3025`]])W(c+r,{f});}
+ if(fa.source)W('AB28',`${fa.source} 기준`,true);
+ zip.file('xl/worksheets/sheet1.xml',s1);zip.file('xl/worksheets/sheet2.xml',s2);zip.file('xl/styles.xml',styles.xml());
+ let wb=await zip.file('xl/workbook.xml').async('string');wb=/<calcPr\b/.test(wb)?wb.replace(/<calcPr\b[^>]*\/>/,'<calcPr calcId="0" fullCalcOnLoad="1"/>'):wb.replace('</workbook>','<calcPr calcId="0" fullCalcOnLoad="1"/></workbook>');zip.file('xl/workbook.xml',wb);
  return zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',compression:'DEFLATE'});
 }
+
