@@ -44,7 +44,7 @@ export async function readGuideline(file) {
     return pages;
   }
   if (name.endsWith('.txt')) return [{page: 1, lines: (await file.text()).split(/\r?\n/).map(s => s.trim()).filter(Boolean)}];
-  if (name.endsWith('.hwp')) throw new Error('HWP 파일은 한글에서 [다른 이름으로 저장 → PDF 또는 HWPX]로 바꿔서 넣어 주십시오.');
+  if (name.endsWith('.hwp')) { const CFB = await loadCfb(); return hwpPages(await file.arrayBuffer(), CFB, inflateRawBrowser); }
   throw new Error('PDF·HWPX·TXT 파일만 읽을 수 있습니다.');
 }
 
@@ -64,6 +64,8 @@ const normBlock = s => String(s || '').replace(/\s+/g, '').replace(/[－–—]/
 export function searchGuideline(pages, block = '') {
   const b = normBlock(block);
   const blockPages = b ? new Set(pages.filter(p => p.lines.some(l => normBlock(l).includes(b))).map(p => p.page)) : new Set();
+  const heads = new Map();
+  for (const pg of pages) { let h = ''; heads.set(pg.page, pg.lines.map(l => { if (/^제\s*\d+\s*(?:조|장|절)/.test(l) && l.length < 60) h = l.replace(/\d+$/, ''); return h; })); }
   const out = [];
   for (const [key, label, re, num] of TOPICS) {
     const hits = [];
@@ -72,11 +74,62 @@ export function searchGuideline(pages, block = '') {
       const ctx = [pg.lines[i - 1], line, pg.lines[i + 1]].filter(Boolean).join(' / ');
       const grab = t => num ? [...t.matchAll(new RegExp(num.source, 'gi'))].map(m => +m[1]).filter(v => Number.isFinite(v)) : [];
       const m0 = line.match(re), after = m0 ? line.slice(m0.index + m0[0].length).split(/건폐율|용적률|조경|높이|최고\s*층수/)[0] : '';
-      const near = grab(after), values = near.length ? near : grab(line);
-      hits.push({page: pg.page, line, ctx, values, inBlock: blockPages.has(pg.page) || (b && normBlock(ctx).includes(b))});
+      const near = grab(after), own = near.length ? near : grab(line), values = own.length ? own : grab(pg.lines.slice(i + 1, i + 7).join(' ')).slice(0, 4);
+      hits.push({page: pg.page, head: heads.get(pg.page)[i] || '', section: !!pg.section, line, ctx, values, inBlock: blockPages.has(pg.page) || (b && normBlock(ctx).includes(b))});
     }
     hits.sort((x, y) => (y.inBlock - x.inBlock) || (y.values.length - x.values.length) || (x.page - y.page));
     out.push({key, label, hits: hits.slice(0, 12), total: hits.length});
   }
   return {blockFound: !b || blockPages.size > 0, blockPages: [...blockPages], topics: out};
+}
+
+/* ── 한글(HWP 5.0) 직접 읽기: 복합문서(CFB) → BodyText/Section* 압축 해제 → 문단 글자(HWPTAG_PARA_TEXT) ── */
+let cfbLoaded = null;
+function loadCfb() {
+  cfbLoaded ??= new Promise((resolve, reject) => {
+    if (window.CFB) return resolve(window.CFB);
+    const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/cfb@1.2.2/dist/cfb.min.js';
+    s.onload = () => resolve(window.CFB); s.onerror = () => reject(new Error('한글 파일 읽기 도구를 불러오지 못했습니다.')); document.head.append(s);
+  });
+  return cfbLoaded;
+}
+async function inflateRawBrowser(u8) {
+  const ds = new DecompressionStream('deflate-raw');
+  const out = new Response(new Blob([u8]).stream().pipeThrough(ds));
+  return new Uint8Array(await out.arrayBuffer());
+}
+const EXT = new Set([1, 2, 3, 11, 12, 14, 15, 16, 17, 18, 21, 22, 23]), INL = new Set([4, 5, 6, 7, 8, 9, 19, 20]);
+function paraText(u8) {
+  const v = new DataView(u8.buffer, u8.byteOffset, u8.byteLength); let s = '';
+  for (let i = 0; i + 1 < u8.length;) {
+    const c = v.getUint16(i, true);
+    if (c < 32) { if (EXT.has(c) || INL.has(c)) { i += 16; continue; } if (c === 9) s += ' '; else if (c === 10 || c === 13) s += '\n'; i += 2; continue; }
+    s += String.fromCharCode(c); i += 2;
+  }
+  return s;
+}
+/** HWP ArrayBuffer → [{page(=구역 번호), lines}] */
+export async function hwpPages(buf, CFB, inflateRaw) {
+  const cfb = CFB.read(new Uint8Array(buf), {type: 'array'});
+  const find = p => CFB.find(cfb, p);
+  const head = find('/FileHeader'); if (!head) throw new Error('한글 파일 형식이 아닙니다.');
+  const hb = head.content, props = hb[36] | (hb[37] << 8) | (hb[38] << 16) | (hb[39] << 24);
+  if (props & 2) throw new Error('암호가 걸린 한글 파일은 읽을 수 없습니다. 암호를 풀고 다시 저장해 넣어 주십시오.');
+  if (props & 4) throw new Error('배포용(읽기 전용) 한글 파일입니다. 한글에서 [다른 이름으로 저장 → PDF]로 바꿔 넣어 주십시오.');
+  const compressed = !!(props & 1), pages = [];
+  for (let n = 0; ; n++) {
+    const st = find('/BodyText/Section' + n); if (!st) break;
+    let data = Uint8Array.from(st.content);
+    if (compressed) data = await inflateRaw(data);
+    const v = new DataView(data.buffer, data.byteOffset, data.byteLength), lines = [];
+    for (let i = 0; i + 4 <= data.length;) {
+      const h = v.getUint32(i, true); i += 4; const tag = h & 0x3ff; let size = h >>> 20;
+      if (size === 0xfff) { size = v.getUint32(i, true); i += 4; }
+      if (tag === 67) for (const l of paraText(data.subarray(i, i + size)).split('\n')) { const t = l.replace(/\s+/g, ' ').trim(); if (t) lines.push(t); }
+      i += size;
+    }
+    pages.push({page: n + 1, lines, section: true});
+  }
+  if (!pages.length) throw new Error('한글 파일에서 본문을 찾지 못했습니다.');
+  return pages;
 }

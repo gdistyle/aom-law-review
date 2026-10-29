@@ -8,7 +8,7 @@ import {drawEdgePicker,suggestEdges} from './edgepicker.js';
 import {allowedUses} from './legal-detail.js';
 import {readGuideline,searchGuideline} from './guideline.js';
 import {vworldApi} from './vworldclient.js';
-const LOAD={};
+const LOAD={};let guidePages=null,guideName='';
 const $=id=>document.getElementById(id);let p=blankProject(),config={services:{}},epoch=0,controller=new AbortController(),busy=0,modelResult={models:[],site:null},mapLoaded=null;
 const apiMessages=[];
 function toast(s){$('toast').textContent=s;$('toast').hidden=false;setTimeout(()=>$('toast').hidden=true,4200);}
@@ -184,11 +184,10 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-reload]');
 /* 토지이음 필지 상세 바로가기 (PNU 기준) */
 function eumUrl(pnu){if(!/^\d{19}$/.test(pnu||''))return 'https://www.eum.go.kr';const q=new URLSearchParams({selSido:pnu.slice(0,2),selSgg:pnu.slice(2,5),selUmd:pnu.slice(5,9),selRi:pnu.slice(9,11),landGbn:pnu[10]==='2'?'2':'1',bobn:String(+pnu.slice(11,15)),bubn:String(+pnu.slice(15,19)),pnu,scale:'',isNoScr:'script',chk:'0',mode:'search',selGbn:'umd'});return 'https://www.eum.go.kr/web/ar/lu/luLandDet.jsp?'+q;}
 /* 시행지침 파일 읽기 · 조항 찾기 · 적용 */
-let guidePages=null,guideName='';
 function guideState(){const el=$('guideState');if(!el)return;const d=p.land.zones?.some(z=>/지구단위계획/.test(z.name));el.className=d&&!guidePages?'uncertain':'small';el.textContent=d?(guidePages?`'${guideName}' 읽음 — 아래에서 블록 조항을 확인하고 [적용]을 누르십시오.`:'이 대지는 지구단위계획구역입니다. 시행지침의 건폐율·용적률·높이·조경이 조례보다 우선하므로, 토지이음에서 시행지침을 내려받아 아래에 넣어야 수치가 확정됩니다. 지침을 넣기 전 수치는 시행지침 미대조 값입니다.'):(guidePages?`'${guideName}' 읽음.`:'지구단위계획구역이 아니면 넣지 않아도 됩니다.');}
 function guideRender(){const el=$('guideResult');if(!el||!guidePages)return;const r=searchGuideline(guidePages,$('guideBlock').value);const unit={bcr:'%',far:'%',landscape:'%',floorLimit:'층',height:'m',buildingLine:'m'};
- el.innerHTML=(r.blockFound?'':`<p class="uncertain">블록 번호 '${esc($('guideBlock').value)}'를 지침에서 찾지 못했습니다. 표기(예: 단독1-2, B1-2)를 바꿔 보십시오.</p>`)+(r.blockPages.length?`<p class="small">블록 번호가 나오는 쪽: ${r.blockPages.join(', ')}쪽</p>`:'')
- +r.topics.map(t=>`<details class="gb-topic"${t.hits.some(h=>h.inBlock)?' open':''}><summary><b>${esc(t.label)}</b> <small>${t.total}건</small></summary>${t.hits.length?t.hits.map(h=>`<div class="gb-hit${h.inBlock?' in':''}"><span class="pg">${h.page}쪽</span><span class="tx">${esc(h.ctx)}</span>${['bcr','far','landscape','floorLimit','height'].includes(t.key)?h.values.slice(0,3).map(v=>`<button type="button" data-gapply="${t.key}" data-v="${v}">${v}${unit[t.key]} 적용</button>`).join(''):''}</div>`).join(''):'<p class="small">해당 문장 없음</p>'}</details>`).join('');}
+ el.innerHTML=(r.blockFound?'':`<p class="uncertain">블록 번호 '${esc($('guideBlock').value)}'를 지침에서 찾지 못했습니다. 표기(예: 단독1-2, B1-2)를 바꿔 보십시오.</p>`)+(r.blockPages.length&&!guidePages[0]?.section?`<p class="small">블록 번호가 나오는 쪽: ${r.blockPages.join(', ')}쪽</p>`:'')
+ +r.topics.map(t=>`<details class="gb-topic"${t.hits.some(h=>h.inBlock)?' open':''}><summary><b>${esc(t.label)}</b> <small>${t.total}건</small></summary>${t.hits.length?t.hits.map(h=>`<div class="gb-hit${h.inBlock?' in':''}"><span class="pg">${h.section?esc(h.head||"본문"):h.page+"쪽"}</span><span class="tx">${esc(h.ctx)}</span>${['bcr','far','landscape','floorLimit','height'].includes(t.key)?h.values.slice(0,3).map(v=>`<button type="button" data-gapply="${t.key}" data-v="${v}">${v}${unit[t.key]} 적용</button>`).join(''):''}</div>`).join(''):'<p class="small">해당 문장 없음</p>'}</details>`).join('');}
 async function guideFile(file){if(!file)return;task('시행지침 읽기',async()=>{guidePages=await readGuideline(file);guideName=file.name;const n=guidePages.reduce((a,b)=>a+b.lines.length,0);if(!n)throw new Error('파일에서 글자를 읽지 못했습니다. 스캔 이미지 PDF는 글자 인식이 되지 않습니다.');guideState();guideRender();toast(`시행지침 ${guidePages.length}쪽 읽음.`);});}
 $('guideFile').onchange=e=>guideFile(e.target.files[0]);
 const gd=$('guideDrop');gd.addEventListener('dragover',e=>{e.preventDefault();gd.classList.add('over');});gd.addEventListener('dragleave',()=>gd.classList.remove('over'));gd.addEventListener('drop',e=>{e.preventDefault();gd.classList.remove('over');guideFile(e.dataTransfer.files[0]);});

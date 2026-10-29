@@ -132,6 +132,6 @@ body{background:#F3F3F1}
 .gb-row{display:grid;grid-template-columns:200px minmax(0,1fr);gap:12px;align-items:end;margin-top:8px}
 .gb-drop{position:relative;border:1.5px dashed #E0A39E;border-radius:8px;padding:14px;text-align:center;color:#8A4A45;cursor:pointer;background:#fff;margin:0}
 .gb-drop.over{background:#FDECEA}.gb-drop input{position:absolute;inset:0;opacity:0;cursor:pointer;margin:0;min-height:0}
-.gb-topic{margin:8px 0;padding-top:6px}.gb-hit{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:8px;align-items:start;padding:6px 0;border-bottom:1px solid #F0F0EE;font-size:12.5px}
+.gb-topic{margin:8px 0;padding-top:6px}.gb-hit{display:grid;grid-template-columns:minmax(44px,140px) minmax(0,1fr) auto;gap:8px;align-items:start;padding:6px 0;border-bottom:1px solid #F0F0EE;font-size:12.5px}
 .gb-hit.in{background:#FFF4F3}.gb-hit .pg{color:#E8382F;font-weight:600}.gb-hit button{font-size:12px;padding:4px 8px;margin-left:4px;white-space:nowrap}
 @media(max-width:760px){.gb-row{grid-template-columns:1fr}}
