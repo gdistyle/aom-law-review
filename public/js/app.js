@@ -8,7 +8,8 @@ import {drawEdgePicker,suggestEdges} from './edgepicker.js';
 import {allowedUses} from './legal-detail.js';
 import {readGuideline,searchGuideline} from './guideline.js';
 import {vworldApi} from './vworldclient.js';
-const LOAD={};let usesKey='';let guidePages=null,guideName='';
+import {hangulInput} from './hangul.js';
+hangulInput(document.getElementById('address'));const LOAD={};let usesKey='';let guidePages=null,guideName='';
 const $=id=>document.getElementById(id);let p=blankProject(),config={services:{}},epoch=0,controller=new AbortController(),busy=0,modelResult={models:[],site:null},mapLoaded=null;
 const apiMessages=[];
 function toast(s){$('toast').textContent=s;$('toast').hidden=false;setTimeout(()=>$('toast').hidden=true,4200);}
@@ -193,7 +194,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-gapply]');
 
 /* 여러 필지: [＋ 필지 추가]를 누를 때마다 입력칸이 하나씩 생기고, 조회하면 대지에 합산 */
 function extraRow(){const box=$('extraParcels'),row=document.createElement('div');row.className='xp-row';row.innerHTML='<input class="xp-in" placeholder="추가 필지 지번 (예: 부암동 99-2)"><button type="button" class="xp-go">추가</button><button type="button" class="xp-x" aria-label="삭제">✕</button><span class="xp-st small"></span>';box.append(row);row.querySelector('.xp-in').focus();
- const go=()=>addParcel(row);row.querySelector('.xp-go').onclick=go;row.querySelector('.xp-in').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go();}};row.querySelector('.xp-x').onclick=()=>removeParcel(row);}
+ hangulInput(row.querySelector('.xp-in'));const go=()=>addParcel(row);row.querySelector('.xp-go').onclick=go;row.querySelector('.xp-in').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go();}};row.querySelector('.xp-x').onclick=()=>removeParcel(row);}
 $('addParcel').onclick=()=>{if(!p.pnu)return toast('먼저 대표 필지 주소를 조회하십시오.');extraRow();};
 async function addParcel(row){let q=row.querySelector('.xp-in').value.trim();if(!q)return;const st=row.querySelector('.xp-st');
  // '99-2'처럼 번지만 넣으면 대표 필지의 시·구·동을 붙임
