@@ -146,7 +146,7 @@ export function drawTerrainMap(){const cv=$('terrainMap');if(!cv)return;const ct
  $('terrainLegend').innerHTML=`<span class="uncertain">대상지 부근 해발 약 ${fmt(h0,0)} m · 주변 범위 ${fmt(lo,0)}~${fmt(hi,0)} m (공개 수치표고 약 30 m 간격 개략값). 빨간선 대상 필지 · 회색 면 도로 · 연두→녹색→갈색 순으로 높아짐.</span>`;}
 
 /* 지번 조회 직후: 법정 최대 건폐율·용적률로 지상 층수 자동 설정(최대 시작) */
-function autoMax(){p.legalMaxFloors=null;floorChips();floorGrid();const l=p.review?.limits;if(!l?.maxFootprint||!l?.maxGross)return;const cap=number(p.manual.floorLimit),lcap=l.legalHeight?.floors;const n=Math.min(80,cap>0?cap:Infinity,lcap>0?lcap:Infinity,Math.ceil(l.maxGross/l.maxFootprint-1e-9));if(!(n>0))return;p.legalMaxFloors=n;p.floors=n;$('floors').value=n;const old=p.model.floorHeights||[];p.model.floorHeights=Array.from({length:n},(_,i)=>old[i]>0?old[i]:(i?3.3:4.3));p.model.maxFloors=n;floorGrid();floorChips();render();$('modelSelect').value='maximum';}
+function autoMax(){p.legalMaxFloors=null;floorChips();floorGrid();const l=p.review?.limits;if(!l?.maxFootprint||!l?.maxGross)return;const cap=number(p.manual.floorLimit),lcap=l.legalHeight?.floors;const n=cap>0?Math.min(80,cap):lcap>0?lcap:Math.min(80,Math.ceil(l.maxGross/l.maxFootprint-1e-9));if(!(n>0))return;p.legalMaxFloors=n;p.floors=n;$('floors').value=n;const old=p.model.floorHeights||[];p.model.floorHeights=Array.from({length:n},(_,i)=>old[i]>0?old[i]:(i?3.3:4.3));p.model.maxFloors=n;floorGrid();floorChips();render();$('modelSelect').value='maximum';}
 for(const id of ['purpose','purpose2','operation'])$(id).addEventListener('change',()=>{inputs();render();updateModels(false);});
 
 /* 지번 조회 즉시 '법정 최대' 요약 */
