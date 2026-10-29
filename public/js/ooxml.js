@@ -13,13 +13,19 @@ export function wordTable(headers,rows,widths){
 }
 const h=(text,pageBreak=false)=>para(text,{bold:true,size:24,keep:true,pageBreak});
 const dataCell=(d,unit='')=>({text:d?.value==null?'':typeof d.value==='number'?fmt(d.value)+unit:String(d.value)+unit,red:d?.uncertain!==false,align:typeof d?.value==='number'?'right':'left'});
-export function wordBody(p){
+const ZRANK=n=>/^(제[12]종|제3종)?(전용|일반|준)?(주거|상업|공업)지역$|^(보전|생산|자연)녹지지역$|^(보전|생산|계획)관리지역$|^(농림|자연환경보전)지역$/.test(n)?0:/^(도시|관리|농림|자연환경보전)지역$/.test(n)?1:/지구$/.test(n)&&!/지구단위|취락/.test(n)?2:/개발제한구역|도시자연공원구역|시가화조정구역|수산자원보호구역/.test(n)?3:/지구단위계획|취락지구/.test(n)?4:5;
+const zoneList=zs=>[...new Set(zs.map(z=>z.name))].map((n,i)=>[n,i]).sort((a,b)=>ZRANK(a[0])-ZRANK(b[0])||a[1]-b[1]).map(x=>x[0]);
+function picture(rid,id,w,h,cx){const cy=Math.round(cx*h/w);return `<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${id}" name="대지 그림 ${id}"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${id}" name="site${id}.png"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${rid}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`;}
+export function wordBody(p,imgs=null){
  assertRowLinks(p.review.rows);const area=totalArea(p),b=selectedBuilding(p);
- const parcels=p.parcels.length?p.parcels:[{name:p.address,lot:p.address,area:p.land.area,price:p.land.price,priceDate:p.land.priceDate,zones:p.land.zones.map(z=>z.name).join(', ')}];
- let xml=h('Ⅰ. 대지개요')+para('. 대지위치 : '+p.address)+para('. 대지면적 : '+(area===null?'':`${fmt(area)}㎡(${fmt(area*.3025,2)}평)`),{red:p.land.area.uncertain})+para('. 지역지구 : '+p.land.zones.map(z=>z.name).join(', '),{red:p.land.zones.some(z=>z.uncertain)})+para('. 지번현황',{keep:true});
- const plotRows=parcels.map(x=>[{text:x.lot||x.name||'',red:x.area?.uncertain},dataCell(x.area),{text:x.area?.value==null?'':fmt(x.area.value*.3025,2),red:x.area?.uncertain,align:'right'},dataCell(x.price),{text:x.priceDate?.value||'',red:x.priceDate?.uncertain},x.zones||p.land.zones.map(z=>z.name).join(', '),{text:'',red:true}]);
- plotRows.push(['합계',{text:area===null?'':fmt(area),align:'right',red:p.land.area.uncertain},{text:area===null?'':fmt(area*.3025,2),align:'right',red:p.land.area.uncertain},'','','','']);
- xml+=wordTable(['지번','면적 Sqm','면적 py','공시지가 원/㎡','기준연월','지역,지구','비고'],plotRows,[1800,1200,1100,1700,1300,4201,1500]);
+ const mainZones=zoneList(p.land.zones.filter(z=>!z.extra)),zAll=zoneList(p.land.zones);
+ const parcels=(p.parcels.length?p.parcels:[{lot:(p.address.split(/\s+/).at(-1)||''),area:p.land.area,price:p.land.price,priceDate:p.land.priceDate}]).map((x,i)=>({...x,zones:i===0&&!x.pnu?mainZones:zoneList(p.land.zones.filter(z=>z.extra===x.pnu))}));
+ const pd=(parcels.find(x=>x.priceDate?.value)?.priceDate?.value||'').replace('-','/');
+ let xml=h('Ⅰ. 대지개요')+para('. 대지위치 : '+p.address+(p.extra?.length?` 외 ${p.extra.length}필지`:''))+para('. 대지면적 : '+(area===null?'':`${fmt(area,2)}㎡(${fmt(area*.3025,2)} 평)`),{red:p.land.area.uncertain})+para('. 지역지구 : '+zAll.join(', '),{red:p.land.zones.some(z=>z.uncertain)})+para('. 지번현황',{bold:true,keep:true});
+ const plotRows=parcels.map(x=>[{text:x.lot||'',align:'center',red:x.area?.uncertain},{text:x.area?.value==null?'':fmt(x.area.value,2),align:'right',red:x.area?.uncertain},{text:x.area?.value==null?'':fmt(x.area.value*.3025,2),align:'right',red:x.area?.uncertain},{text:x.price?.value==null?'':fmt(x.price.value),align:'right',red:x.price?.uncertain},{text:(x.zones||[]).join(', ')},'']);
+ plotRows.push([{text:'합계',align:'center',fill:'D9D9D9'},{text:area===null?'':fmt(area,2),align:'right',fill:'D9D9D9',red:p.land.area.uncertain},{text:area===null?'':fmt(area*.3025,2),align:'right',fill:'D9D9D9',red:p.land.area.uncertain},{text:'',fill:'D9D9D9'},{text:'',fill:'D9D9D9'},{text:'',fill:'D9D9D9'}]);
+ xml+=wordTable(['지번','면적 Sqm','면적 py',`공시지가 원/㎡${pd?'\n'+pd:''}`,'지역, 지구','비고'],plotRows,[1300,1400,1300,1700,6000,1100]);
+ if(imgs){const cw=6400,cx=Math.round(cw/1440*914400*0.97);xml+=`<w:tbl><w:tblPr><w:tblW w:w="${cw*2+200}" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblBorders>${['top','left','bottom','right','insideH','insideV'].map(s=>`<w:${s} w:val="nil"/>`).join('')}</w:tblBorders></w:tblPr><w:tblGrid><w:gridCol w:w="${cw}"/><w:gridCol w:w="200"/><w:gridCol w:w="${cw}"/></w:tblGrid><w:tr>`+[[imgs.cad,'rIdSite1',9101,'지적도 (브이월드 일반지도 위 지적선)'],null,[imgs.photo,'rIdSite2',9102,'항공사진 (브이월드 영상지도)']].map(c=>c?`<w:tc><w:tcPr><w:tcW w:w="${cw}" w:type="dxa"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="40"/></w:pPr>${picture(c[1],c[2],c[0].w,c[0].h,cx)}</w:p>${para(c[3],{align:'center',size:16})}</w:tc>`:`<w:tc><w:tcPr><w:tcW w:w="200" w:type="dxa"/></w:tcPr><w:p/></w:tc>`).join('')+`</w:tr></w:tbl>`;}
  xml+=h('Ⅱ. 기존건축물 현황',true);
  if(p.building.status==='empty')xml+=para(p.building.manual?'해당 없음(나대지)':'건축물대장 조회 결과 0건 (나대지·대표 지번 등재·미등재 건축물 여부 대조 대상)',{red:true});
  else if(b){xml+=para('건축물명 : '+(b.bldNm||'')+' / '+(b.dongNm||''));xml+=wordTable(['항목','내용','항목','내용'],Array.from({length:Math.ceil(BUILDING_FIELDS.length/2)},(_,i)=>{const pair=BUILDING_FIELDS.slice(i*2,i*2+2);return pair.flatMap(([label,key,unit])=>[label,{text:key==='useAprDay'?displayDate(b[key]):number(b[key])!==null?fmt(b[key])+unit:String(b[key]??''),red:!!b._manual||b[key]==null,align:number(b[key])!==null?'right':'left'}]).concat(pair.length===1?['','']:[]);}),[2200,4200,2200,4201]);
@@ -50,7 +56,7 @@ function coverPage(xml,p){const b=xml.indexOf('<w:body>')+8,brk=xml.indexOf('<w:
   +para(run('Copyright © 2020 by AOM Architects &amp; Developers Co.,Ltd All. RIGHTS RESERVED.',12,{color:g}))
   +para(run('No part of this publication may be reproduced, stored in a retrieval system, or transmitted in any form or by any means — electronic, mechanical, photocopying, recording, or otherwise — without the permission of AOM A&amp;D.',12,{color:g}))
   +para(run('This document provides an outline of a presentation and is incomplete without the accompanying oral commentary and discussion.',12,{color:g}),{keep:false});
- return xml.slice(0,b)+cover+xml.slice(pStart);}
+ let rest=xml.slice(pStart);rest=rest.replace('<w:br w:type="page"/>','');rest=rest.replace(/^<w:p>(<w:pPr>)?/,m=>m.endsWith('<w:pPr>')?'<w:p><w:pPr><w:pageBreakBefore/>':'<w:p><w:pPr><w:pageBreakBefore/></w:pPr>');if(!rest.includes('<w:pageBreakBefore/>'))rest=rest.replace(/^<w:p ([^>]*)>(<w:pPr>)?/,(m,a,pp)=>`<w:p ${a}><w:pPr><w:pageBreakBefore/>`+(pp?'':'</w:pPr>'));return xml.slice(0,b)+cover+rest;}
 export async function exportWord(p){
  const zip=await JSZip.loadAsync(await template('법규검토서_틀.docx'));
  let xml=await zip.file('word/document.xml').async('string');
@@ -59,7 +65,9 @@ export async function exportWord(p){
  xml=coverPage(xml,p);
  xml=xml.replaceAll('{{TITLE}}',esc(titleOf(p))).replaceAll('{{DATE}}',esc(displayDate(p.date)));
  // 원본 TOC/BODY는 w:t가 아닌 body 직하 텍스트 자리표시자. XML 조각 직접 대입.
- xml=xml.replace('{{TOC}}',toc).replace('{{BODY}}',wordBody(p));
+ let imgs=null;try{const cfg=await (await fetch('/api/config')).json();const {siteImages}=await import('./mapimage.js');imgs=await siteImages(p,cfg);}catch(e){console.warn('대지 그림 생성 실패',e);}
+ if(imgs){zip.file('word/media/site_cad.png',imgs.cad.bytes);zip.file('word/media/site_photo.png',imgs.photo.bytes);let rels=await zip.file('word/_rels/document.xml.rels').async('string');rels=rels.replace('</Relationships>','<Relationship Id="rIdSite1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/site_cad.png"/><Relationship Id="rIdSite2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/site_photo.png"/></Relationships>');zip.file('word/_rels/document.xml.rels',rels);let ct=await zip.file('[Content_Types].xml').async('string');if(!/Extension="png"/i.test(ct)){ct=ct.replace('<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">','<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="png" ContentType="image/png"/>');zip.file('[Content_Types].xml',ct);}}
+ xml=xml.replace('{{TOC}}',toc).replace('{{BODY}}',wordBody(p,imgs));
  if(/\{\{\w+\}\}/.test(xml))throw new Error('워드 자리표시자 잔존');
  const parsed=new DOMParser().parseFromString(xml,'application/xml');if(parsed.querySelector('parsererror'))throw new Error('워드 XML 생성 오류');
  zip.file('word/document.xml',xml);
