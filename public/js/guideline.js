@@ -74,7 +74,7 @@ export function searchGuideline(pages, block = '') {
       const ctx = [pg.lines[i - 1], line, pg.lines[i + 1]].filter(Boolean).join(' / ');
       const grab = t => num ? [...t.matchAll(new RegExp(num.source, 'gi'))].map(m => +m[1]).filter(v => Number.isFinite(v)) : [];
       const m0 = line.match(re), after = m0 ? line.slice(m0.index + m0[0].length).split(/건폐율|용적률|조경|높이|최고\s*층수/)[0] : '';
-      const near = grab(after), own = near.length ? near : grab(line), values = own.length ? own : grab(pg.lines.slice(i + 1, i + 7).join(' ')).slice(0, 4);
+      const near = grab(after), own = near.length ? near : grab(line), values = [...new Set(own.length ? own : grab(pg.lines.slice(i + 1, i + 7).join(' ')).slice(0, 4))];
       hits.push({page: pg.page, head: heads.get(pg.page)[i] || '', section: !!pg.section, line, ctx, values, inBlock: blockPages.has(pg.page) || (b && normBlock(ctx).includes(b))});
     }
     hits.sort((x, y) => (y.inBlock - x.inBlock) || (y.values.length - x.values.length) || (x.page - y.page));
