@@ -129,7 +129,7 @@ body{background:#F3F3F1}
 .guide-box{border:1.5px solid #E8382F;border-radius:8px;padding:14px 16px;margin:0 0 18px;background:#FFFBFA}
 .gb-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.gb-head b{font-size:15px}
 .gb-link{background:#E8382F;color:#fff!important;text-decoration:none;padding:7px 12px;border-radius:6px;font-size:13px}
-.gb-row{display:grid;grid-template-columns:200px minmax(0,1fr);gap:12px;align-items:end;margin-top:8px}
+.gb-row{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;align-items:end;margin-top:8px}
 .gb-drop{position:relative;border:1.5px dashed #E0A39E;border-radius:8px;padding:14px;text-align:center;color:#8A4A45;cursor:pointer;background:#fff;margin:0}
 .gb-drop.over{background:#FDECEA}.gb-drop input{position:absolute;inset:0;opacity:0;cursor:pointer;margin:0;min-height:0}
 .gb-topic{margin:8px 0;padding-top:6px}.gb-hit{display:grid;grid-template-columns:minmax(44px,140px) minmax(0,1fr) auto;gap:8px;align-items:start;padding:6px 0;border-bottom:1px solid #F0F0EE;font-size:12.5px}
