@@ -172,7 +172,7 @@ function addSummaries(p,rows,L){
   sunlight:()=>'정북 쪽 인접 대지경계선에서 높이 10 m 이하 부분은 1.5 m 이상, 10 m 초과 부분은 해당 높이의 1/2 이상 띄움',
   landscape:()=>L.landscape!=null?`대지면적의 ${L.landscape}% 이상 조경 → ${F(L.landscapeArea)} ㎡ 이상`:'대지면적 200 ㎡ 이상이면 조경 설치 (면적 비율은 조례)',
   setback:()=>'건축선·인접 대지경계선에서 띄울 거리는 용도·규모별로 조례에서 정함 (시행령 별표 2 범위)',
-  parking:()=>L.parking!=null?`부설주차장 ${F(L.parking)}대 이상 (${L.parkingBasis||'조례 기준'})`:'주용도·시설면적이 정해지면 조례 기준으로 대수 산정',
+  parking:()=>L.parking!=null?(L.parkingHow?`${L.parkingHow} → 부설주차장 ${F(L.parking)}대 이상 (0.5 이상 1대, 1대 미만 0대 · ${L.parkingBasis||'설치기준'})`:`부설주차장 ${F(L.parking)}대 이상 (${L.parkingBasis||'설치기준'})`):'주용도·시설면적이 정해지면 설치기준으로 대수 산정',
   district:()=>'지구단위계획 시행지침의 용도·건폐율·용적률·높이·건축선이 우선 적용',
   development:()=>'형질변경·토지분할 등을 수반하면 개발행위허가 필요 (건축허가 시 의제 처리)'
  };
@@ -271,7 +271,7 @@ export function reviewProject(p){
  limits.parkingHouse=null;{const A=limits.parkingArea,f2=v=>(Math.round(v*100)/100).toLocaleString('ko-KR');let raw=null,how='';
   if(A!=null&&parkNat?.house&&number(p.manual.parkingUnit)==null){const h=parkNat.house;if(A<=h.min){raw=A/100;how=`시설면적 ${f2(A)}㎡ ≤ ${h.min}㎡ → 비고4: ${f2(A)} ÷ 100 = ${f2(raw)}대`;}else if(A<=h.base){raw=1;how=`시설면적 ${f2(A)}㎡ (${h.min}㎡ 초과 ${h.base}㎡ 이하) → 1대`;}else{raw=1+(A-h.base)/h.step;how=`1 + (시설면적 ${f2(A)}㎡ − ${h.base}㎡) ÷ ${h.step}㎡ = ${f2(raw)}대`;}limits.parkingBasis=`「주차장법 시행령」 별표1 ${parkNat.row} 단독주택`;limits.parkingHouse=h;}
   else if(A!=null&&limits.parkingUnit>0){raw=A/limits.parkingUnit;how=`시설면적 ${f2(A)}㎡ ÷ ${f2(limits.parkingUnit)}㎡ = ${f2(raw)}대`;}
-  if(raw!=null){const fl=Math.floor(raw),r=raw<1?0:(raw-fl>=0.5?fl+1:fl);limits.parking=r;limits.parkingRaw=raw;limits.parkingFormula=`[${limits.parkingBasis||'설치기준'}${limits.parkingPurposeAssumed?' · 주용도 미선택으로 '+parkPurpose+' 가정':''}] ${how} → 비고6(소수점 0.5 이상은 1대, 총 1대 미만은 0대) 적용 = ${r}대 · 시설면적 = ${limits.planLabel}${number(p.manual.parkingArea)!=null?'(수동 입력)':''}`;}
+  if(raw!=null){const fl=Math.floor(raw),r=raw<1?0:(raw-fl>=0.5?fl+1:fl);limits.parking=r;limits.parkingRaw=raw;limits.parkingHow=how;limits.parkingFormula=`[${limits.parkingBasis||'설치기준'}${limits.parkingPurposeAssumed?' · 주용도 미선택으로 '+parkPurpose+' 가정':''}] ${how} → 비고6(소수점 0.5 이상은 1대, 총 1대 미만은 0대) 적용 = ${r}대 · 시설면적 = ${limits.planLabel}${number(p.manual.parkingArea)!=null?'(수동 입력)':''}`;}
   else{limits.parking=null;limits.parkingFormula=A==null?'시설면적(연면적) 미산정':'주차 설치기준 원문 미수신 — 산정 불가';}}
  const tier=landscapeAuto?null:landscapeTier(o.building,planG??limits.maxGross,area);limits.landscapeTier=tier;
  limits.landscape=number(p.manual.landscape)??landscapeAuto?.value??tier?.value??null;
