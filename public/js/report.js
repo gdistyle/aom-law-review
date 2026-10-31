@@ -179,7 +179,7 @@ function maxScale(P) {
     ['적용 용적률', l.far?.value != null ? `${fmt(l.far.value)} %` : '', area != null && l.far?.value != null ? `${fmt(area, 2)} ㎡ × ${fmt(l.far.value)} %` : '', !!l.far?.uncertain],
     ['법정 최대 건축면적', `${fmt(l.maxFootprint, 2)} ㎡ (${py(l.maxFootprint)} 평)`, '대지면적 × 적용 건폐율', L.unsure],
     ['법정 최대 연면적', l.maxGross != null ? `${fmt(l.maxGross, 2)} ㎡ (${py(l.maxGross)} 평)` : '', '용적률 산정용 연면적 (별도 상한 있을 시 상한 적용)', L.unsure],
-    ['지상 최대 층수', L.floors ? `${L.floors} 층` : '', L.floorsByRatio ? '건폐율 가득 적층 시 비율 산정치' : (l.legalHeight?.lines?.[0] || '법령 층수 제한'), L.floorsByRatio],
+    L.floorsByRatio ? ['법정 층수 제한', '없음', `건폐율 가득 채워 쌓으면 ${L.floors ?? '-'}층 (용적률 ÷ 건폐율). 건축면적을 줄이면 더 높게 계획 가능 — 일조 사선·공동주택 인동거리·대지 안의 공지로 제한됨`, true] : ['지상 최대 층수', L.floors ? `${L.floors} 층` : '', l.legalHeight?.lines?.[0] || '법령 층수 제한', false],
     ['부설주차', l.parking != null ? `${fmt(l.parking)} 대` : '', l.parkingFormula || '', !!l.parkingPurposeAssumed || L.unsure],
     ['조경면적', l.landscapeExempt ? '조경 의무 면제 대상' : l.landscapeArea != null ? `${fmt(l.landscapeArea, 2)} ㎡ 이상` : '', l.landscapeFormula || '', L.unsure && !l.landscapeExempt]
   ].map(x => x[1] ? x : [x[0], '산정 불가', x[2] || '필요 자료(용도지역·대지면적·주용도·조례 원문) 미확보', true]);
@@ -188,7 +188,7 @@ function maxScale(P) {
     ['주용도', P.purpose || '미선택', P.purpose ? '05 계획 조건에서 선택' : '주용도 미선택 — 부설주차·조경 등은 가정값으로 산정', !P.purpose],
     ['부용도', P.purpose2 || '없음', '', false],
     ['행위 구분', P.operation || '신축', '', false],
-    ['지상 층수', fl ? `${fl} 층` : '', fl && L.floors && fl === L.floors ? '법정 최대 층수 적용' : fl ? `법정 최대 ${L.floors ?? '-'}층 중 선택` : '', L.floorsByRatio],
+    ['지상 층수', fl ? `${fl} 층` : '', fl && L.floors && fl === L.floors ? (L.floorsByRatio ? '건폐율 가득 채운 층수 적용 (법정 층수 제한 없음)' : '법정 최대 층수 적용') : fl ? (L.floorsByRatio ? `건폐율 가득 채운 층수 ${L.floors}층 중 선택` : `법정 최대 ${L.floors ?? '-'}층 중 선택`) : '', L.floorsByRatio],
     ['지하 층수', bs ? `${bs} 층` : '없음', '', false]
   ].filter(x => x[1]);
   return h1('Ⅱ', '계획 조건 및 법정 최대 규모') + h2('계획 조건') + table([3000, 3600, BODY_W - 6600], ['항 목', '적용', '비 고'], plan.map(([k, v, f, red]) => [{t: k, b: true, jc: 'center'}, {t: v, b: true, red, jc: 'center'}, {t: f, sz: 16, color: GRAY, red}]), {zebra: true})
