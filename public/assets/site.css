@@ -261,3 +261,4 @@ body{background:#F3F3F1}
 .sh-nc{fill:#fff;stroke:#303236;stroke-width:1.2}.sh-n{fill:#303236}.sh-nt{font:700 13px sans-serif;fill:#303236}.sh-sunc{fill:#fff;fill-opacity:.85;stroke:#9a9da1;stroke-dasharray:3 3}.sh-ray{stroke:#d18a00;stroke-width:1.5}.sh-t{font:11px sans-serif;fill:#303236}.sh-scale{fill:#303236}
 .sh-table{margin-top:8px}.sh-table td{text-align:center}
 .sh-cap{font-weight:700}
+.sh-hour{opacity:.13}.sh-hour path{fill:#2b2c30;stroke:#2b2c30;stroke-width:.4}.sh-bld{stroke:none!important}

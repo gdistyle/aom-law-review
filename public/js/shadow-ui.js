@@ -41,7 +41,8 @@ export function renderShadow(box, p, model, site, state = {}) {
   try { for (const f of (p.geometry?.parcels || [])) { const polys = f.geometry?.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry?.type === 'MultiPolygon' ? f.geometry.coordinates : []; for (const pg of polys) around += `<path d="${path(pg[0].map(site.project))}" class="sh-par"/>`; } } catch {}
   // 그림자
   let shadows = '';
-  for (const o of hours) { if (!o.v) continue; for (const L of model.layers) for (const pc of L.pieces) shadows += `<path d="${path(layerShadow(pc, L.z, L.height, o.v))}" class="sh-shadow"/>`; }
+  // 시각마다 한 묶음(그룹 투명도)으로 그려, 같은 시각 안의 겹침은 진해지지 않고 '시간 겹침'만 진해지게 함
+  for (const o of hours) { if (!o.v) continue; let g = ''; for (const L of model.layers) for (const pc of L.pieces) g += `<path d="${path(layerShadow(pc, L.z, L.height, o.v))}"/>`; shadows += `<g class="sh-hour">${g}</g>`; }
   const foot = model.layers[0]?.pieces.map(pc => `<path d="${path(pc)}" class="sh-bld"/>`).join('') || '';
   const siteP = site.rings.map(r => `<path d="${path(r)}" class="sh-site"/>`).join('');
   // 태양 방향 화살표(오른쪽 아래 원)
