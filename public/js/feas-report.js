@@ -34,7 +34,7 @@ function inputRows(x) {
   add('연면적', `${fmt(x.gross, 2)} ㎡ (${fmt(x.gross * 0.3025, 2)} 평)`, grossIn ? '직접 입력값' : '법정 최대 연면적(건폐율·용적률 산술 상한) 적용 — 실제 설계 규모와 다를 수 있음', !grossIn);
   if (f.landMode === 'buy') {
     const ref = num(f._landRaw) == null;
-    add('토지 매입가', `${(Math.round(x.landCost / 1e4 * 100) / 100).toLocaleString('ko-KR')} 만 원 (${krw(x.landCost)})`, ref ? '공시지가 × 대지면적 참고값 — 실거래가·감정가와 다름' : '직접 입력값', ref);
+    add('토지 매입가', `${(Math.round(x.landCost / 1e4 * 100) / 100).toLocaleString('ko-KR')} 만 원 (${krw(x.landCost)})`, ref ? (a.multi ? '필지별 공시지가 × 필지별 면적 합계 참고값 — 실거래가·감정가와 다름' : '공시지가 × 대지면적 참고값 — 실거래가·감정가와 다름') : '직접 입력값', ref);
   }
   const nice = v => (Math.round(v * 100) / 100).toLocaleString('ko-KR', {maximumFractionDigits: 2});
   const unit = (k, label, u, desc) => { const v = num(f[k]); const txt = v == null ? '미입력 (0으로 계산)' : u === '원' ? `${nice(toUser(k, v))} 만 원 (${krw(v)})` : `${nice(toUser(k, v))} 만 원/평${u.includes('월') ? '·월' : ''} (${won(v)} ${u})`; add(label, txt, desc, v == null || def(k)); };

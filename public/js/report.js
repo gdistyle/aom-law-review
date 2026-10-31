@@ -5,6 +5,7 @@ import {esc, fmt, displayDate, titleOf, totalArea, selectedBuilding} from './cor
 import {shortLaw} from './legal.js';
 import {scaleChecklist} from './checklist.js';
 import {stripMarks} from './context.js';
+import {parcelRows} from './multiparcel.js';
 
 const ORANGE = 'F37021', DARK = '303236', GRAY = '6B6E73', LINE = 'D9D9D6', SOFT = 'FFF4EC', HEAD = '3A3B3F', RED = 'E00000';
 const PAGE_W = 16838, PAGE_H = 11906, MARGIN = 1134, BODY_W = PAGE_W - MARGIN * 2; // A4 가로, 좌우 2cm
@@ -127,6 +128,16 @@ function siteOverview(P) {
     ['지역·지구 등', [...new Set(zones)].join(', '), (P.land?.zones || []).some(z => z.uncertain)]
   ].filter(x => x[1]);
   let x = h1('Ⅰ', '대지 개요') + table([3000, BODY_W - 3000], null, rows.map(([k, v, red]) => [{t: k, b: true, fill: 'F2F2F0', jc: 'center'}, {t: v, red}]));
+  const PR = parcelRows(P);
+  if (PR.length > 1) {
+    const tot = PR.reduce((s, q) => s + (q.area || 0), 0), zs = new Set(PR.map(q => q.zone)), M = P.review?.multi;
+    const cw = [1500, 4300, 1700, 1500, 2600]; cw.push(BODY_W - cw.reduce((s, v) => s + v, 0));
+    x += h2(`필지별 현황 (${PR.length}필지)`) + table(cw, ['구분', '지번', '면적 (㎡)', '지목', '용도지역', '공시지가 (원/㎡)'],
+      [...PR.map((q, i) => [{t: i ? '추가 ' + i : '대표', jc: 'center'}, q.address || '', {t: q.area != null ? fmt(q.area, 2) : '미수집', jc: 'right', red: q.area == null}, {t: q.category, jc: 'center'}, {t: (q.zone || '미수집') + (new Set(q.zones).size > 1 ? ' (필지 안에서 나뉨)' : ''), jc: 'center', red: !q.zone || new Set(q.zones).size > 1}, {t: q.price != null ? fmt(q.price) : '미수집', jc: 'right', red: q.price == null}]),
+       [{t: '합계', jc: 'center', b: true, fill: 'FFF4EC'}, {t: '', fill: 'FFF4EC'}, {t: fmt(tot, 2), jc: 'right', b: true, fill: 'FFF4EC'}, {t: '', fill: 'FFF4EC'}, {t: zs.size > 1 ? `용도지역 ${zs.size}개` : [...zs][0] || '', jc: 'center', b: true, red: zs.size > 1, fill: 'FFF4EC'}, {t: '', fill: 'FFF4EC'}]], {sz: 16, pad: 40});
+    if (zs.size > 1 && M?.ruleText) x += p(`※ 용도지역이 서로 다른 필지를 합친 대지 : ${M.ruleText}. 대지 전체 환산 건폐율 ${fmt(P.review.limits.bcr?.value)}% · 용적률 ${fmt(P.review.limits.far?.value)}% (「국토의 계획 및 이용에 관한 법률」 제84조, 같은 법 시행령 제94조, Ⅲ장 원문 인용).`, {red: true, sz: 17, after: 80});
+    if (M?.note) x += p('※ ' + M.note, {red: true, sz: 17, after: 80});
+  }
   const b = selectedBuilding(P);
   x += h2('기존 건축물');
   if (b) {
