@@ -163,6 +163,15 @@ async function terrain(path,env){
  if(!contentType.includes('png')||bytes[0]!==137||bytes[1]!==80)throw new Error('UPSTREAM_FORMAT');
  return new Response(bytes,{headers:{'Content-Type':'image/png','Cache-Control':'public, max-age=86400','X-Content-Type-Options':'nosniff'}});
 }
+/* 같은 조회는 Cloudflare 무료 캐시에 저장해 기관 API 호출 수를 줄인다 (성공 응답만, 개인 정보 없음). */
+async function cached(u,ttl,make){
+ const cache=typeof caches!=='undefined'?caches.default:null;
+ const key=new Request('https://cache.aom-law-review/'+u.pathname+'?'+[...u.searchParams].sort(([a],[b])=>a<b?-1:1).map(([k,v])=>encodeURIComponent(k)+'='+encodeURIComponent(v)).join('&'));
+ if(cache){try{const hit=await cache.match(key);if(hit){const r=new Response(hit.body,hit);r.headers.set('X-Cache','HIT');return r;}}catch{}}
+ const res=await make();
+ if(cache&&res.ok){try{const body=await res.clone().text();if(/"ok":true/.test(body)){const store=new Response(body,{headers:{'Content-Type':res.headers.get('Content-Type')||'application/json; charset=utf-8','Cache-Control':'public, max-age='+ttl}});await cache.put(key,store);}}catch{}}
+ return res;
+}
 export default {async fetch(request,env){
  const u=new URL(request.url);if(!u.pathname.startsWith('/api/'))return env.ASSETS.fetch(request);
  if(request.method!=='GET')return fail('METHOD_NOT_ALLOWED','GET 요청만 허용',405);
@@ -170,10 +179,10 @@ export default {async fetch(request,env){
  if(!rateLimit(request))return fail('RATE_LIMIT','요청 횟수 제한',429);
  try{
   if(u.pathname==='/api/config')return json({ok:true,kakaoJsKey:env.KAKAO_JS_KEY||'',lawOc:env.LAW_OC||'',vworldKey:env.VWORLD_KEY||'',vworldDomain:env.VWORLD_DOMAIN||'',vworldBuildingLayer:env.VWORLD_BUILDING_LAYER||'',vworldFloorsField:env.VWORLD_BUILDING_FLOORS_FIELD||'',services:{kakao:configured(env,'KAKAO_REST_KEY'),building:configured(env,'DATA_GO_KR_KEY'),land:configured(env,'VWORLD_KEY'),law:configured(env,'LAW_OC')},eumTemplate:publicEumTemplate(env.EUM_PARCEL_URL_TEMPLATE),buildingLayer:!!env.VWORLD_BUILDING_LAYER});
-  if(u.pathname==='/api/address')return await address(u,env);
-  if(u.pathname==='/api/nearby')return await nearby(u,env);
-  if(u.pathname==='/api/buildings')return await buildings(u,env);
-  if(u.pathname==='/api/land')return await land(u,env);
+  if(u.pathname==='/api/address')return await cached(u,86400*7,()=>address(u,env));
+  if(u.pathname==='/api/nearby')return await cached(u,86400*7,()=>nearby(u,env));
+  if(u.pathname==='/api/buildings')return await cached(u,86400,()=>buildings(u,env));
+  if(u.pathname==='/api/land')return await cached(u,86400,()=>land(u,env));
   if(u.pathname==='/api/spatial')return await spatial(u,env);
   if(u.pathname==='/api/law')return await law(u,env);
   if(u.pathname.startsWith('/api/terrain/'))return await terrain(u.pathname,env);
