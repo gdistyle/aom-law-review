@@ -22,7 +22,10 @@ test('내진·에너지·허가권자·다중이용', () => {
   assert.equal(get(duties(P(1, 0, 250, 250)), '구조'), 'yes');
   assert.equal(get(duties(P(1, 0, 499, 499)), '에너지'), 'no');
   assert.equal(get(duties(P(1, 0, 500, 500)), '에너지'), 'yes');
-  assert.equal(get(duties(P(21, 0, 100, 2100)), '건축허가권자'), 'yes');
+  assert.equal(get(duties({...P(21, 0, 100, 2100), location: {region1: '서울'}}), '건축허가권자'), 'yes');
+  assert.equal(get(duties({...P(21, 0, 100, 2100), location: {region1: '경기'}}), '건축허가권자'), 'no');
+  assert.equal(get(duties(P(1, 0, 600, 600, '단독주택')), '에너지'), 'no');
+  assert.equal(get(duties(P(1, 0, 300, 300, '창고시설')), '구조'), 'no');
   assert.equal(get(duties(P(5, 0, 1200, 6000, '판매시설')), '다중이용'), 'yes');
   assert.equal(get(duties(P(5, 0, 1200, 6000, '업무시설')), '다중이용'), 'no');
   assert.equal(get(duties(P(null, 0, 1, 1)), '승강기'), 'unknown');

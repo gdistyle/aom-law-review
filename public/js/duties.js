@@ -23,16 +23,17 @@ export function duties(p) {
   const s = planScale(p), rows = [];
   const add = (item, cond, basis, scale, r) => rows.push({item, result: cond == null ? 'unknown' : cond ? 'yes' : 'no', basis, scale, ref: r});
   const F = s.floors, G = s.gross, H = s.height;
-  add('건축허가권자 (특별시장·광역시장 허가)', F == null || G == null ? null : F >= 21 || G >= 100000,
-    '21층 이상 또는 연면적 10만 ㎡ 이상이면 특별시장·광역시장 허가', `지상 ${F ?? '-'}층 · 연면적 ${fmt(G)} ㎡`, ref('건축법', 11));
+  const metro = /^(서울|부산|대구|인천|광주|대전|울산)/.test(String(p.location?.region1 || p.address || '').trim());
+  add('건축허가권자 (특별시장·광역시장 허가)', !metro ? false : F == null || G == null ? null : F >= 21 || G >= 100000,
+    '특별시·광역시 안에서 21층 이상 또는 연면적 10만 ㎡ 이상이면 특별시장·광역시장 허가 (그 밖의 지역은 시장·군수·구청장 허가)', `${metro ? '특별시·광역시' : '특별시·광역시 아님'} · 지상 ${F ?? '-'}층 · 연면적 ${fmt(G)} ㎡`, ref('건축법', 11));
   add('승강기 설치', F == null || G == null ? null : F >= 6 && G >= 2000,
     '6층 이상으로서 연면적 2,000 ㎡ 이상 (일부 예외 있음)', `지상 ${F ?? '-'}층 · 연면적 ${fmt(G)} ㎡`, ref('건축법', 64));
   add('비상용 승강기 설치', H == null ? null : H > 31,
     '높이 31 m 초과', `높이 약 ${H == null ? '-' : H.toFixed(1)} m (층고 가정)`, ref('건축법', 64));
-  add('구조 안전 확인 (내진 설계)', /단독주택|공동주택|아파트|연립|다세대|다가구|다중주택/.test(s.purpose) ? true : F == null || G == null ? null : F >= 2 || G >= 200 || (H != null && H >= 13),
-    '2층 이상, 연면적 200 ㎡ 이상, 높이 13 m 이상, 단독주택·공동주택 등 (목구조는 3층·500 ㎡)', `지상 ${F ?? '-'}층 · 연면적 ${fmt(G)} ㎡`, ref('건축법 시행령', 32));
-  add('에너지 절약 계획서 제출', G == null ? null : G >= 500,
-    '연면적 합계 500 ㎡ 이상 (일부 용도 제외)', `연면적 ${fmt(G)} ㎡`, ref('녹색건축물 조성 지원법 시행령', 10));
+  add('구조 안전 확인 (내진 설계)', /단독주택|공동주택|아파트|연립|다세대|다가구|다중주택/.test(s.purpose) ? true : F == null || G == null ? null : F >= 2 || (G >= 200 && !/창고|축사|작물/.test(s.purpose)) || (H != null && H >= 13),
+    '2층 이상, 연면적 200 ㎡ 이상(창고·축사·작물 재배사 제외), 높이 13 m 이상, 처마 높이 9 m 이상, 기둥 간격 10 m 이상, 단독주택·공동주택 등 (목구조는 3층·500 ㎡)', `지상 ${F ?? '-'}층 · 연면적 ${fmt(G)} ㎡`, ref('건축법 시행령', 32));
+  add('에너지 절약 계획서 제출', /단독주택|다가구|다중주택|공관/.test(s.purpose) && !/공동주택/.test(s.purpose) ? false : G == null ? null : G >= 500,
+    '연면적 합계 500 ㎡ 이상 (단독주택, 동·식물원, 냉난방 설비가 없는 일부 용도 등 제외)', `연면적 ${fmt(G)} ㎡`, ref('녹색건축물 조성 지원법 시행령', 10));
   add('다중이용 건축물 (구조기술사 협력·상주 감리 등)', F == null || G == null ? null : F >= 16 ? true : G < 5000 ? false : MULTI_SURE.test(s.purpose) ? true : MULTI_MAYBE.test(s.purpose) ? null : false,
     '16층 이상, 또는 문화·집회(동물원·식물원 제외)·종교·판매·여객용 운수·종합병원·관광숙박 바닥면적 합계 5,000 ㎡ 이상', `지상 ${F ?? '-'}층 · 주용도 ${s.purpose || '미선택'}`, ref('건축법 시행령', 2));
   return {rows, scale: s};
