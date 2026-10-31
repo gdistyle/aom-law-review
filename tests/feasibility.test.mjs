@@ -66,3 +66,16 @@ test('민감도 표 3×3, 가운데는 기본값', () => {
   assert.equal(s.length, 3); assert.equal(s[1][1], feasibility(x).metric);
   assert.ok(s[0][2] > s[1][1] && s[2][0] < s[1][1]);
 });
+
+test('분양·임대 면적 비율: 수입·보증금·손익분기에 반영 (손계산)', () => {
+  const s = feasibility({...base, mode: 'sale', saleUnit: 6_000_000, saleRate: 100, saleCostRate: 3, netRatio: 70});
+  assert.equal(s.netArea, 700);
+  assert.equal(Math.round(s.revenue), 4_200_000_000);
+  assert.equal(Math.round(s.saleCost), 126_000_000);
+  assert.equal(Math.round(s.total), 4_430_800_000 + 199_386_000 + 126_000_000);
+  assert.ok(Math.abs(feasibility({...base, mode: 'sale', saleRate: 100, saleCostRate: 3, netRatio: 70, saleUnit: s.breakEvenUnit}).profit) < 1e-3);
+  const l = feasibility({...base, mode: 'lease', rentUnit: 20_000, depositUnit: 200_000, vacancy: 10, opexRate: 15, netRatio: 80});
+  assert.equal(Math.round(l.grossRent), 20_000 * 800 * 12 * 0.9);
+  assert.equal(Math.round(l.deposit), 200_000 * 800 * 0.9);
+  assert.equal(feasibility({...base, mode: 'sale', saleUnit: 1}).netArea, 1000);
+});

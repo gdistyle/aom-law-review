@@ -27,7 +27,7 @@ export function npv(rate, cfs) { return cfs.reduce((s, c, t) => s + c / Math.pow
  * @param {object} x 입력
  *  mode: 'sale' | 'lease' | 'own'
  *  landMode: 'buy' | 'own'
- *  siteArea, gross, landCost, buildUnit, designRate, otherCost, contRate,
+ *  siteArea, gross, netRatio(분양·임대 면적 비율 %), landCost, buildUnit, designRate, otherCost, contRate,
  *  landTaxRate, buildTaxRate, loanRatio, loanRate, months,
  *  saleUnit, saleRate, saleCostRate,
  *  rentUnit, depositUnit, vacancy, opexRate, capRate, holdYears, discountRate,
@@ -45,10 +45,12 @@ export function feasibility(x = {}) {
   const S = L + landTax + C + D + buildTax + O + cont;               // 이자·분양경비 전 사업비
   const loan = S * pct(x.loanRatio);
   const interest = loan * pct(x.loanRate) * z(x.months) / 12;        // 대출 전액이 기간 내내 사용된다고 가정(보수적)
-  const out = {gross, land: L, landTax, build: C, design: D, buildTax, other: O, cont, subtotal: S, loan, interest};
+  const net = (n(x.netRatio) ?? 100) / 100;                          // 분양·임대 가능 면적 비율(연면적 대비), 미입력 시 100%
+  const netArea = gross * net;
+  const out = {gross, netArea, land: L, landTax, build: C, design: D, buildTax, other: O, cont, subtotal: S, loan, interest};
 
   if (x.mode === 'sale') {
-    const revenue = z(x.saleUnit) * gross * pct(x.saleRate);
+    const revenue = z(x.saleUnit) * netArea * pct(x.saleRate);
     const saleCost = revenue * pct(x.saleCostRate);
     const total = S + interest + saleCost;
     const profit = revenue - total;
@@ -56,15 +58,15 @@ export function feasibility(x = {}) {
     Object.assign(out, {revenue, saleCost, total, equity, profit,
       margin: total > 0 ? profit / total : null,
       roe: equity > 0 ? profit / equity : null,
-      breakEvenUnit: gross > 0 && pct(x.saleRate) > 0 && (1 - pct(x.saleCostRate)) > 0 ? (S + interest) / (gross * pct(x.saleRate) * (1 - pct(x.saleCostRate))) : null});
+      breakEvenUnit: netArea > 0 && pct(x.saleRate) > 0 && (1 - pct(x.saleCostRate)) > 0 ? (S + interest) / (netArea * pct(x.saleRate) * (1 - pct(x.saleCostRate))) : null});
     out.metric = out.margin;
   } else if (x.mode === 'lease') {
     const total = S + interest;
     const occ = 1 - pct(x.vacancy);
-    const grossRent = z(x.rentUnit) * gross * 12 * occ;
+    const grossRent = z(x.rentUnit) * netArea * 12 * occ;
     const opex = grossRent * pct(x.opexRate);
     const noi = grossRent - opex;
-    const deposit = z(x.depositUnit) * gross * occ;
+    const deposit = z(x.depositUnit) * netArea * occ;
     const netInvest = total - deposit;
     const value = pct(x.capRate) > 0 ? noi / pct(x.capRate) : null;
     const years = Math.max(0, Math.round(z(x.holdYears)));
@@ -89,6 +91,8 @@ export function feasibility(x = {}) {
 /** 판정: 손실·대출금리 미만 → 미흡 / 목표 미달 → 검토 필요 / 목표 이상 → 양호 */
 export function verdict(x, r) {
   if (x.mode === 'own') return {level: 'info', label: '직접 사용', text: '수입이 없는 직접 사용 계획으로, 총사업비와 ㎡당 사업비만 산출함.'};
+  const miss = [n(x.buildUnit) == null && '공사비 단가', x.mode === 'sale' && n(x.saleUnit) == null && '분양가 단가', x.mode === 'lease' && n(x.rentUnit) == null && '월 임대료 단가'].filter(Boolean);
+  if (miss.length) return {level: 'none', label: '판정 불가', text: `필수 항목(${miss.join(' · ')})을 넣어야 판정함.`};
   const m = r.metric, target = n(x.target), rate = n(x.loanRate);
   if (m == null || !(r.total > 0)) return {level: 'none', label: '판정 불가', text: '공사비 단가와 분양가(또는 임대료)를 입력하면 판정함.'};
   const p = v => (v * 100).toFixed(1) + '%';

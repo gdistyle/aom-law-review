@@ -1,7 +1,7 @@
 /* 사업성 검토 자료 (개략 · 초안) — 워드. 건축 사전 검토 자료와 같은 서식(A4 가로)으로 내용만 다르게. */
 import {packDocx, W} from './report.js';
 import {feasibility, sensitivity, FEAS_NOTE} from './feasibility.js';
-import {FEAS_DEFAULTS, FEAS_BASIS, krw} from './feas-ui.js';
+import {FEAS_DEFAULTS, FEAS_BASIS, krw, toUser} from './feas-ui.js';
 import {displayDate, fmt} from './core.js';
 
 const {r, p, gap, table, h1, h2, note, picture, ORANGE, GRAY, SOFT, BODY_W} = W;
@@ -34,22 +34,24 @@ function inputRows(x) {
   add('연면적', `${fmt(x.gross, 2)} ㎡ (${fmt(x.gross * 0.3025, 2)} 평)`, grossIn ? '직접 입력값' : '법정 최대 연면적(건폐율·용적률 산술 상한) 적용 — 실제 설계 규모와 다를 수 있음', !grossIn);
   if (f.landMode === 'buy') {
     const ref = num(f._landRaw) == null;
-    add('토지 매입가', `${won(x.landCost)} 원 (${krw(x.landCost)})`, ref ? '공시지가 × 대지면적 참고값 — 실거래가·감정가와 다름' : '직접 입력값', ref);
+    add('토지 매입가', `${(Math.round(x.landCost / 1e4 * 100) / 100).toLocaleString('ko-KR')} 만 원 (${krw(x.landCost)})`, ref ? '공시지가 × 대지면적 참고값 — 실거래가·감정가와 다름' : '직접 입력값', ref);
   }
-  const unit = (k, label, u, desc) => { const v = num(f[k]); add(label, v == null ? '미입력 (0으로 계산)' : `${won(v)} ${u}`, desc, v == null || def(k)); };
+  const nice = v => (Math.round(v * 100) / 100).toLocaleString('ko-KR', {maximumFractionDigits: 2});
+  const unit = (k, label, u, desc) => { const v = num(f[k]); const txt = v == null ? '미입력 (0으로 계산)' : u === '원' ? `${nice(toUser(k, v))} 만 원 (${krw(v)})` : `${nice(toUser(k, v))} 만 원/평${u.includes('월') ? '·월' : ''} (${won(v)} ${u})`; add(label, txt, desc, v == null || def(k)); };
   const rate = (k, label, desc) => { const v = num(f[k]); add(label, v == null ? '미입력 (0으로 계산)' : `${v} %`, desc, v == null || def(k)); };
-  unit('buildUnit', '공사비 단가', '원/㎡', '연면적 1㎡당 공사비');
+  if (f.mode !== 'own') { const v = num(f.netRatio); add('분양·임대 면적 비율', v == null ? '미입력 (100%로 계산)' : `${v} %`, '연면적 중 실제 분양·임대 가능 면적 (주차장·공용부 제외)', v == null); }
+  unit('buildUnit', '공사비 단가', '원/㎡', '연면적 1평당 공사비');
   rate('designRate', '설계·감리비', '공사비 대비');
-  unit('otherCost', '기타 비용', '원', '인허가 부담금·측량·인입 공사 등');
+  unit('otherCost', '기타 비용', '원', '학교용지·광역교통·하수도 원인자 부담금, 측량·인입·철거 공사 등');
   rate('contRate', '예비비', '공사비 대비');
   if (f.landMode === 'buy') rate('landTaxRate', '토지 취득세율', FEAS_BASIS.landTaxRate);
   rate('buildTaxRate', '건물 취득세율', FEAS_BASIS.buildTaxRate);
   rate('loanRatio', '대출 비율', '이자·분양경비 전 사업비 대비');
   rate('loanRate', '대출 금리', '연 이자율');
   { const v = num(f.months); add('공사 기간', v == null ? '미입력 (0으로 계산)' : `${v} 개월`, '대출 이자 산정 기간', v == null); }
-  if (f.mode === 'sale') { unit('saleUnit', '분양가 단가', '원/㎡', '연면적 1㎡당 분양가'); rate('saleRate', '분양률', '전체 중 분양 완료 비율'); rate('saleCostRate', '분양 경비', '분양수입 대비 (대행·광고 등)'); }
+  if (f.mode === 'sale') { unit('saleUnit', '분양가 단가', '원/㎡', '분양 면적 1평당 분양가 (부가가치세 제외)'); rate('saleRate', '분양률', '전체 중 분양 완료 비율'); rate('saleCostRate', '분양 경비', '분양수입 대비 (대행·광고 등)'); }
   if (f.mode === 'lease') {
-    unit('rentUnit', '월 임대료 단가', '원/㎡·월', '연면적 1㎡당 월 임대료'); unit('depositUnit', '보증금 단가', '원/㎡', '연면적 1㎡당 보증금');
+    unit('rentUnit', '월 임대료 단가', '원/㎡·월', '임대 면적 1평당 월 임대료'); unit('depositUnit', '보증금 단가', '원/㎡', '임대 면적 1평당 보증금');
     rate('vacancy', '공실률', '임대되지 않는 비율'); rate('opexRate', '운영비', '임대수입 대비 (관리·수선·재산세 등)');
     rate('capRate', '환원율', '건물 가치 = 연 순수입 ÷ 환원율'); { const v = num(f.holdYears); add('보유 기간', v == null ? '' : `${v} 년`, '내부수익률 산정 기간', def('holdYears')); }
     rate('discountRate', '할인율', '순현재가치 산정용 기대 수익률');
@@ -62,7 +64,7 @@ function summary(x, R) {
   const v = R.verdict;
   const color = {good: '168C46', mid: ORANGE, bad: 'E00000'}[v.level] || GRAY;
   let cells = [['총사업비', krw(R.total)]];
-  if (x.mode === 'sale') cells.push(['예상 분양수입', krw(R.revenue)], ['예상 이익', krw(R.profit)], ['이익률 (사업비 대비)', pc(R.margin)], ['자기자본 수익률', pc(R.roe)], ['손익분기 분양가', R.breakEvenUnit != null ? won(R.breakEvenUnit) + ' 원/㎡' : '']);
+  if (x.mode === 'sale') cells.push(['예상 분양수입', krw(R.revenue)], ['예상 이익', krw(R.profit)], ['이익률 (사업비 대비)', pc(R.margin)], ['자기자본 수익률', pc(R.roe)], ['손익분기 분양가', R.breakEvenUnit != null ? `${(Math.round(toUser('saleUnit', R.breakEvenUnit) * 100) / 100).toLocaleString('ko-KR')} 만 원/평` : '']);
   else if (x.mode === 'lease') cells.push(['연 순수입 (NOI)', krw(R.noi)], ['임대 수익률', pc(R.yield)], ['투자금 회수 기간', R.payback != null ? R.payback.toFixed(1) + ' 년' : ''], ['건물 가치 (환원율 기준)', krw(R.value)], ['내부수익률 (IRR)', pc(R.irr)]);
   else cells.push(['연면적', `${fmt(x.gross, 2)} ㎡`], ['㎡당 사업비', R.perM2 != null ? won(R.perM2) + ' 원/㎡' : '']);
   const Wc = Math.floor(BODY_W / 3), rows = [];
@@ -71,9 +73,9 @@ function summary(x, R) {
     rows.push(g.map(([k]) => ({t: k, jc: 'center', color: GRAY, sz: 16, fill: 'F7F7F5'})));
     rows.push(g.map(([, val]) => ({t: val || (g.some(c => c[0]) ? '—' : ''), jc: 'center', b: true, sz: 24})));
   }
-  const zk = [['designRate', '설계·감리비'], ['contRate', '예비비'], ['otherCost', '기타 비용'], ['loanRatio', '대출 비율'], ['loanRate', '대출 금리'], ['months', '공사 기간'], ...(x.mode === 'sale' ? [['saleCostRate', '분양 경비']] : []), ...(x.mode === 'lease' ? [['vacancy', '공실률'], ['opexRate', '운영비'], ['capRate', '환원율']] : [])];
+  const zk = [...(x.mode !== 'own' ? [['netRatio', '분양·임대 면적 비율(100%로 계산)']] : []), ['designRate', '설계·감리비'], ['contRate', '예비비'], ['otherCost', '기타 비용'], ['loanRatio', '대출 비율'], ['loanRate', '대출 금리'], ['months', '공사 기간'], ...(x.mode === 'sale' ? [['saleCostRate', '분양 경비']] : []), ...(x.mode === 'lease' ? [['vacancy', '공실률'], ['opexRate', '운영비'], ['capRate', '환원율']] : [])];
   const zeros = x.mode === 'own' ? zk.slice(0, 6).filter(([k]) => num(x[k]) == null).map(([, l]) => l) : zk.filter(([k]) => num(x[k]) == null).map(([, l]) => l);
-  const zeroLine = zeros.length ? p(r(`※ 0으로 계산된 항목 ${zeros.length}개 : ${zeros.join(' · ')} — 해당 비용이 빠져 결과가 실제보다 유리하게 산출되었을 수 있음.`, {sz: 17, b: true, red: true}), {after: 100}) : '';
+  const zeroLine = zeros.length ? p(r(`※ 비어 있는 항목 ${zeros.length}개 : ${zeros.join(' · ')} — 비용이 0원으로, 면적 비율이 100%로 잡혀 결과가 실제보다 유리하게 산출되었을 수 있음.`, {sz: 17, b: true, red: true}), {after: 100}) : '';
   return h1('', '한눈에 보기', true) + zeroLine
     + p(r('판정  ', {sz: 20, b: true, color: GRAY}) + r(v.label, {sz: 30, b: true, color}) + r('   ' + v.text, {sz: 19}), {shd: SOFT, ind: 200, indR: 200, before: 80, after: 160})
     + table([Wc, Wc, BODY_W - Wc * 2], null, rows, {keep: true, sz: 16, pad: 40})
@@ -110,17 +112,17 @@ function costs(x, R) {
 function income(x, R) {
   let rows;
   if (x.mode === 'sale') rows = [
-    ['분양수입', '분양가 단가 × 연면적 × 분양률', won(R.revenue), krw(R.revenue)],
+    ['분양수입', '분양가 단가 × 분양 면적(연면적 × 면적 비율) × 분양률', won(R.revenue), krw(R.revenue)],
     ['총사업비', 'Ⅰ 합계', won(R.total), krw(R.total)],
     ['예상 이익', '분양수입 − 총사업비', won(R.profit), krw(R.profit)],
     ['이익률', '예상 이익 ÷ 총사업비', pc(R.margin), ''],
     ['자기자본 수익률', '예상 이익 ÷ (총사업비 − 대출금)', pc(R.roe), ''],
-    ['손익분기 분양가', '이익이 0이 되는 연면적 ㎡당 분양가', R.breakEvenUnit != null ? won(R.breakEvenUnit) + ' 원/㎡' : '', '']];
+    ['손익분기 분양가', '이익이 0이 되는 분양 면적 평당 분양가', R.breakEvenUnit != null ? `${(Math.round(toUser('saleUnit', R.breakEvenUnit) * 100) / 100).toLocaleString('ko-KR')} 만 원/평` : '', R.breakEvenUnit != null ? `${won(R.breakEvenUnit)} 원/㎡` : '']];
   else if (x.mode === 'lease') rows = [
-    ['연 임대수입', '월 임대료 단가 × 연면적 × 12 × (1 − 공실률)', won(R.grossRent), krw(R.grossRent)],
+    ['연 임대수입', '월 임대료 단가 × 임대 면적 × 12 × (1 − 공실률)', won(R.grossRent), krw(R.grossRent)],
     ['운영비', '연 임대수입 × 운영비율', won(R.opex), krw(R.opex)],
     ['연 순수입 (NOI)', '연 임대수입 − 운영비', won(R.noi), krw(R.noi)],
-    ['보증금 합계', '보증금 단가 × 연면적 × (1 − 공실률)', won(R.deposit), krw(R.deposit)],
+    ['보증금 합계', '보증금 단가 × 임대 면적 × (1 − 공실률)', won(R.deposit), krw(R.deposit)],
     ['실투자금', '총사업비 − 보증금 합계', won(R.netInvest), krw(R.netInvest)],
     ['임대 수익률', '연 순수입 ÷ 실투자금', pc(R.yield), ''],
     ['투자금 회수 기간', '실투자금 ÷ 연 순수입', R.payback != null ? R.payback.toFixed(1) + ' 년' : '', ''],
@@ -153,7 +155,8 @@ function verdictAndNotes(x, R) {
     + p(FEAS_NOTE, {red: true, sz: 18, after: 60, keep: true})
     + p('· 토지비는 감정평가 또는 실거래가, 공사비는 시공사 견적, 분양가·임대료는 인근 시세 조사로 재확인할 것.', {sz: 18, after: 40})
     + p('· 연면적은 법정 상한으로, 건축선·일조·주차·지구단위계획 등에 따라 실제 설계 면적은 줄어들 수 있음.', {sz: 18, after: 40})
-    + p('· 부가가치세·양도소득세·법인세·재산세 등 보유·처분 단계 세금과 금융 수수료는 반영하지 않음.', {sz: 18, after: 40})
+    + p('· 분양가·임대료는 부가가치세 제외 금액 기준이며, 부가가치세·양도소득세·법인세·재산세 등 보유·처분 단계 세금과 금융 수수료는 반영하지 않음.', {sz: 18, after: 40})
+    + p('· 건물 취득세는 공사비를 과세표준으로 가정함. 실제 과세표준에는 설계비 등 간접비가 포함될 수 있음(「지방세법」 시행령 취득가격 규정과 미대조).', {sz: 18, after: 40, red: true})
     + p('· 숫자를 바꾸어 다시 계산하려면 함께 제공하는 「사업수지 계산표(엑셀)」의 노란 칸을 수정할 것.', {sz: 18, after: 100})
     + h2('용어 풀이') + table([c1, BODY_W - c1], ['용어', '뜻'], terms.map(([k, d]) => [{t: k, jc: 'center', b: true}, d]), {zebra: true, sz: 16, pad: 40});
 }

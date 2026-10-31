@@ -6,13 +6,16 @@ def calc(x):
     lt=L*z(x['landTaxRate'])/100; C=z(x.get('buildUnit'))*g; D=C*z(x.get('designRate'))/100
     bt=C*z(x['buildTaxRate'])/100; O=z(x.get('otherCost')); ct=C*z(x.get('contRate'))/100
     S=L+lt+C+D+bt+O+ct; loan=S*z(x.get('loanRatio'))/100; I=loan*z(x.get('loanRate'))/100*z(x.get('months'))/12
-    o=dict(subtotal=S,interest=I,loan=loan)
+    net=(100.0 if x.get('netRatio') is None else float(x['netRatio']))/100; na=g*net
+    o=dict(subtotal=S,interest=I,loan=loan,netArea=na)
     if x['mode']=='sale':
-        R=z(x.get('saleUnit'))*g*z(x.get('saleRate'))/100; sc=R*z(x.get('saleCostRate'))/100; T=S+I+sc
-        o.update(total=T,revenue=R,profit=R-T,metric=(R-T)/T if T>0 else None)
+        R=z(x.get('saleUnit'))*na*z(x.get('saleRate'))/100; sc=R*z(x.get('saleCostRate'))/100; T=S+I+sc
+        sr=z(x.get('saleRate'))/100; scr=z(x.get('saleCostRate'))/100
+        be=(S+I)/(na*sr*(1-scr)) if na>0 and sr>0 and (1-scr)>0 else None
+        o.update(total=T,revenue=R,profit=R-T,metric=(R-T)/T if T>0 else None,breakEvenUnit=be)
     elif x['mode']=='lease':
-        T=S+I; occ=1-z(x.get('vacancy'))/100; gr=z(x.get('rentUnit'))*g*12*occ; noi=gr*(1-z(x.get('opexRate'))/100)
-        dep=z(x.get('depositUnit'))*g*occ; ni=T-dep; cap=z(x.get('capRate'))/100
+        T=S+I; occ=1-z(x.get('vacancy'))/100; gr=z(x.get('rentUnit'))*na*12*occ; noi=gr*(1-z(x.get('opexRate'))/100)
+        dep=z(x.get('depositUnit'))*na*occ; ni=T-dep; cap=z(x.get('capRate'))/100
         val=noi/cap if cap>0 else None
         yrs=round(z(x.get('holdYears')))
         cfs=[-ni]+[noi+((val-dep) if (t==yrs and val is not None) else 0) for t in range(1,yrs+1)] if ni>0 and yrs>0 else []
