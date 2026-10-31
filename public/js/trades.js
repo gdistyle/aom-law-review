@@ -49,7 +49,7 @@ const n1 = v => v == null || !Number.isFinite(v) ? '' : (Math.round(v * 10) / 10
 export function renderTrades(box, p, state, onLoad) {
   if (!box) return;
   if (!p.pnu) { box.innerHTML = ''; return; }
-  const head = `<h3>토지 실거래가 참고 <small>(국토교통부 실거래 신고 · 최근 12개월 · 같은 법정동)</small></h3>`;
+  const head = `<h3>토지 실거래가 참고</h3><p class="small tr-sub"><span>국토교통부 실거래 신고</span> · <span>최근 12개월</span> · <span>같은 법정동</span></p>`;
   const dong = p.parcels?.[0]?.dong || '';
   if (!state.data) {
     box.innerHTML = head + `<p class="small">버튼을 누르면 <b>${esc(dong || '같은 동')}</b>에서 최근 12개월 동안 신고된 토지 매매 가격을 불러옵니다. 토지 매입가를 정할 때 참고하십시오.</p>
@@ -59,14 +59,15 @@ export function renderTrades(box, p, state, onLoad) {
   }
   const S = tradeStats(state.data, {dong, jimok: p.land?.category?.value, zone: p.land?.zone?.value});
   const area = state.siteArea;
-  const row = (label, g) => g && g.n ? `<tr><th>${esc(label)}</th><td class="c">${g.n}건</td><td class="r">${n0(g.perM2)}</td><td class="r"><b>${n1(g.perPy)}</b></td><td class="r">${n0(g.min)} ~ ${n0(g.max)}</td><td class="r uncertain">${area ? n0(g.perM2 * area / 1e4) : ''}</td></tr>`
-    : `<tr><th>${esc(label)}</th><td class="c">0건</td><td colspan="4" class="muted">해당 거래 없음</td></tr>`;
+  const lab = l => { const m = l.match(/^(.*?) \((.*)\)$/); return m ? `${esc(m[1])}<br><small class="nw">(${esc(m[2])})</small>` : esc(l); };
+  const row = (label, g) => g && g.n ? `<tr><th>${lab(label)}</th><td class="c">${g.n}건</td><td class="r"><b>${n1(g.perPy)}</b></td><td class="r">${n0(g.perM2)}</td><td class="r">${n0(g.min)} ~ ${n0(g.max)}</td><td class="r uncertain">${area ? n0(g.perM2 * area / 1e4) : ''}</td></tr>`
+    : `<tr><th>${lab(label)}</th><td class="c">0건</td><td colspan="4" class="muted">해당 거래 없음</td></tr>`;
   let html = head;
   if (!S.dongCount) {
     html += `<p class="small">최근 12개월 동안 <b>${esc(dong)}</b>에서 신고된 토지 매매가 없습니다. 이웃 동 시세나 감정평가를 참고하십시오.</p>`;
   } else {
-    html += `<table class="feas-auto tr-stat"><thead><tr><th>구분</th><th>거래</th><th>㎡당 중앙값 (원)</th><th>평당 중앙값 (만 원)</th><th>㎡당 범위 (원)</th><th>× 대지면적 (만 원)</th></tr></thead><tbody>
-      ${row(`같은 동 전체 (${dong})`, S.all)}${S.jimok ? row(`같은 지목 (${p.land.category.value})`, S.jimok) : ''}${S.zone ? row(`같은 용도지역 (${p.land.zone.value})`, S.zone) : ''}</tbody></table>
+    html += `<div class="tr-scroll"><table class="feas-auto tr-stat"><thead><tr><th>구분</th><th>거래</th><th>평당 중앙값 (만 원)</th><th>㎡당 중앙값 (원)</th><th>㎡당 범위 (원)</th><th>× 대지면적 (만 원)</th></tr></thead><tbody>
+      ${row(`같은 동 전체 (${dong})`, S.all)}${S.jimok ? row(`같은 지목 (${p.land.category.value})`, S.jimok) : ''}${S.zone ? row(`같은 용도지역 (${p.land.zone.value})`, S.zone) : ''}</tbody></table></div>
       <p class="uncertain small">중앙값 = 가격을 줄 세웠을 때 가운데 값(극단적인 거래의 영향을 덜 받음). 「× 대지면적」은 중앙값을 이 대지 면적(${n1(area)} ㎡)에 곱한 단순 참고값이며 실제 매입가가 아님 — 땅마다 도로 접함·모양·경사·개발 가능성이 달라 가격 차이가 큼. 해제·지분 거래 ${S.excluded}건은 통계에서 제외.</p>`;
     const L = S.list.slice(0, 40);
     html += `<details${state.open ? ' open' : ''} class="tr-more"><summary>거래 목록 보기 (${S.list.length}건${S.list.length > 40 ? ', 최근 40건 표시' : ''})</summary><div class="tr-scroll"><table class="feas-auto tr-list"><thead><tr><th>계약일</th><th>지번</th><th>지목</th><th>용도지역</th><th>면적 (㎡)</th><th>거래금액 (만 원)</th><th>㎡당 (원)</th><th>평당 (만 원)</th></tr></thead><tbody>

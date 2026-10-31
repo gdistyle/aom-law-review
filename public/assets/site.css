@@ -266,5 +266,6 @@ body{background:#F3F3F1}
 .trade-box{margin-top:22px;padding-top:16px;border-top:1px solid var(--line,#e3e3e3)}
 .trade-box .tr-stat th,.trade-box .tr-list th{text-align:center;white-space:nowrap}
 .trade-box td.c{text-align:center;white-space:nowrap}.trade-box td.r{text-align:right;white-space:nowrap}
-.trade-box .tr-scroll{overflow-x:auto}.trade-box .tr-list{min-width:640px}
+.trade-box .tr-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}.trade-box .tr-stat th:first-child,.trade-box .tr-stat tbody th{white-space:normal;word-break:keep-all;min-width:9em}.trade-box .tr-list td,.trade-box .tr-list th{white-space:nowrap}.trade-box .tr-sub span{white-space:nowrap}.trade-box .tr-sub{margin-top:-4px}
 .trade-box tr.tr-x td{color:#9a9a9a}
+.trade-box .nw{white-space:nowrap;font-weight:400}
