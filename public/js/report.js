@@ -178,7 +178,7 @@ function maxScale(P) {
   ].filter(x => x[1]);
   const fl = Number(P.floors) || null, bs = Number(P.basement) || 0;
   const plan = [
-    ['주용도', P.purpose || '미선택', P.purpose ? '04 계획 조건에서 선택' : '주용도 미선택 — 부설주차·조경 등은 가정값으로 산정', !P.purpose],
+    ['주용도', P.purpose || '미선택', P.purpose ? '05 계획 조건에서 선택' : '주용도 미선택 — 부설주차·조경 등은 가정값으로 산정', !P.purpose],
     ['부용도', P.purpose2 || '없음', '', false],
     ['행위 구분', P.operation || '신축', '', false],
     ['지상 층수', fl ? `${fl} 층` : '', fl && L.floors && fl === L.floors ? '법정 최대 층수 적용' : fl ? `법정 최대 ${L.floors ?? '-'}층 중 선택` : '', L.floorsByRatio],
