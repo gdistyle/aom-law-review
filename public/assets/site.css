@@ -194,3 +194,43 @@ body{background:#F3F3F1}
 .use-chip small{font-size:10.5px;opacity:.85}
 
 .consult-motto{margin:10px 0 12px;font-size:13.5px;font-weight:600;color:inherit;opacity:.9;line-height:1.65}
+
+/* 08 사업성 검토 */
+.feas-warn{margin:0 0 10px;padding:9px 12px;border-left:3px solid var(--red,#E00000);background:rgba(224,0,0,.05);color:var(--red,#E00000);font-size:12.5px;line-height:1.6;word-break:keep-all}
+.feas-warn.small{font-size:12px;margin-top:10px}
+.feas-guide{display:grid;gap:4px;margin:0 0 14px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:13px;line-height:1.6;word-break:keep-all}
+.feas-guide b{display:inline-block;min-width:64px;color:var(--aom)}
+.feas-empty{padding:14px;border:1px dashed var(--line);border-radius:8px;font-size:13px}
+.feas-step{display:grid;grid-template-columns:28px 1fr;gap:10px;margin:0 0 14px}
+.feas-step h3{margin:2px 0 8px;font-size:14px}.feas-step h3 small{font-weight:400;opacity:.7}
+.feas-no{width:24px;height:24px;border-radius:50%;background:var(--aom);color:#fff;display:grid;place-items:center;font-size:12.5px}
+.feas-chips{display:flex;flex-wrap:wrap;gap:8px}
+.feas-chip{display:grid;gap:2px;min-width:118px;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:transparent;color:inherit;text-align:left;cursor:pointer}
+.feas-chip small{font-size:11.5px;opacity:.7}
+.feas-chip.on{border-color:var(--aom);background:var(--aom);color:#fff}.feas-chip.on small{opacity:.9}
+.feas-auto{width:100%;border-collapse:collapse;font-size:12.5px}.feas-auto th,.feas-auto td{border:1px solid var(--line);padding:6px 8px}.feas-auto th{width:22%;text-align:center;font-weight:600;background:rgba(127,127,127,.08)}
+.feas-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.feas-field{display:grid;gap:3px;font-size:12.5px}.feas-field span{font-weight:600}.feas-field span small{font-weight:400;opacity:.7}
+.feas-field input{padding:7px 9px;border:1px solid var(--line);border-radius:6px;text-align:right;font-variant-numeric:tabular-nums}
+.feas-field input.uncertain{color:var(--red,#E00000)}
+.feas-read{font-style:normal;font-size:11.5px;color:var(--aom);text-align:right;min-height:1em}
+.feas-help{font-size:11px;opacity:.7;line-height:1.5;word-break:keep-all}
+.feas-more{margin:4px 0 14px;padding:8px 10px;border:1px solid var(--line);border-radius:8px}.feas-more summary{cursor:pointer;font-size:13px;font-weight:600}.feas-more .feas-grid{margin-top:10px}
+.feas-result{margin-top:6px;padding-top:12px;border-top:2px solid var(--aom)}
+.feas-verdict{display:flex;gap:10px;align-items:center;padding:10px 12px;border-radius:8px;margin-bottom:10px;font-size:13px;word-break:keep-all}
+.feas-verdict b{font-size:16px;white-space:nowrap}
+.lv-good{background:rgba(22,140,70,.1)}.lv-good b{color:#168c46}
+.lv-mid{background:rgba(243,112,33,.1)}.lv-mid b{color:var(--aom)}
+.lv-bad{background:rgba(224,0,0,.08)}.lv-bad b{color:var(--red,#E00000)}
+.lv-none,.lv-info{background:rgba(127,127,127,.08)}
+.feas-kpi{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:12px}
+.feas-kpi div{padding:8px 10px;border:1px solid var(--line);border-radius:8px}.feas-kpi span{display:block;font-size:11.5px;opacity:.75}.feas-kpi b{font-size:14px;font-variant-numeric:tabular-nums}
+.feas-table,.feas-sens{width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:10px}
+.feas-table th,.feas-table td,.feas-sens th,.feas-sens td{border:1px solid var(--line);padding:6px 8px}
+.feas-table thead th,.feas-sens thead th{background:#3a3b3f;color:#fff;text-align:center;font-weight:600}
+.feas-table td:first-child{text-align:center}.feas-table .num{text-align:right;font-variant-numeric:tabular-nums}
+.feas-table .sum td{font-weight:700;background:rgba(243,112,33,.08)}
+.feas-sens td{text-align:right;font-variant-numeric:tabular-nums}.feas-sens tbody th{text-align:center;background:rgba(127,127,127,.08)}
+.feas-sens td.base{font-weight:700;outline:2px solid var(--aom);outline-offset:-2px}.feas-sens td.neg{color:var(--red,#E00000)}
+.feas-result h4{margin:8px 0 6px;font-size:13px}.feas-result h4 small{font-weight:400;opacity:.7}
+.feas-dl{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}.feas-dl button{padding:9px 12px;font-size:13px}.feas-dl em{font-style:normal;font-size:11px;opacity:.8;margin-left:4px}

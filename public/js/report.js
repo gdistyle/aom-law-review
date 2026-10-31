@@ -33,8 +33,8 @@ function table(cols, head, rows, o = {}) {
   const tc = (c, w, rowFill, isHead) => {
     const x = typeof c === 'object' && c !== null ? c : {t: c};
     const fill = isHead ? HEAD : (x.fill || rowFill);
-    return `<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/><w:vAlign w:val="center"/>${fill ? `<w:shd w:val="clear" w:color="auto" w:fill="${fill}"/>` : ''}<w:tcMar><w:top w:w="70" w:type="dxa"/><w:bottom w:w="70" w:type="dxa"/><w:left w:w="110" w:type="dxa"/><w:right w:w="110" w:type="dxa"/></w:tcMar></w:tcPr>`
-      + p(runs(x.t ?? '', {sz: x.sz || (isHead ? 18 : o.sz || 18), b: isHead || x.b, color: isHead ? 'FFFFFF' : x.color, red: !isHead && x.red}), {jc: isHead ? 'center' : (x.jc || 'left'), after: 0, lh: 264}) + '</w:tc>';
+    return `<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/><w:vAlign w:val="center"/>${fill ? `<w:shd w:val="clear" w:color="auto" w:fill="${fill}"/>` : ''}<w:tcMar><w:top w:w="${o.pad ?? 70}" w:type="dxa"/><w:bottom w:w="${o.pad ?? 70}" w:type="dxa"/><w:left w:w="110" w:type="dxa"/><w:right w:w="110" w:type="dxa"/></w:tcMar></w:tcPr>`
+      + p(runs(x.t ?? '', {sz: x.sz || (isHead ? 18 : o.sz || 18), b: isHead || x.b, color: isHead ? 'FFFFFF' : x.color, red: !isHead && x.red}), {jc: isHead ? 'center' : (x.jc || 'left'), after: 0, lh: 264, keep: !!o.keep}) + '</w:tc>';
   };
   const tr = (cells, i, isHead) => `<w:tr><w:trPr>${isHead ? '<w:tblHeader/>' : ''}<w:cantSplit/></w:trPr>${cells.map((c, k) => tc(c, cols[k], !isHead && o.zebra && i % 2 ? 'F7F7F5' : '', isHead)).join('')}</w:tr>`;
   return `<w:tbl><w:tblPr><w:tblW w:w="${cols.reduce((a, b) => a + b, 0)}" w:type="dxa"/><w:tblLayout w:type="fixed"/>${border}</w:tblPr><w:tblGrid>${cols.map(w => `<w:gridCol w:w="${w}"/>`).join('')}</w:tblGrid>`
@@ -216,18 +216,23 @@ function closing() {
 
 /* ---------- 패키지 ---------- */
 const NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"';
-function header() {
-  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:hdr ${NS}>${p(r('A.O.M', {sz: 16, b: true, color: ORANGE}) + r('   건축 사전 검토 자료 (초안)', {sz: 16, color: GRAY}), {jc: 'right', after: 0, line: LINE})}</w:hdr>`;
+function header(title = '건축 사전 검토 자료 (초안)') {
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:hdr ${NS}>${p(r('A.O.M', {sz: 16, b: true, color: ORANGE}) + r('   ' + title, {sz: 16, color: GRAY}), {jc: 'right', after: 0, line: LINE})}</w:hdr>`;
 }
-function footer() {
+function footer(tag = '참고용 초안') {
   const fld = `<w:r><w:rPr>${FONT}<w:color w:val="${GRAY}"/><w:sz w:val="16"/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:rPr>${FONT}<w:sz w:val="16"/></w:rPr><w:instrText xml:space="preserve"> PAGE </w:instrText></w:r><w:r><w:rPr>${FONT}<w:sz w:val="16"/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr>${FONT}<w:color w:val="${GRAY}"/><w:sz w:val="16"/></w:rPr><w:t>1</w:t></w:r><w:r><w:rPr>${FONT}<w:sz w:val="16"/></w:rPr><w:fldChar w:fldCharType="end"/></w:r>`;
-  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:ftr ${NS}><w:p><w:pPr><w:tabs><w:tab w:val="right" w:pos="${BODY_W}"/></w:tabs><w:spacing w:after="0"/></w:pPr>${r('A.O.M 종합건축사사무소  ·  031-791-2536  ·  참고용 초안', {sz: 16, color: GRAY})}<w:r><w:tab/></w:r>${fld}</w:p></w:ftr>`;
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:ftr ${NS}><w:p><w:pPr><w:tabs><w:tab w:val="right" w:pos="${BODY_W}"/></w:tabs><w:spacing w:after="0"/></w:pPr>${r('A.O.M 종합건축사사무소  ·  031-791-2536  ·  ' + tag, {sz: 16, color: GRAY})}<w:r><w:tab/></w:r>${fld}</w:p></w:ftr>`;
 }
 const STYLES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr>${FONT}<w:sz w:val="19"/><w:szCs w:val="19"/><w:lang w:val="ko-KR" w:eastAsia="ko-KR"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="80" w:line="276" w:lineRule="auto"/><w:jc w:val="left"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style><w:style w:type="table" w:default="1" w:styleId="TableNormal"><w:name w:val="Normal Table"/><w:tblPr><w:tblInd w:w="0" w:type="dxa"/><w:tblCellMar><w:left w:w="108" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr></w:style></w:styles>`;
 
 export async function exportReport(P, imgs = null, logo = null) {
-  if (typeof JSZip === 'undefined') throw new Error('압축 모듈 미로드');
   const body = cover(P, logo) + summary(P, imgs) + siteOverview(P) + maxScale(P) + lawReview(P) + sanctions(P) + context(P) + closing();
+  return packDocx(body, {title: '건축 사전 검토 자료 (초안)', author: P.author, imgs, logo});
+}
+
+/** 같은 서식(A4 가로·머리말·꼬리말)으로 워드 패키지 생성 — 다른 보고서에서도 사용 */
+export async function packDocx(body, {title, author = '', imgs = null, logo = null, tag = '참고용 초안'} = {}) {
+  if (typeof JSZip === 'undefined') throw new Error('압축 모듈 미로드');
   const sect = `<w:sectPr><w:headerReference w:type="default" r:id="rIdH"/><w:footerReference w:type="default" r:id="rIdF"/><w:pgSz w:w="${PAGE_W}" w:h="${PAGE_H}" w:orient="landscape"/><w:pgMar w:top="1134" w:right="${MARGIN}" w:bottom="1020" w:left="${MARGIN}" w:header="567" w:footer="510" w:gutter="0"/><w:titlePg/></w:sectPr>`;
   const doc = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ${NS}><w:body>${body}${sect}</w:body></w:document>`;
   const zip = new JSZip();
@@ -238,8 +243,11 @@ export async function exportReport(P, imgs = null, logo = null) {
   if (logo) { zip.file('word/media/logo.png', logo.bytes); rels.push('<Relationship Id="rIdLogo" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/logo.png"/>'); }
   zip.file('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/header1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml"/><Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/></Types>');
   zip.file('_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/></Relationships>');
-  zip.file('docProps/core.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>건축 사전 검토 자료 (초안)</dc:title><dc:creator>${esc(P.author || 'A.O.M 종합건축사사무소')}</dc:creator></cp:coreProperties>`);
+  zip.file('docProps/core.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>${esc(title)}</dc:title><dc:creator>${esc(author || 'A.O.M 종합건축사사무소')}</dc:creator></cp:coreProperties>`);
   zip.file('word/_rels/document.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${rels.join('')}</Relationships>`);
-  zip.file('word/document.xml', doc); zip.file('word/styles.xml', STYLES); zip.file('word/header1.xml', header()); zip.file('word/footer1.xml', footer());
+  zip.file('word/document.xml', doc); zip.file('word/styles.xml', STYLES); zip.file('word/header1.xml', header(title)); zip.file('word/footer1.xml', footer(tag));
   return zip.generateAsync({type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
 }
+
+/* 다른 보고서용 서식 조각 공유 */
+export const W = {r, runs, p, gap, table, h1, h2, note, picture, val, ORANGE, DARK, GRAY, LINE, SOFT, HEAD, RED, BODY_W};

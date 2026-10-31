@@ -13,8 +13,8 @@ const walk=dir=>readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()
 const scripts=walk(root).filter(p=>/\.(?:mjs|js)$/.test(p)&&!p.includes('/vendor/'));
 for(const script of scripts)execFileSync(process.execPath,['--check',script],{stdio:'pipe'});
 const html=readFileSync(join(root,'public/index.html'),'utf8');
-for(let i=0;i<=7;i++)if(!html.includes(`id="s${i}"`))throw new Error(`화면 구역 ${i} 누락`);
+for(let i=0;i<=8;i++)if(!html.includes(`id="s${i}"`))throw new Error(`화면 구역 ${i} 누락`);
 for(const match of html.matchAll(/(?:src|href)="(\/(?:js|assets|vendor)\/[^"#?]+)"/g))if(!existsSync(join(root,'public',match[1])))throw new Error('정적 파일 누락: '+match[1]);
 if(!readFileSync(join(root,'src/worker.js'),'utf8').includes('기관 문서로 사양 재확인할 곳'))throw new Error('기관 사양 재확인 주석 없음');
 if(existsSync(join(root,'public/.dev.vars')))throw new Error('공개 경로에 비밀키 파일 존재');
-console.log(`PASS: JavaScript ${scripts.length}개 문법, 제공 자산 ${manifest.assets.length}개 해시, 필수 파일·0–7구역·정적 경로.`);
+console.log(`PASS: JavaScript ${scripts.length}개 문법, 제공 자산 ${manifest.assets.length}개 해시, 필수 파일·0–8구역·정적 경로.`);
