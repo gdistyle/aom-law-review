@@ -182,7 +182,7 @@ function maxScale(P) {
     ['지상 최대 층수', L.floors ? `${L.floors} 층` : '', L.floorsByRatio ? '건폐율 가득 적층 시 비율 산정치' : (l.legalHeight?.lines?.[0] || '법령 층수 제한'), L.floorsByRatio],
     ['부설주차', l.parking != null ? `${fmt(l.parking)} 대` : '', l.parkingFormula || '', !!l.parkingPurposeAssumed || L.unsure],
     ['조경면적', l.landscapeExempt ? '조경 의무 면제 대상' : l.landscapeArea != null ? `${fmt(l.landscapeArea, 2)} ㎡ 이상` : '', l.landscapeFormula || '', L.unsure && !l.landscapeExempt]
-  ].filter(x => x[1]);
+  ].map(x => x[1] ? x : [x[0], '산정 불가', x[2] || '필요 자료(용도지역·대지면적·주용도·조례 원문) 미확보', true]);
   const fl = Number(P.floors) || null, bs = Number(P.basement) || 0;
   const plan = [
     ['주용도', P.purpose || '미선택', P.purpose ? '05 계획 조건에서 선택' : '주용도 미선택 — 부설주차·조경 등은 가정값으로 산정', !P.purpose],

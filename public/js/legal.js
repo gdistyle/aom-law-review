@@ -163,14 +163,14 @@ function addSummaries(p,rows,L){
  const f=v=>v==null||!Number.isFinite(Number(v))?null:Math.round(Number(v)*100)/100;const F=v=>f(v)==null?'-':f(v).toLocaleString('ko-KR');
  const rw=number(p.manual?.roadWidth),road=p.land?.road?.value||'';
  const S={
-  bcr:()=>L.bcr?.value!=null?`건폐율 ${L.bcr.value}% 이하 → 건축면적 최대 ${F(L.maxFootprint)} ㎡`:'',
+  bcr:()=>L.bcr?.value!=null?(L.maxFootprint!=null?`건폐율 ${L.bcr.value}% 이하 → 건축면적 최대 ${F(L.maxFootprint)} ㎡ (대지 ${F(L.area)} ㎡ × ${L.bcr.value}%)`:`건폐율 ${L.bcr.value}% 이하 (대지면적 미수집으로 면적 산정 불가)`):'건폐율 산정 불가 — 용도지역 또는 조례 수치 미확인',
   far:()=>L.far?.value!=null?`용적률 ${L.far.value}% 이하 → 지상 연면적 최대 ${F(L.maxGross)} ㎡`:'',
   use:r=>r.text?`${p.purpose} : 허용 용도 목록에 있음${r.uncertain?' (조건부 — 조건 대조)':''}`:`${p.purpose||'주용도'} : 허용 여부를 별표에서 판정하지 못함`,
   road:()=>`너비 4 m 이상 도로에 2 m 이상 접해야 함 (연면적 2,000 ㎡ 이상은 6 m 도로에 4 m 이상)${road?` · 현황 : ${road}`:''}`,
   deadend:()=>'막다른 도로 길이 10 m 미만 → 너비 2 m, 10~35 m → 3 m, 35 m 이상 → 6 m (도시지역 밖 읍·면 4 m)',
   buildingLine:()=>rw!=null?(rw<4?`도로 너비 ${rw} m (4 m 미만) → 도로 중심선에서 2 m 후퇴한 선이 건축선 (대지 쪽 ${F(2-rw/2)} m 후퇴)`:`도로 너비 ${rw} m (4 m 이상) → 대지와 도로의 경계선이 건축선`):'도로 너비 4 m 이상이면 도로 경계선이 건축선, 4 m 미만이면 도로 중심선에서 2 m 후퇴한 선이 건축선',
-  sunlight:()=>'정북 쪽 인접 대지경계선에서 높이 10 m 이하 부분은 1.5 m 이상, 10 m 초과 부분은 해당 높이의 1/2 이상 띄움',
-  landscape:()=>L.landscape!=null?`대지면적의 ${L.landscape}% 이상 조경 → ${F(L.landscapeArea)} ㎡ 이상`:'대지면적 200 ㎡ 이상이면 조경 설치 (면적 비율은 조례)',
+  sunlight:()=>{const n=number(p.floors),H=n>0?4.3+(n-1)*3.3:null;return '정북 쪽 인접 대지경계선에서 높이 10 m 이하 부분 1.5 m 이상, 10 m 초과 부분은 그 높이의 1/2 이상 이격'+(H!=null?` → 지상 ${n}층 높이 약 ${F(H)} m 가정 시 최상부 ${H>10?F(H/2):'1.5'} m 이상`:'');},
+  landscape:()=>L.landscapeExempt?'조경 의무 면제 대상':L.landscape!=null?`대지면적의 ${L.landscape}% 이상 조경 → ${L.landscapeArea!=null?F(L.landscapeArea)+' ㎡ 이상 (대지 '+F(L.area)+' ㎡ × '+L.landscape+'%)':'대지면적 미수집으로 면적 산정 불가'}`:'대지면적 200 ㎡ 이상이면 조경 설치 — 조례 비율 미확인으로 면적 산정 불가',
   setback:()=>'건축선·인접 대지경계선에서 띄울 거리는 용도·규모별로 조례에서 정함 (시행령 별표 2 범위)',
   parking:()=>L.parking!=null?(L.parkingHow?`${L.parkingHow} → 부설주차장 ${F(L.parking)}대 이상 (0.5 이상 1대, 1대 미만 0대 · ${L.parkingBasis||'설치기준'})`:`부설주차장 ${F(L.parking)}대 이상 (${L.parkingBasis||'설치기준'})`):'주용도·시설면적이 정해지면 설치기준으로 대수 산정',
   district:()=>'지구단위계획 시행지침의 용도·건폐율·용적률·높이·건축선이 우선 적용',
