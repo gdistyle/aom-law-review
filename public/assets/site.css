@@ -163,3 +163,4 @@ body{background:#F3F3F1}
 .top-home{margin-left:auto;align-self:center;font-size:13.5px;color:#303236;text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 14px;white-space:nowrap}.top-home:hover{color:var(--red);border-color:var(--red)}
 @media(max-width:760px){.top-home{display:inline-block;margin:8px 0 10px}}
 .consult-svc{font-size:12.5px;font-weight:600;color:var(--red);word-break:keep-all}
+.consult-call{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:4px;padding:11px 14px;border-radius:8px;background:var(--red);color:#fff;text-decoration:none;font-size:14px}.consult-call b{font-size:18px;letter-spacing:.02em;white-space:nowrap}.consult-call:hover{filter:brightness(1.05)}
