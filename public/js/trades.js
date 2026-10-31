@@ -18,7 +18,7 @@ export function median(a) {
 }
 const norm = s => String(s || '').replace(/\s+/g, '');
 /** 같은 법정동(읍·면 뒤의 리 포함) 판정 */
-export const sameDong = (umd, dong) => !!dong && (norm(umd) === norm(dong) || norm(umd).endsWith(norm(dong)));
+export const sameDong = (umd, dong) => { if (!dong) return false; const u = String(umd || '').trim().split(/\s+/), d = norm(dong); return norm(umd) === d || u.at(-1) === d; };
 
 /** 거래 1건 → ㎡당(원)·평당(만 원). amount: 만 원, area: ㎡ */
 export function unitOf(t) {

@@ -26,11 +26,11 @@ const pctS = v => v == null || !Number.isFinite(v) ? '' : (Math.abs(v) < 0.0005 
 /** 1234500000 → "12억 3,450만 원" */
 export function krw(v) {
   if (v == null || !Number.isFinite(v)) return '';
-  const neg = v < 0, a = Math.round(Math.abs(v)), eok = Math.floor(a / 1e8), man = Math.floor((a % 1e8) / 1e4), rest = a % 1e4;
+  const a = Math.round(Math.abs(v)), neg = v < 0 && a > 0, eok = Math.floor(a / 1e8), man = Math.floor((a % 1e8) / 1e4), rest = a % 1e4;
   const parts = [];
   if (eok) parts.push(eok.toLocaleString('ko-KR') + '억');
   if (man) parts.push(man.toLocaleString('ko-KR') + '만');
-  if (!eok && !man) parts.push(rest.toLocaleString('ko-KR'));
+  if (rest || (!eok && !man)) parts.push(rest.toLocaleString('ko-KR'));
   return (neg ? '−' : '') + parts.join(' ') + ' 원';
 }
 
@@ -46,13 +46,13 @@ export function autoValues(p) {
   const price = num(p.land?.price?.value);
   const multi = (p.extra || []).length > 0;
   let levy = 0; try { levy = charges(p).filter(c => c.ok).reduce((t, c) => t + c.total, 0); } catch {}
-  return {siteArea, gross: num(l.maxGross), landRef: multi ? landRefSum(p) : price != null && siteArea ? price * siteArea : null, price, multi, levy, purpose: p.purpose || ''};
+  return {siteArea, gross: num(l.planGross ?? l.maxGross), landRef: multi ? landRefSum(p) : price != null && siteArea ? price * siteArea : null, price, multi, levy, purpose: p.purpose || ''};
 }
 
 const FIELDS = [
   // [key, 라벨, 단위, 설명, 표시 조건]
   ['landCost', '토지 매입가', '만 원', '실제 살 가격. 비우면 공시지가 × 대지면적을 참고값으로 씀(실거래가와 다름).', f => f.landMode === 'buy'],
-  ['gross', '연면적', '㎡', '건물 바닥면적 합계. 비우면 05에서 계산한 법정 최대 연면적을 씀.', () => true],
+  ['gross', '연면적', '㎡', '건물 바닥면적 합계. 비우면 05에서 정한 층수 기준 연면적(법정 최대 이내)을 씀.', () => true],
   ['netRatio', '분양·임대 면적 비율', '% (연면적 대비)', '주차장·계단·복도 등 공용부를 뺀, 실제로 팔거나 세놓을 수 있는 면적의 비율. 비우면 100%로 계산되어 결과가 실제보다 좋게 나옴.', f => f.mode !== 'own'],
   ['buildUnit', '공사비 단가 (필수)', '만 원/평', '연면적 1평을 짓는 데 드는 공사비. 시공사 견적 또는 인근 신축 사례 기준으로 넣을 것.', () => true],
   ['designRate', '설계·감리비', '% (공사비 대비)', '건축사 설계·감리 비용을 공사비의 몇 %로 볼지.', () => true],
@@ -99,10 +99,10 @@ export function renderFeas(p, onChange) {
   const ready = !!(p.pnu && f.mode && f.landMode);
   let html = `<p class="feas-warn">${esc(FEAS_NOTE)}</p>
   <div class="feas-guide"><div><b>넣을 것</b> 지번 → 사업 방식 → 땅 → (단가)</div><div><b>나오는 것</b> 총사업비 · 예상 수입 · 이익 · 수익률 · 판정 · 워드 보고서 · 엑셀 계산표</div></div>`;
-  if (!p.pnu) return void (box.innerHTML = html + `<p class="feas-empty">먼저 위에서 지번을 조회하십시오. 대지면적·최대 연면적·공시지가가 자동으로 들어옵니다.</p>`);
+  if (!p.pnu) return void (box.innerHTML = html + `<p class="feas-empty">먼저 위에서 지번을 조회하십시오. 대지면적·연면적·공시지가가 자동으로 들어옵니다.</p>`);
   html += step(1, '사업 방식을 고르십시오', `<div class="feas-chips">${chip('mode', 'sale', '분양', '지어서 팔기')}${chip('mode', 'lease', '임대', '지어서 세놓기')}${chip('mode', 'own', '직접 사용', '내가 쓰기(사업비만 계산)')}</div>`);
   html += step(2, '땅은 어떤 상황입니까', `<div class="feas-chips">${chip('landMode', 'buy', '새로 매입', '토지비·취득세 포함')}${chip('landMode', 'own', '이미 보유', '토지비 제외')}</div>`);
-  html += step(3, '자동으로 들어온 값', `<table class="feas-auto feas-kv"><tr><th>대지면적</th><td>${a.siteArea ? won(a.siteArea) + ' ㎡' : '<span class="uncertain">미수집</span>'}</td><th>최대 연면적</th><td>${a.gross != null ? won(a.gross) + ' ㎡' : '<span class="uncertain">05에서 용도 선택 필요</span>'}</td></tr><tr><th>주용도</th><td>${esc(a.purpose) || '<span class="uncertain">미선택 (05에서 선택)</span>'}</td><th>공시지가</th><td>${a.multi ? (a.landRef != null ? `필지별 합계 ${krw(a.landRef)}` : '<span class="uncertain">일부 필지 미수집</span>') : a.price != null ? won(a.price) + ' 원/㎡' : '<span class="uncertain">미수집</span>'}</td></tr></table>`);
+  html += step(3, '자동으로 들어온 값', `<table class="feas-auto feas-kv"><tr><th>대지면적</th><td>${a.siteArea ? won(a.siteArea) + ' ㎡' : '<span class="uncertain">미수집</span>'}</td><th>연면적 (05 기준)</th><td>${a.gross != null ? won(a.gross) + ' ㎡' : '<span class="uncertain">05에서 용도 선택 필요</span>'}</td></tr><tr><th>주용도</th><td>${esc(a.purpose) || '<span class="uncertain">미선택 (05에서 선택)</span>'}</td><th>공시지가</th><td>${a.multi ? (a.landRef != null ? `필지별 합계 ${krw(a.landRef)}` : '<span class="uncertain">일부 필지 미수집</span>') : a.price != null ? won(a.price) + ' 원/㎡' : '<span class="uncertain">미수집</span>'}</td></tr></table>`);
   if (ready) {
     const vis = FIELDS.filter(([, , , , show]) => show(f));
     const NEED = ['buildUnit', 'saleUnit', 'rentUnit', 'netRatio'];

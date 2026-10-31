@@ -6,7 +6,7 @@ import {lawLink} from './legal.js';
 
 const n = v => (v == null || v === '' || !Number.isFinite(Number(v))) ? null : Number(v);
 const ref = (name, no, kind = 'law') => ({name, article: no ? `제${no}조` : '', url: lawLink(name, no, kind)});
-const MULTI_USE = /문화\s*및\s*집회|종교시설|판매시설|운수시설|의료시설|관광\s*숙박|숙박시설/;
+const MULTI_SURE = /문화\s*및\s*집회|종교시설|판매시설|종합병원|관광\s*숙박|여객/, MULTI_MAYBE = /의료시설|숙박시설|운수시설/;  // 의료·숙박·운수는 종합병원·관광숙박·여객용만 해당
 
 /** 판정용 규모: 지상 연면적 = min(법정 최대 연면적, 최대 건축면적 × 지상 층수), 지하 = 최대 건축면적 × 지하 층수(가정) */
 export function planScale(p) {
@@ -29,12 +29,12 @@ export function duties(p) {
     '6층 이상으로서 연면적 2,000 ㎡ 이상 (일부 예외 있음)', `지상 ${F ?? '-'}층 · 연면적 ${fmt(G)} ㎡`, ref('건축법', 64));
   add('비상용 승강기 설치', H == null ? null : H > 31,
     '높이 31 m 초과', `높이 약 ${H == null ? '-' : H.toFixed(1)} m (층고 가정)`, ref('건축법', 64));
-  add('구조 안전 확인 (내진 설계)', F == null || G == null ? null : F >= 2 || G >= 200 || (H != null && H >= 13),
-    '2층 이상, 연면적 200 ㎡ 이상, 높이 13 m 이상 등 (목구조는 3층·500 ㎡)', `지상 ${F ?? '-'}층 · 연면적 ${fmt(G)} ㎡`, ref('건축법 시행령', 32));
+  add('구조 안전 확인 (내진 설계)', /단독주택|공동주택|아파트|연립|다세대|다가구|다중주택/.test(s.purpose) ? true : F == null || G == null ? null : F >= 2 || G >= 200 || (H != null && H >= 13),
+    '2층 이상, 연면적 200 ㎡ 이상, 높이 13 m 이상, 단독주택·공동주택 등 (목구조는 3층·500 ㎡)', `지상 ${F ?? '-'}층 · 연면적 ${fmt(G)} ㎡`, ref('건축법 시행령', 32));
   add('에너지 절약 계획서 제출', G == null ? null : G >= 500,
     '연면적 합계 500 ㎡ 이상 (일부 용도 제외)', `연면적 ${fmt(G)} ㎡`, ref('녹색건축물 조성 지원법 시행령', 10));
-  add('다중이용 건축물 (구조기술사 협력·상주 감리 등)', F == null || G == null ? null : F >= 16 || (MULTI_USE.test(s.purpose) && G >= 5000),
-    '16층 이상, 또는 문화·집회·판매·의료·숙박 등 해당 용도 바닥면적 합계 5,000 ㎡ 이상', `지상 ${F ?? '-'}층 · 주용도 ${s.purpose || '미선택'}`, ref('건축법 시행령', 2));
+  add('다중이용 건축물 (구조기술사 협력·상주 감리 등)', F == null || G == null ? null : F >= 16 ? true : G < 5000 ? false : MULTI_SURE.test(s.purpose) ? true : MULTI_MAYBE.test(s.purpose) ? null : false,
+    '16층 이상, 또는 문화·집회(동물원·식물원 제외)·종교·판매·여객용 운수·종합병원·관광숙박 바닥면적 합계 5,000 ㎡ 이상', `지상 ${F ?? '-'}층 · 주용도 ${s.purpose || '미선택'}`, ref('건축법 시행령', 2));
   return {rows, scale: s};
 }
 const fmt = v => v == null ? '-' : Math.round(v).toLocaleString('ko-KR');

@@ -33,7 +33,7 @@ function inputRows(x) {
   add('토지', LAND[f.landMode] || '', '');
   add('대지면적', a.siteArea ? `${fmt(a.siteArea, 2)} ㎡ (${fmt(a.siteArea * 0.3025, 2)} 평)` : '', '토지이용계획 조회값');
   const grossIn = num(f._grossRaw) != null;
-  add('연면적', `${fmt(x.gross, 2)} ㎡ (${fmt(x.gross * 0.3025, 2)} 평)`, grossIn ? '직접 입력값' : '법정 최대 연면적(건폐율·용적률 산술 상한) 적용 — 실제 설계 규모와 다를 수 있음', !grossIn);
+  add('연면적', `${fmt(x.gross, 2)} ㎡ (${fmt(x.gross * 0.3025, 2)} 평)`, grossIn ? '직접 입력값' : '05 계획 조건 기준 연면적(선택 층수 × 최대 건축면적, 법정 최대 이내) 적용 — 실제 설계 규모와 다를 수 있음', !grossIn);
   if (f.landMode === 'buy') {
     const ref = num(f._landRaw) == null;
     add('토지 매입가', `${(Math.round(x.landCost / 1e4 * 100) / 100).toLocaleString('ko-KR')} 만 원 (${krw(x.landCost)})`, ref ? (a.multi ? '필지별 공시지가 × 필지별 면적 합계 참고값 — 실거래가·감정가와 다름' : '공시지가 × 대지면적 참고값 — 실거래가·감정가와 다름') : '직접 입력값', ref);

@@ -105,7 +105,7 @@ export function buildFeasSheet(P, x) {
   put(r, 'A', {v: '조건', s: S.center}); put(r, 'B', {v: '사업 방식', s: S.label}); put(r, 'C', {v: {sale: '분양', lease: '임대', own: '직접 사용'}[x.mode] || '', s: S.center}); put(r, 'D', {v: '', s: S.center}); put(r, 'E', {v: '방식을 바꾸려면 사이트에서 다시 받기', s: S.text}); r++;
   put(r, 'A', {v: '조건', s: S.center}); put(r, 'B', {v: '토지', s: S.label}); put(r, 'C', {v: x.landMode === 'own' ? '이미 보유' : '새로 매입', s: S.center}); put(r, 'D', {v: '', s: S.center}); put(r, 'E', {v: x.landMode === 'own' ? '토지비 0으로 계산' : '', s: S.text}); r++;
   input('siteArea', '대지면적', '㎡', '토지이용계획 조회값', 'rate', num(a.siteArea), false);
-  input('gross', '연면적', '㎡', num(x._grossRaw) != null ? '직접 입력값' : '법정 최대 연면적 — 실제 설계 규모와 다를 수 있음', 'rate', num(x.gross), num(x._grossRaw) == null);
+  input('gross', '연면적', '㎡', num(x._grossRaw) != null ? '직접 입력값' : '05 계획 조건 기준 연면적 (법정 최대 이내) — 실제 설계 규모와 다를 수 있음', 'rate', num(x.gross), num(x._grossRaw) == null);
   if (x.mode !== 'own') input('netRatio', '분양·임대 면적 비율', '%', num(x.netRatio) == null ? '비워 두면 100%로 계산 (주차장·공용부 제외 비율 입력)' : '연면적 중 실제 분양·임대 가능 면적', 'rate');
   input('landCost', '토지 매입가', '만 원', x.landMode === 'own' ? '보유 토지 (0)' : num(x._landRaw) == null ? (a.multi ? '필지별 공시지가 × 면적 합계 참고값 — 실거래가와 다름' : '공시지가 × 대지면적 참고값 — 실거래가와 다름') : '직접 입력값', 'money', x.landMode === 'own' ? 0 : num(x.landCost), x.landMode !== 'own' && num(x._landRaw) == null);
   input('buildUnit', '공사비 단가', '만 원/평', '연면적 1평당 공사비 (계산 시 원/㎡로 환산)');
