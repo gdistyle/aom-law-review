@@ -3,7 +3,7 @@
 import {feasibility, sensitivity, FEAS_NOTE} from './feasibility.js';
 import {FEAS_DEFAULTS, FEAS_BASIS, toUser} from './feas-ui.js';
 import {esc, displayDate} from './core.js';
-import {redFlags} from './feas-report.js';
+import {redFlags} from './feas-flags.js';
 
 const num = v => { if (v === null || v === undefined || v === '') return null; const x = Number(String(v).replaceAll(',', '')); return Number.isFinite(x) ? x : null; };
 const S = {def: 0, title: 1, head: 2, label: 3, text: 4, inMoney: 5, inMoneyRed: 6, money: 7, pct: 8, total: 9, note: 10, warn: 11, inRate: 12, inRateRed: 13, section: 14, dec: 15, pctB: 16, center: 17, factor: 18, verdict: 19, totalPct: 20, inMan: 21, inManRed: 22, coverKick: 23, coverTitle: 24, coverSub: 25, coverDate: 26, coverOrg: 27, moneyRed: 28, pctRed: 29, totalRed: 30, pctBRed: 31, decRed: 32};

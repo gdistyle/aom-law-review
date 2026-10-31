@@ -3,6 +3,7 @@ import {feasibility, sensitivity, FEAS_NOTE} from './feasibility.js';
 import {esc, totalArea} from './core.js';
 import {landRefSum} from './multiparcel.js';
 import {charges} from './charges.js';
+import {redFlags} from './feas-flags.js';
 
 /* 기본값: 법령으로 정해진 세율만 채우고, 근거가 확인되지 않은 단가는 비워 둔다(빨간 글씨 안내). */
 export const FEAS_DEFAULTS = {
@@ -143,13 +144,14 @@ function resultHtml(x) {
   const rows = [['토지비', r.land], ['토지 취득세', r.landTax], ['공사비', r.build], ['설계·감리비', r.design], ['건물 취득세', r.buildTax], ['기타 비용', r.other], ['예비비', r.cont], ['대출 이자', r.interest]];
   if (x.mode === 'sale') rows.push(['분양 경비', r.saleCost]);
   const table = `<table class="feas-table"><thead><tr><th>구분</th><th>금액(원)</th><th>읽기</th></tr></thead><tbody>${rows.map(([k, val]) => `<tr><td>${k}</td><td class="num">${won(val)}</td><td>${krw(val)}</td></tr>`).join('')}<tr class="sum"><td>총사업비</td><td class="num">${won(r.total)}</td><td>${krw(r.total)}</td></tr></tbody></table>`;
-  let kpi = [['총사업비', krw(r.total)]];
-  if (x.mode === 'sale') kpi.push(['예상 분양수입', krw(r.revenue)], ['예상 이익', krw(r.profit)], ['이익률(사업비 대비)', pctS(r.margin)], ['자기자본 수익률', pctS(r.roe)], ['손익분기 분양가', r.breakEvenUnit != null ? `${nice(toUser('saleUnit', r.breakEvenUnit))} 만 원/평` : '']);
-  else if (x.mode === 'lease') kpi.push(['연 순수입(NOI)', krw(r.noi)], ['임대 수익률', pctS(r.yield)], ['보증금 합계', krw(r.deposit)], ['투자금 회수 기간', r.payback != null ? r.payback.toFixed(1) + ' 년' : ''], ['건물 가치(환원율 기준)', krw(r.value)], ['내부수익률(IRR)', pctS(r.irr)]);
-  else kpi.push(['㎡당 사업비', r.perM2 != null ? won(r.perM2) + ' 원/㎡' : '']);
+  const F = redFlags(x);
+  let kpi = [['총사업비', krw(r.total), F.total]];
+  if (x.mode === 'sale') kpi.push(['예상 분양수입', krw(r.revenue), F.revenue], ['예상 이익', krw(r.profit), F.profit], ['이익률(사업비 대비)', pctS(r.margin), F.profit], ['자기자본 수익률', pctS(r.roe), F.profit || F.loan], ['손익분기 분양가', r.breakEvenUnit != null ? `${nice(toUser('saleUnit', r.breakEvenUnit))} 만 원/평` : '', F.total || F.area]);
+  else if (x.mode === 'lease') kpi.push(['연 순수입(NOI)', krw(r.noi), F.noi], ['임대 수익률', pctS(r.yield), F.noi || F.netInvest], ['보증금 합계', krw(r.deposit), F.deposit], ['투자금 회수 기간', r.payback != null ? r.payback.toFixed(1) + ' 년' : '', F.noi || F.netInvest], ['건물 가치(환원율 기준)', krw(r.value), F.value], ['내부수익률(IRR)', pctS(r.irr), F.irr]);
+  else kpi.push(['㎡당 사업비', r.perM2 != null ? won(r.perM2) + ' 원/㎡' : '', F.total]);
   const s = sensitivity(x), lab = x.mode === 'sale' ? '분양가' : '임대료';
   const sens = s ? `<h4>공사비·${lab}가 바뀌면? <small>(${x.mode === 'sale' ? '이익률' : '임대 수익률'})</small></h4><table class="feas-sens"><thead><tr><th>공사비 \\ ${lab}</th><th>−10%</th><th>기본</th><th>+10%</th></tr></thead><tbody>${['−10%', '기본', '+10%'].map((h, i) => `<tr><th>${h}</th>${s[i].map((m, j) => `<td class="${m != null && m < 0 ? 'neg' : ''}${i === 1 && j === 1 ? ' base' : ''}">${pctS(m)}</td>`).join('')}</tr>`).join('')}</tbody></table>` : '';
-  return `<div class="feas-result">${zeroWarn}<div class="feas-verdict lv-${v.level}"><b>${v.label}</b><span>${esc(v.text)}</span></div><div class="feas-kpi">${kpi.map(([k, val]) => `<div><span>${k}</span><b>${val || '—'}</b></div>`).join('')}</div>${table}${sens}
+  return `<div class="feas-result">${zeroWarn}<div class="feas-verdict lv-${v.level}"><b>${v.label}</b><span>${esc(v.text)}</span></div><div class="feas-kpi">${kpi.map(([k, val, red]) => `<div><span>${k}</span><b${red && val ? ' class="uncertain"' : ''}>${val || '—'}</b></div>`).join('')}</div>${table}${sens}
   <div class="feas-dl"><button type="button" class="primary" data-feasdl="word">사업성 검토 보고서 <em>WORD</em></button><button type="button" data-feasdl="pdf">보고서 <em>PDF</em></button><button type="button" data-feasdl="excel">사업수지 계산표 <em>EXCEL</em></button><button type="button" data-feasdl="zip">전부 한 번에 (ZIP)</button></div>
   <p class="feas-warn small">판정은 입력값 기준 개략 결과이며 확정이 아님.</p></div>`;
 }
