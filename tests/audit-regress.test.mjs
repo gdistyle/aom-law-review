@@ -50,3 +50,15 @@ test('조례 용적률: "(단, 지구단위계획: N)" 구분, 지역 단서는 
   assert.equal(extractRatio(t, '제1종전용주거지역'), 80); assert.equal(extractRatio(t, '중심상업지역'), null);
   assert.equal(extractRatio('2. 제2종일반주거지역 : 100퍼센트 이상 250퍼센트 이하', '제2종일반주거지역', true), 250);
 });
+import {ordinanceSetback} from '../public/js/legal.js';
+test('조례 대지 안의 공지 표(하남시 형식) — 공동주택 3종·그 밖의 건축물 면적 구간', () => {
+  const t = ['[별표 3] 대지 안의 공지 기준(제31조 관련)', '용 도', '1. 공장', '모든 지역', '5백 제곱미터 이상', '적용 대상', '3미터 이상(다만, 준공업지역에서 건축하는 경우에는 1.5미터 이상)', '모든 건축선', '2미터 이상', '인접 대지경계선',
+    '2. 공동주택', '모든 지역', '아파트', '연립주택', '다세대', '적용 대상', '3미터', '이상', '2미터', '이상', '1미터', '이상', '모든 건축선', '3미터', '이상', '2미터', '이상', '1미터', '이상', '인접 대지경계선 ',
+    '3. 그 밖의 건축물', '모든 지역', '1미터 이상', '모든 건축선', '1,000제곱미터 이상 1미터 이상', '인접 대지경계선', '1,000제곱미터 미만 0.5미터 이상'].join('\n');
+  const law = {current: true, name: '하남시 건축 조례', articles: [], annexes: [{title: '[별표 3] 대지 안의 공지 기준(제31조 관련)', text: t}]};
+  assert.deepEqual(ordinanceSetback(law, '다세대주택', 800, '').line, 1);
+  assert.equal(ordinanceSetback(law, '공동주택', 800, '').multi[1].boundary, 2);
+  assert.equal(ordinanceSetback(law, '공장', 600, '').boundary, 2);
+  assert.equal(ordinanceSetback(law, '공장', 300, '').boundary, 0.5);
+  assert.equal(ordinanceSetback(law, '제2종 근린생활시설', 1500, '').boundary, 1);
+});

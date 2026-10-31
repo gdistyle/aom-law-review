@@ -61,9 +61,30 @@ function paraTexts(rec) {
   return out;
 }
 
-/** HWP 바이트 → 문단 글자 배열 */
+/* HWPX(zip + XML) — Contents/sectionN.xml의 문단(<hp:p>)마다 한 줄 */
+async function hwpxParagraphs(b) {
+  let eocd = -1; for (let i = b.length - 22; i >= Math.max(0, b.length - 70000); i--) if (u32(b, i) === 0x06054B50) { eocd = i; break; }
+  if (eocd < 0) throw new Error('HWPX 형식 오류');
+  const n = u16(b, eocd + 10); let o = u32(b, eocd + 16); const files = [];
+  for (let k = 0; k < n; k++) {
+    const method = u16(b, o + 10), csize = u32(b, o + 20), nl = u16(b, o + 28), el = u16(b, o + 30), cl = u16(b, o + 32), lho = u32(b, o + 42);
+    const name = new TextDecoder().decode(b.subarray(o + 46, o + 46 + nl)); files.push({name, method, csize, lho}); o += 46 + nl + el + cl;
+  }
+  const secs = files.filter(f => /^Contents\/section\d+\.xml$/.test(f.name)).sort((a, c) => +a.name.match(/\d+/)[0] - +c.name.match(/\d+/)[0]);
+  const out = [];
+  for (const f of secs) {
+    const start = f.lho + 30 + u16(b, f.lho + 26) + u16(b, f.lho + 28), raw = b.subarray(start, start + f.csize);
+    const xml = new TextDecoder().decode(f.method === 8 ? await inflateRaw(raw) : raw);
+    for (const m of xml.split(/<\/hp:p>/)) { const t = [...m.matchAll(/<hp:t(?:\s[^>]*)?>([^<]*)<\/hp:t>/g)].map(x => x[1]).join('').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&amp;/g, '&'); if (t || /<hp:p[\s>]/.test(m)) out.push(t); }
+  }
+  return out;
+}
+
+/** HWP·HWPX 바이트 → 문단 글자 배열 */
 export async function hwpParagraphs(bytes) {
-  const {map, get} = cfb(bytes);
+  const b0 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+  if (b0[0] === 0x50 && b0[1] === 0x4B) return hwpxParagraphs(b0);
+  const {map, get} = cfb(b0);
   const fh = map['FileHeader'] ? get(map['FileHeader']) : null;
   const compressed = fh ? (u32(fh, 36) & 1) === 1 : true;
   const secs = Object.keys(map).filter(k => /^BodyText\/Section\d+$/.test(k)).sort((a, b) => +a.match(/\d+$/)[0] - +b.match(/\d+$/)[0]);

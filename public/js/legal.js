@@ -154,6 +154,39 @@ export function ordinanceParking(law,purpose){
   return null;}
  return null;
 }
+
+/** 건축조례 별표 「대지 안의 공지 기준」 표(첨부 HWP·HWPX 글자)에서 용도별 띄울 거리(m). 하남시 등 '번호. 용도 → 거리 → 모든 건축선 / 인접 대지경계선' 형식. 못 읽으면 null. */
+export function ordinanceSetback(law,purpose,gross,zone){
+ if(!law?.current||!purpose)return null;
+ const an=law.annexes.find(a=>/공지/.test(a.title||'')&&a.text);if(!an)return null;
+ const rows=[];let want=1,cur=null;
+ for(const line of an.text.split('\n')){const m=line.match(/^\s*(\d+)\.\s*\S/);if(m&&+m[1]===want){cur={no:want,lines:[line]};rows.push(cur);want++;continue;}if(cur)cur.lines.push(line);}
+ if(!rows.length)return null;
+ const kn2=t=>String(t).replace(/(\d+)\s*천/g,(_,a)=>String(+a*1000)).replace(/(\d+)\s*백/g,(_,a)=>String(+a*100)).replace(/,/g,'');
+ const parse=r=>{const out={line:[],boundary:[],threshold:null,tiers:[]};let buf=[];
+  for(const raw of r.lines.slice(1)){const l=kn2(raw).trim();const th=l.match(/^(\d+)\s*제곱미터\s*이상(?:\s*또는)?$/);if(th&&out.threshold==null){out.threshold=+th[1];continue;}
+   const tier=l.match(/(\d+)\s*제곱미터\s*(이상|미만)\s*(\d+(?:\.\d+)?)\s*미터/);if(tier){out.tiers.push({area:+tier[1],op:tier[2],m:+tier[3]});continue;}
+   if(/모든\s*건축선/.test(l)){out.line=buf;buf=[];continue;}if(/인접\s*대지\s*경계선/.test(l)){out.boundary=buf.length?buf:out.boundary;buf=[];continue;}
+   const v=l.match(/^(\d+(?:\.\d+)?)\s*(?:미터)?(?:\s*이상)?(?:\(|$)/);if(v&&!/제곱미터/.test(l))buf.push(+v[1]);}
+  return out;};
+ const P=norm(purpose),label=r=>norm(r.lines[0]);
+ const pick=f=>rows.find(r=>f(label(r)));
+ let row=null,sub=null;
+ if(/공장/.test(P))row=pick(l=>/공장/.test(l)&&!/공동주택/.test(l));
+ else if(/창고/.test(P))row=pick(l=>/^\d+\.창고/.test(l));
+ else if(/공동주택|아파트|연립|다세대/.test(P)){row=pick(l=>/공동주택/.test(l)&&!/제외/.test(l));sub=/아파트/.test(P)?0:/연립/.test(P)?1:/다세대/.test(P)?2:null;}
+ else{const key=['판매시설','숙박시설','문화및집회시설','종교시설'].find(k=>P.includes(k));if(key)row=pick(l=>l.includes(key));}
+ if(!row&&/전용주거/.test(norm(zone||'')))row=pick(l=>/전용주거지역에서/.test(l));
+ let d=row?parse(row):null;
+ if(d&&d.threshold!=null&&gross!=null&&gross<d.threshold){row=null;d=null;}
+ if(!row){row=pick(l=>/그밖의건축물/.test(l));d=row?parse(row):null;}
+ if(!d)return null;
+ let boundary=d.boundary;if(!boundary.length&&d.tiers.length&&gross!=null){const t=d.tiers.find(t=>t.op==='이상'?gross>=t.area:gross<t.area);if(t)boundary=[t.m];}
+ const L=d.line,B=boundary;if(!L.length&&!B.length)return null;
+ const label3=['아파트','연립주택','다세대'];
+ if(L.length===3||B.length===3){if(sub!=null)return {line:L[sub]??null,boundary:B[sub]??null,row:row.no+'호',kind:label3[sub]};return {line:L[0]??null,boundary:B[0]??null,row:row.no+'호',multi:label3.map((k,i)=>({kind:k,line:L[i]??null,boundary:B[i]??null}))};}
+ return {line:L[0]??null,boundary:B[0]??null,row:row.no+'호',threshold:d.threshold};
+}
 /** 건축조례 조경 조항의 연면적 구간별 비율. 연면적은 법정 최대 연면적(가정)으로 판정. */
 export function landscapeTier(law,gross,site=null){if(!law?.current||gross==null)return null;for(const a of law.articles.filter(a=>/조경/.test(norm(a.title||'')))){const all=kn(norm(a.text));if(site!=null){for(const m of all.matchAll(/면적(\d+)제곱미터이상(\d+)제곱미터미만인대지에건축하는건축물의조경면적은대지면적의(\d+(?:\.\d+)?)(?:%|퍼센트)/g))if(site>=+m[1]&&site<+m[2])return{lo:0,hi:Infinity,value:+m[3],article:a,gross,small:[+m[1],+m[2]]};}const t=kn(norm(a.text).split('②')[0]);const tiers=[];for(const m of t.matchAll(/연면적(?:\([^)]*\))?(?:이)?(\d+)제곱미터(이상|미만)(?:(\d+)제곱미터미만)?인건축물:대지면적의(\d+(?:\.\d+)?)(?:%|퍼센트)/g)){const lo=m[2]==='이상'?+m[1]:0,hi=m[2]==='미만'?+m[1]:(m[3]?+m[3]:Infinity);tiers.push({lo,hi,value:+m[4]});}const hit=tiers.filter(x=>gross>=x.lo&&gross<x.hi);if(hit.length===1)return{...hit[0],article:a,gross,tiers};}return null;}
 const boxClean=t=>String(t||'').replace(/[┃│┠┨─┼━┏┓┗┛┯┷╂┿┣┫├┤]/g,' ');
@@ -191,7 +224,7 @@ function addSummaries(p,rows,L){
   buildingLine:()=>rw!=null?(rw<4?`도로 너비 ${rw} m (4 m 미만) → 도로 중심선에서 2 m 후퇴한 선이 건축선 (대지 쪽 ${F(2-rw/2)} m 후퇴)`:`도로 너비 ${rw} m (4 m 이상) → 대지와 도로의 경계선이 건축선`):'도로 너비 4 m 이상이면 도로 경계선이 건축선, 4 m 미만이면 도로 중심선에서 2 m 후퇴한 선이 건축선',
   sunlight:()=>{const n=number(p.floors),H=n>0?4.3+(n-1)*3.3:null;return '정북 쪽 인접 대지경계선에서 높이 10 m 이하 부분 1.5 m 이상, 10 m 초과 부분은 그 높이의 1/2 이상 이격'+(H!=null?` → 지상 ${n}층 높이 약 ${F(H)} m 가정 시 최상부 ${H>10?F(H/2):'1.5'} m 이상`:'');},
   landscape:()=>L.landscapeExempt?'조경 의무 면제 대상':L.landscape!=null?`대지면적의 ${L.landscape}% 이상 조경 → ${L.landscapeArea!=null?F(L.landscapeArea)+' ㎡ 이상 (대지 '+F(L.area)+' ㎡ × '+L.landscape+'%)':'대지면적 미수집으로 면적 산정 불가'}`:'대지면적 200 ㎡ 이상이면 조경 설치 — 조례 비율 미확인으로 면적 산정 불가',
-  setback:()=>'건축선·인접 대지경계선에서 띄울 거리는 용도·규모별로 조례에서 정함 (시행령 별표 2 범위)',
+  setback:()=>{const sb=L.setback;if(!sb)return p.purpose?'건축선·인접 대지경계선에서 띄울 거리는 용도·규모별로 조례에서 정함 (시행령 별표 2 범위) — 조례 표 자동 판독 불가':'주용도를 선택하면 조례 기준으로 띄울 거리 표시';const f=v=>v==null?'-':`${v} m 이상`;return sb.multi?`조례 별표 ${sb.row} : `+sb.multi.map(x=>`${x.kind} 건축선 ${f(x.line)}·인접 대지경계선 ${f(x.boundary)}`).join(' / '):`건축선에서 ${f(sb.line)}, 인접 대지경계선에서 ${f(sb.boundary)} 띄움 (조례 별표 ${sb.row}${sb.kind?' '+sb.kind:''})`;},
   parking:()=>L.parking!=null?(L.parkingHow?`${L.parkingHow} → 부설주차장 ${F(L.parking)}대 이상 (0.5 이상 1대, 1대 미만 0대 · ${L.parkingBasis||'설치기준'})`:`부설주차장 ${F(L.parking)}대 이상 (${L.parkingBasis||'설치기준'})`):'주용도·시설면적이 정해지면 설치기준으로 대수 산정',
   district:()=>'지구단위계획 시행지침의 용도·건폐율·용적률·높이·건축선이 우선 적용',
   development:()=>'형질변경·토지분할 등을 수반하면 개발행위허가 필요 (건축허가 시 의제 처리)'
@@ -287,7 +320,7 @@ export function reviewProject(p){
  limits.parkingUnit=number(p.manual.parkingUnit)??parkAuto?.value??parkNat?.unit??null;
  limits.parkingBasis=number(p.manual.parkingUnit)!=null?'수동 입력':parkAuto?'조례':parkNat?(parkNat.ordinance?`「${o.parking?.name||'주차장 조례'}」 부설주차장 설치기준 ${parkNat.row}`:`「주차장법 시행령」 별표1 ${parkNat.row}`):'';
  limits.parkingPurposeAssumed=!purpose;limits.parkingPurpose=parkPurpose;
- const fsel=number(p.floors),useF=fsel>0&&limits.maxFootprint!=null&&limits.maxGross!=null&&limits.maxFootprint*fsel<limits.maxGross-1e-9;const planG=useF?Math.min(limits.maxGross,limits.maxFootprint*fsel):null;limits.planGross=planG??limits.maxGross;limits.planLabel=useF?`선택 층수 ${fsel}층 × 최대 건축면적`:'법정 최대 연면적';limits.parkingArea=number(p.manual.parkingArea)??planG??limits.maxGross??null;limits.parkingAreaAssumed=number(p.manual.parkingArea)==null;
+ const fsel=number(p.floors),useF=fsel>0&&limits.maxFootprint!=null&&limits.maxGross!=null&&limits.maxFootprint*fsel<limits.maxGross-1e-9;const planG=useF?Math.min(limits.maxGross,limits.maxFootprint*fsel):null;limits.planGross=planG??limits.maxGross;try{limits.setback=ordinanceSetback(o.building,purpose||'',limits.planGross,zone);}catch{limits.setback=null;}limits.planLabel=useF?`선택 층수 ${fsel}층 × 최대 건축면적`:'법정 최대 연면적';limits.parkingArea=number(p.manual.parkingArea)??planG??limits.maxGross??null;limits.parkingAreaAssumed=number(p.manual.parkingArea)==null;
  limits.parkingHouse=null;{const A=limits.parkingArea,f2=v=>(Math.round(v*100)/100).toLocaleString('ko-KR');let raw=null,how='';
   if(A!=null&&parkNat?.house&&number(p.manual.parkingUnit)==null){const h=parkNat.house;if(A<=h.min){raw=A/100;how=`시설면적 ${f2(A)}㎡ ≤ ${h.min}㎡ → 비고4: ${f2(A)} ÷ 100 = ${f2(raw)}대`;}else if(A<=h.base){raw=1;how=`시설면적 ${f2(A)}㎡ (${h.min}㎡ 초과 ${h.base}㎡ 이하) → 1대`;}else{raw=1+(A-h.base)/h.step;how=`1 + (시설면적 ${f2(A)}㎡ − ${h.base}㎡) ÷ ${h.step}㎡ = ${f2(raw)}대`;}limits.parkingBasis=parkNat.ordinance?`「${o.parking?.name||'주차장 조례'}」 부설주차장 설치기준 ${parkNat.row} 단독주택`:`「주차장법 시행령」 별표1 ${parkNat.row} 단독주택`;limits.parkingHouse=h;}
   else if(A!=null&&limits.parkingUnit>0){raw=A/limits.parkingUnit;how=`시설면적 ${f2(A)}㎡ ÷ ${f2(limits.parkingUnit)}㎡ = ${f2(raw)}대`;}
