@@ -262,3 +262,9 @@ body{background:#F3F3F1}
 .sh-table{margin-top:8px}.sh-table td{text-align:center}
 .sh-cap{font-weight:700}
 .sh-hour{opacity:.13}.sh-hour path{fill:#2b2c30;stroke:#2b2c30;stroke-width:.4}.sh-bld{stroke:none!important}
+/* 토지 실거래가 참고 */
+.trade-box{margin-top:22px;padding-top:16px;border-top:1px solid var(--line,#e3e3e3)}
+.trade-box .tr-stat th,.trade-box .tr-list th{text-align:center;white-space:nowrap}
+.trade-box td.c{text-align:center;white-space:nowrap}.trade-box td.r{text-align:right;white-space:nowrap}
+.trade-box .tr-scroll{overflow-x:auto}.trade-box .tr-list{min-width:640px}
+.trade-box tr.tr-x td{color:#9a9a9a}

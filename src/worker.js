@@ -163,6 +163,29 @@ async function terrain(path,env){
  if(!contentType.includes('png')||bytes[0]!==137||bytes[1]!==80)throw new Error('UPSTREAM_FORMAT');
  return new Response(bytes,{headers:{'Content-Type':'image/png','Cache-Control':'public, max-age=86400','X-Content-Type-Options':'nosniff'}});
 }
+
+/* 국토교통부 토지 매매 실거래가 (XML). 시군구 5자리 + 계약년월 6자리. 지번은 기관이 일부만 공개(개인정보 보호). */
+const TRADE_KEYS={sggCd:'sgg',sggNm:'sggNm',umdNm:'umd',jibun:'jibun',jimok:'jimok',landUse:'zone',dealArea:'area',dealAmount:'amount',dealYear:'y',dealMonth:'m',dealDay:'d',cdealType:'cancel',cdealDay:'cancelDay',dealingGbn:'kind',shareDealingType:'share',
+ '시군구':'sggNm','법정동':'umd','지번':'jibun','지목':'jimok','용도지역':'zone','계약면적':'area','거래금액':'amount','년':'y','월':'m','일':'d','해제여부':'cancel','해제사유발생일':'cancelDay','거래유형':'kind','지분거래구분':'share'};
+const xmlText=v=>v.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g,'$1').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&amp;/g,'&').trim();
+export function parseTrades(xml){
+ const code=(xml.match(/<resultCode>([^<]*)<\/resultCode>/)||[])[1];
+ if(/SERVICE_KEY|SERVICE_ACCESS|LIMITED_NUMBER|SERVICE ERROR/i.test(xml)&&!/<item>/.test(xml))throw new Error('UPSTREAM_AUTH_OR_QUOTA');
+ if(code!=null&&!['00','000','0','0000'].includes(code.trim()))throw new Error('UPSTREAM_BUSINESS_ERROR');
+ const total=number((xml.match(/<totalCount>([^<]*)<\/totalCount>/)||[])[1]);
+ const items=[...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].map(m=>{const o={};for(const t of m[1].matchAll(/<([^\/>\s]+)>([\s\S]*?)<\/\1>/g)){const k=TRADE_KEYS[t[1]];if(k)o[k]=xmlText(t[2]);}
+  return {sggNm:o.sggNm||'',umd:o.umd||'',jibun:o.jibun||'',jimok:o.jimok||'',zone:o.zone||'',area:number(String(o.area||'').replace(/,/g,'')),amount:number(String(o.amount||'').replace(/,/g,'')),y:number(o.y),m:number(o.m),d:number(o.d),cancel:!!(o.cancel&&o.cancel.trim()&&o.cancel.trim()!=='-'),kind:o.kind||'',share:o.share||''};});
+ return {items,total:total??items.length};
+}
+async function trades(u,env){
+ if(!configured(env,'DATA_GO_KR_KEY'))return missing('trade');
+ const lawd=checkQuery(u,'lawd',/^\d{5}$/),ym=checkQuery(u,'ym',/^20\d{2}(0[1-9]|1[0-2])$/);
+ const url=new URL('https://apis.data.go.kr/1613000/RTMSDataSvcLandTrade/getRTMSDataSvcLandTrade');
+ for(const [k,v]of Object.entries({serviceKey:decodeKey(env.DATA_GO_KR_KEY),LAWD_CD:lawd,DEAL_YMD:ym,numOfRows:'1000',pageNo:'1'}))url.searchParams.set(k,v);
+ const r=await upstream(url,env),xml=new TextDecoder().decode(r.bytes);
+ const {items,total}=parseTrades(xml);
+ return json({ok:true,lawd,ym,items,total,source:publicSource('국토교통부 토지 매매 실거래가 자료','https://www.data.go.kr/data/15126466/openapi.do')});
+}
 /* 같은 조회는 Cloudflare 무료 캐시에 저장해 기관 API 호출 수를 줄인다 (성공 응답만, 개인 정보 없음). */
 async function cached(u,ttl,make){
  const cache=typeof caches!=='undefined'?caches.default:null;
@@ -183,6 +206,7 @@ export default {async fetch(request,env){
   if(u.pathname==='/api/nearby')return await cached(u,86400*7,()=>nearby(u,env));
   if(u.pathname==='/api/buildings')return await cached(u,86400,()=>buildings(u,env));
   if(u.pathname==='/api/land')return await cached(u,86400,()=>land(u,env));
+  if(u.pathname==='/api/trades'){const ym=u.searchParams.get('ym')||'',now=new Date(Date.now()+9*3600e3),pm=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth()-1,1)),prev=String(pm.getUTCFullYear())+String(pm.getUTCMonth()+1).padStart(2,'0');return await cached(u,ym>=prev?21600:86400*7,()=>trades(u,env));}
   if(u.pathname==='/api/spatial')return await spatial(u,env);
   if(u.pathname==='/api/law')return await law(u,env);
   if(u.pathname.startsWith('/api/terrain/'))return await terrain(u.pathname,env);
