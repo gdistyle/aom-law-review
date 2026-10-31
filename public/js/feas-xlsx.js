@@ -3,13 +3,14 @@
 import {feasibility, sensitivity, FEAS_NOTE} from './feasibility.js';
 import {FEAS_DEFAULTS, FEAS_BASIS, toUser} from './feas-ui.js';
 import {esc, displayDate} from './core.js';
+import {redFlags} from './feas-report.js';
 
 const num = v => { if (v === null || v === undefined || v === '') return null; const x = Number(String(v).replaceAll(',', '')); return Number.isFinite(x) ? x : null; };
-const S = {def: 0, title: 1, head: 2, label: 3, text: 4, inMoney: 5, inMoneyRed: 6, money: 7, pct: 8, total: 9, note: 10, warn: 11, inRate: 12, inRateRed: 13, section: 14, dec: 15, pctB: 16, center: 17, factor: 18, verdict: 19, totalPct: 20, inMan: 21, inManRed: 22, coverKick: 23, coverTitle: 24, coverSub: 25, coverDate: 26, coverOrg: 27};
+const S = {def: 0, title: 1, head: 2, label: 3, text: 4, inMoney: 5, inMoneyRed: 6, money: 7, pct: 8, total: 9, note: 10, warn: 11, inRate: 12, inRateRed: 13, section: 14, dec: 15, pctB: 16, center: 17, factor: 18, verdict: 19, totalPct: 20, inMan: 21, inManRed: 22, coverKick: 23, coverTitle: 24, coverSub: 25, coverDate: 26, coverOrg: 27, moneyRed: 28, pctRed: 29, totalRed: 30, pctBRed: 31, decRed: 32};
 
 function stylesXML() {
   const font = (sz, {b = false, color = '222222'} = {}) => `<font>${b ? '<b/>' : ''}<sz val="${sz}"/><color rgb="FF${color}"/><name val="맑은 고딕"/><family val="3"/><charset val="129"/></font>`;
-  const fonts = [font(10), font(15, {b: true}), font(10, {b: true, color: 'FFFFFF'}), font(10, {color: 'E00000'}), font(10, {b: true}), font(9, {color: '6B6E73'}), font(10, {b: true, color: 'F37021'}), font(12, {b: true, color: 'F37021'}), font(22, {b: true}), font(14, {color: '6B6E73'})];
+  const fonts = [font(10), font(15, {b: true}), font(10, {b: true, color: 'FFFFFF'}), font(10, {color: 'E00000'}), font(10, {b: true}), font(9, {color: '6B6E73'}), font(10, {b: true, color: 'F37021'}), font(12, {b: true, color: 'F37021'}), font(22, {b: true}), font(14, {color: '6B6E73'}), font(10, {b: true, color: 'E00000'})];
   const fill = c => `<fill><patternFill patternType="solid"><fgColor rgb="FF${c}"/><bgColor indexed="64"/></patternFill></fill>`;
   const fills = ['<fill><patternFill patternType="none"/></fill>', '<fill><patternFill patternType="gray125"/></fill>', fill('3A3B3F'), fill('FFF7CC'), fill('FFF4EC'), fill('F2F2F0')];
   const borders = ['<border><left/><right/><top/><bottom/><diagonal/></border>', '<border><left style="thin"><color rgb="FFD9D9D6"/></left><right style="thin"><color rgb="FFD9D9D6"/></right><top style="thin"><color rgb="FFD9D9D6"/></top><bottom style="thin"><color rgb="FFD9D9D6"/></bottom><diagonal/></border>'];
@@ -42,7 +43,12 @@ function stylesXML() {
     xf(0, 8, 0, 0, 'left', 'center', true),   // coverTitle
     xf(0, 9, 0, 0, 'left'),               // coverSub
     xf(0, 4, 0, 0, 'left'),               // coverDate
-    xf(0, 4, 0, 0, 'left')                // coverOrg
+    xf(0, 4, 0, 0, 'left'),               // coverOrg
+    xf(164, 3, 0, 1, 'right'),            // moneyRed
+    xf(165, 3, 0, 1, 'right'),            // pctRed
+    xf(164, 10, 4, 1, 'right'),           // totalRed
+    xf(165, 10, 4, 1, 'right'),           // pctBRed
+    xf(167, 3, 0, 1, 'right')             // decRed
   ];
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="6"><numFmt numFmtId="164" formatCode="#,##0"/><numFmt numFmtId="165" formatCode="0.0%"/><numFmt numFmtId="166" formatCode="0.0##"/><numFmt numFmtId="167" formatCode="0.0"/><numFmt numFmtId="168" formatCode="+0%;-0%;0%"/><numFmt numFmtId="169" formatCode="#,##0.0#"/></numFmts><fonts count="${fonts.length}">${fonts.join('')}</fonts><fills count="${fills.length}">${fills.join('')}</fills><borders count="${borders.length}">${borders.join('')}</borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="${xfs.length}">${xfs.join('')}</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
 }
@@ -76,7 +82,7 @@ export function buildFeasSheet(P, x) {
   put(r, 'A', {v: '사업수지 계산표 (개략 · 초안)', s: S.title}); rows[0].ht = 26; merges.push('A1:E1'); r++;
   put(r, 'A', {v: `${P.address || '대지'}   ·   ${displayDate(P.date)}   ·   A.O.M 종합건축사사무소`, s: S.note}); merges.push(`A${r}:E${r}`); r++;
   put(r, 'A', {v: FEAS_NOTE, s: S.warn}); rows[r - 1].ht = 42; merges.push(`A${r}:E${r}`); r++;
-  put(r, 'A', {v: '사용법 : 노란 칸만 고치면 아래 결과가 자동으로 다시 계산됨. 빨간 글씨는 기본값·참고값임. 금액은 원, 비율은 % 숫자로 입력 (예: 4.6).', s: S.note}); rows[r - 1].ht = 30; merges.push(`A${r}:E${r}`); r++;
+  put(r, 'A', {v: '사용법 : 노란 칸만 고치면 아래 결과가 자동으로 다시 계산됨. 금액은 만 원, 단가는 만 원/평, 비율은 % 숫자로 입력 (예: 4.6). 빨간 글씨 = 받은 시점의 기본값·참고값·미입력 항목과 그 값으로 계산된 결과 (칸을 고쳐도 글씨 색은 그대로임).', s: S.note}); rows[r - 1].ht = 44; merges.push(`A${r}:E${r}`); r++;
   r++;
   const head = () => { ['구분', '항목', '값', '단위', '설명 · 산식'].forEach((t, i) => put(r, 'ABCDE'[i], {v: t, s: S.head})); r++; };
   const section = t => { put(r, 'A', {v: t, s: S.section}); ['B', 'C', 'D', 'E'].forEach(c => put(r, c, {v: '', s: S.section})); merges.push(`A${r}:E${r}`); r++; };
@@ -122,7 +128,13 @@ export function buildFeasSheet(P, x) {
 
   /* 2. 총사업비 */
   section('2. 총사업비'); head();
-  const calc = (k, label, f, v, desc, s = S.money, unit = '원') => { at[k] = 'C' + r; put(r, 'A', {v: '계산', s: S.center}); put(r, 'B', {v: label, s: S.label}); put(r, 'C', {f, v, s}); put(r, 'D', {v: unit, s: S.center}); put(r, 'E', {v: desc, s: S.text}); r++; };
+  const F = redFlags(x);
+  const RK = {netArea: F.area, land: F.land, landTax: F.landTax, build: F.build, design: F.design, buildTax: F.buildTax, other: F.other, cont: F.cont, subtotal: F.subtotal, loan: F.loan, interest: F.interest, revenue: F.revenue, saleCost: F.saleCost, total: F.total,
+    profit: F.profit, margin: F.profit, equity: F.loan, roe: F.profit || F.loan, breakEven: F.total || F.area, breakEvenPy: F.total || F.area,
+    grossRent: F.rent, opex: F.opex, noi: F.noi, deposit: F.deposit, netInvest: F.netInvest, yield: F.noi || F.netInvest, payback: F.noi || F.netInvest, value: F.value, devProfit: F.value || F.total, irr: F.irr, npv: F.npv, perM2: F.total};
+  const sensRed = x.mode === 'sale' ? F.profit : (F.noi || F.netInvest);
+  const REDS = {[S.money]: S.moneyRed, [S.pct]: S.pctRed, [S.total]: S.totalRed, [S.pctB]: S.pctBRed, [S.dec]: S.decRed};
+  const calc = (k, label, f, v, desc, s = S.money, unit = '원') => { if (RK[k] && REDS[s] != null) s = REDS[s]; at[k] = 'C' + r; put(r, 'A', {v: '계산', s: S.center}); put(r, 'B', {v: label, s: S.label}); put(r, 'C', {f, v, s}); put(r, 'D', {v: unit, s: S.center}); put(r, 'E', {v: desc, s: S.text}); r++; };
   const $ = ref;
 if (x.mode !== 'own') calc('netArea', x.mode === 'sale' ? '분양 면적' : '임대 면적', `${$('gross')}*IF(ISBLANK(${$('netRatio')}),100,${$('netRatio')})/100`, R.netArea, '연면적 × 분양·임대 면적 비율 (비우면 100%)', S.money, '㎡');
   calc('land', '토지비', `${W_('landCost')}`, R.land, '토지 매입가');
@@ -201,7 +213,7 @@ if (x.mode !== 'own') calc('netArea', x.mode === 'sale' ? '분양 면적' : '임
           ? `IFERROR(((${$('revenue')}*(1+${bf}))-(${Sx}+${Ix}+${$('revenue')}*(1+${bf})*${$('saleCostRate')}/100))/(${Sx}+${Ix}+${$('revenue')}*(1+${bf})*${$('saleCostRate')}/100),"")`
           : `IFERROR(IF((${Sx}+${Ix}-${$('deposit')})>0,${$('noi')}*(1+${bf})/(${Sx}+${Ix}-${$('deposit')}),""),"")`;
         const v = sens[i][j];
-        put(r, col, {f, v: v == null || !Number.isFinite(v) ? '' : v, s: i === 1 && j === 1 ? S.totalPct : S.pct});
+        put(r, col, {f, v: v == null || !Number.isFinite(v) ? '' : v, s: i === 1 && j === 1 ? (sensRed ? S.pctBRed : S.totalPct) : (sensRed ? S.pctRed : S.pct)});
         ((at.sens ||= [])[i] ||= [])[j] = col + r;
       });
       r++;
