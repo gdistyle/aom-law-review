@@ -12,7 +12,7 @@ import {hangulInput} from './hangul.js';
 import {siteContext,contextText,siteDirections,directionSentence,useStories,stripMarks,terrainSummary} from './context.js';
 import {scaleChecklist,useChange} from './checklist.js';
 import {renderFeas} from './feas-ui.js';
-import {renderTrades,recentMonths} from './trades.js';
+import {renderTrades,recentMonths,tradeStats} from './trades.js';
 import {combineZones,parcelRows} from './multiparcel.js';
 import {permitSteps} from './permits.js';
 import {charges} from './charges.js';
@@ -133,11 +133,11 @@ const DEFAULT_ADDRESS='하남시 대청로 22-17';
 
 /* 토지 실거래가: 버튼을 누를 때만 조회(기관 일일 호출량 절약). 12개월 × 1회, 결과는 서버 캐시. */
 let tradeState={pnu:''};
-function tradeRender(){if(tradeState.pnu!==p.pnu)tradeState={pnu:p.pnu};tradeState.siteArea=totalArea(p);renderTrades($('tradeBox'),p,tradeState,loadTrades);}
+function tradeRender(){if(tradeState.pnu!==p.pnu){tradeState={pnu:p.pnu};p.trades=null;}tradeState.siteArea=totalArea(p);renderTrades($('tradeBox'),p,tradeState,loadTrades);}
 async function loadTrades(){const st=tradeState,project=p;if(st.loading||!project.pnu)return;st.loading=true;st.done=0;st.error='';tradeRender();
  const now=new Date(Date.now()+9*3600e3),months=recentMonths(new Date(now.getUTCFullYear(),now.getUTCMonth(),1)),lawd=project.pnu.slice(0,5);const all=[];let failed=0,auth=false;
  await pool(months.map(ym=>async()=>{try{const d=await apiRetry('/api/trades',{lawd,ym});if(d.ok)all.push(...d.items);else{failed++;if(/AUTH|QUOTA/.test(d.code||''))auth=true;}}catch(e){failed++;if(/AUTH|QUOTA/.test(e.message||''))auth=true;}st.done++;if(p===project)tradeRender();}),3);
- st.loading=false;if(p!==project||st!==tradeState)return;if(failed===months.length){st.error=auth?'기관 사용 승인 반영 전이거나 오늘 조회 한도를 넘었습니다. 잠시 후 다시 눌러 주십시오.':'실거래가 자료를 받지 못했습니다. 잠시 후 다시 눌러 주십시오.';}else{st.data=all;st.failed=failed;}tradeRender();}
+ st.loading=false;if(p!==project||st!==tradeState)return;if(failed===months.length){st.error=auth?'기관 사용 승인 반영 전이거나 오늘 조회 한도를 넘었습니다. 잠시 후 다시 눌러 주십시오.':'실거래가 자료를 받지 못했습니다. 잠시 후 다시 눌러 주십시오.';}else{st.data=all;st.failed=failed;try{const S=tradeStats(all,{dong:project.parcels?.[0]?.dong||''});project.trades=S.all.n?{dong:project.parcels?.[0]?.dong||'',n:S.all.n,perM2:S.all.perM2,perPy:S.all.perPy}:null;}catch{}}tradeRender();try{renderFeas(p);}catch{}}
 const SECS=['s0','s1','s2','s3','s4','s5','s6','s7','s8','s9'];
 /* 상세 창: 왼쪽 항목을 누르면 지도 위에 해당 구역만 표시 */
 function showSec(id){if(!SECS.includes(id))return closeDrawer();for(const k of SECS){const el=$(k);if(el)el.hidden=k!==id;}const sec=$(id);$('drawerNo').textContent=(sec.querySelector('.eyebrow')?.textContent||'').split('/')[0].trim();$('drawerTitle').textContent=sec.querySelector('h2,h1')?.textContent||'';$('drawer').hidden=false;$('drawer').querySelector('.drawer-body').scrollTop=0;for(const b of document.querySelectorAll('[data-open]'))b.classList.toggle('on',b.dataset.open===id);try{if(location.hash!=='#'+id)history.pushState({sec:id},'','#'+id);}catch{}if(id==='s6')updateModels();if(id==='s7')try{drawTerrainMap();}catch{}}

@@ -38,7 +38,7 @@ export function feasInput(p) {
   const f = {...FEAS_DEFAULTS, ...(p.feas || {})};
   const auto = autoValues(p);
   const levy = auto.levy, otherAuto = num(f.otherCost) == null && levy > 0;
-  return {...f, otherCost: otherAuto ? levy : f.otherCost, _otherAuto: otherAuto, _landRaw: f.landCost, _grossRaw: f.gross, siteArea: auto.siteArea, gross: num(f.gross) ?? auto.gross, landCost: f.landMode === 'buy' ? (num(f.landCost) ?? auto.landRef) : 0, _auto: auto};
+  return {...f, otherCost: otherAuto ? levy : f.otherCost, _otherAuto: otherAuto, _landRaw: f.landCost, _grossRaw: f.gross, _trades: p.trades || null, siteArea: auto.siteArea, gross: num(f.gross) ?? auto.gross, landCost: f.landMode === 'buy' ? (num(f.landCost) ?? auto.landRef) : 0, _auto: auto};
 }
 export function autoValues(p) {
   const siteArea = totalArea(p), l = p.review?.limits || {};
