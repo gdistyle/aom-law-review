@@ -58,14 +58,15 @@ async function nearby(u,env){
  const x=number(u.searchParams.get('x')),y=number(u.searchParams.get('y'));
  if(!(x>124&&x<132&&y>32&&y<40))throw new Error('INVALID_INPUT');
  // 카카오 로컬 카테고리 검색 + 공원 키워드 검색. 이름·분류·거리만 반환(주소·전화 미반환).
- const CATS=[['SW8','지하철역',1000],['SC4','학교',500],['CT1','문화시설',800],['AT4','관광명소',1000],['PO3','공공기관',600],['HP8','병원',500],['MT1','대형마트',1000]];
+ const CATS=[['SW8','지하철역',1000],['SC4','학교',500],['CT1','문화시설',800],['AT4','관광명소',1000],['PO3','공공기관',600],['MT1','대형마트',1000]];
  const H={Authorization:'KakaoAK '+env.KAKAO_REST_KEY};
- const one=async(url,label)=>{try{const d=await upstreamJSON(url,env,H);return (Array.isArray(d.documents)?d.documents:[]).slice(0,5).map(o=>({name:String(o.place_name||'').slice(0,60),kind:label,group:String(o.category_name||'').split('>').pop().trim().slice(0,30),distance:number(o.distance)})).filter(o=>o.name&&Number.isFinite(o.distance));}catch{return [];}};
+ const one=async(url,label,keep=()=>true)=>{try{const d=await upstreamJSON(url,env,H);return (Array.isArray(d.documents)?d.documents:[]).filter(keep).slice(0,5).map(o=>({name:String(o.place_name||'').slice(0,60),kind:label,group:String(o.category_name||'').split('>').pop().trim().slice(0,30),distance:number(o.distance)})).filter(o=>o.name&&Number.isFinite(o.distance));}catch{return [];}};
+ const BAD=/주차장|정류장|노래|카페|약국|아파트|빌라|부동산|교회|학원|마트|편의점|식당|주유소/;
  const jobs=CATS.map(([code,label,r])=>{const url=new URL('https://dapi.kakao.com/v2/local/search/category.json');for(const [k,v]of Object.entries({category_group_code:code,x:String(x),y:String(y),radius:String(r),sort:'distance',size:'5'}))url.searchParams.set(k,v);return one(url,label);});
- const park=new URL('https://dapi.kakao.com/v2/local/search/keyword.json');for(const [k,v]of Object.entries({query:'공원',x:String(x),y:String(y),radius:'800',sort:'distance',size:'5'}))park.searchParams.set(k,v);
- jobs.push(one(park,'공원').then(a=>a.filter(o=>/공원|숲|녹지/.test(o.name+o.group))));
- const river=new URL('https://dapi.kakao.com/v2/local/search/keyword.json');for(const [k,v]of Object.entries({query:'천',x:String(x),y:String(y),radius:'800',sort:'distance',size:'5'}))river.searchParams.set(k,v);
- jobs.push(one(river,'하천').then(a=>a.filter(o=>/하천|강$|천$|호수/.test(o.group+' '+o.name))));
+ const park=new URL('https://dapi.kakao.com/v2/local/search/keyword.json');for(const [k,v]of Object.entries({query:'공원',x:String(x),y:String(y),radius:'800',sort:'distance',size:'15'}))park.searchParams.set(k,v);
+ jobs.push(one(park,'공원',o=>/공원|숲/.test(String(o.category_name||''))&&/공원|숲/.test(String(o.place_name||''))&&!BAD.test(String(o.place_name||''))));
+ const river=new URL('https://dapi.kakao.com/v2/local/search/keyword.json');for(const [k,v]of Object.entries({query:'하천',x:String(x),y:String(y),radius:'800',sort:'distance',size:'15'}))river.searchParams.set(k,v);
+ jobs.push(one(river,'하천',o=>/하천|강|호수|저수지/.test(String(o.category_name||''))&&!BAD.test(String(o.place_name||''))));
  const items=(await Promise.all(jobs)).flat();
  return json({ok:true,items,source:publicSource('카카오 로컬 장소검색','https://developers.kakao.com/docs/ko/kakaomap/rest-api')});
 }

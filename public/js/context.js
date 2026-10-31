@@ -64,7 +64,7 @@ export function siteContext({ zone = '', places = [], buildings = [], terrainPoi
   if (park) facts.push(`녹지 : ${park.name} ${fmtM(park.distance)}`);
   if (river) facts.push(`수변 : ${river.name} ${fmtM(river.distance)}`);
   if (school) facts.push(`교육시설 : ${school.name} ${fmtM(school.distance)}`);
-  for (const kind of ['문화시설', '관광명소', '공공기관', '대형마트', '병원']) {
+  for (const kind of ['문화시설', '관광명소', '공공기관', '대형마트']) {
     for (const o of places.filter(p => p.kind === kind).sort((a, b) => a.distance - b.distance).slice(0, kind === '문화시설' || kind === '관광명소' ? 2 : 1)) {
       if (!signature.some(s => s.name === o.name)) signature.push(o);
     }
