@@ -113,6 +113,10 @@ export function renderFeas(p, onChange) {
 
 function resultHtml(x) {
   const r = feasibility(x), v = r.verdict;
+  const zeroKeys = [['designRate', '설계·감리비'], ['contRate', '예비비'], ['otherCost', '기타 비용'], ['loanRatio', '대출 비율'], ['loanRate', '대출 금리'], ['months', '공사 기간'],
+    ...(x.mode === 'sale' ? [['saleCostRate', '분양 경비']] : []), ...(x.mode === 'lease' ? [['vacancy', '공실률'], ['opexRate', '운영비'], ['capRate', '환원율']] : [])];
+  const zeros = zeroKeys.filter(([k]) => num(x[k]) == null).map(([, l]) => l);
+  const zeroWarn = zeros.length ? `<p class="feas-warn"><b>0으로 계산된 항목 ${zeros.length}개</b> : ${zeros.join(' · ')} — 비워 두면 비용이 빠져 결과가 실제보다 좋게 나옴. 「세부 값」에서 채울 것.</p>` : '';
   const rows = [['토지비', r.land], ['토지 취득세', r.landTax], ['공사비', r.build], ['설계·감리비', r.design], ['건물 취득세', r.buildTax], ['기타 비용', r.other], ['예비비', r.cont], ['대출 이자', r.interest]];
   if (x.mode === 'sale') rows.push(['분양 경비', r.saleCost]);
   const table = `<table class="feas-table"><thead><tr><th>구분</th><th>금액(원)</th><th>읽기</th></tr></thead><tbody>${rows.map(([k, val]) => `<tr><td>${k}</td><td class="num">${won(val)}</td><td>${krw(val)}</td></tr>`).join('')}<tr class="sum"><td>총사업비</td><td class="num">${won(r.total)}</td><td>${krw(r.total)}</td></tr></tbody></table>`;
@@ -122,7 +126,7 @@ function resultHtml(x) {
   else kpi.push(['㎡당 사업비', r.perM2 != null ? won(r.perM2) + ' 원/㎡' : '']);
   const s = sensitivity(x), lab = x.mode === 'sale' ? '분양가' : '임대료';
   const sens = s ? `<h4>공사비·${lab}가 바뀌면? <small>(${x.mode === 'sale' ? '이익률' : '임대 수익률'})</small></h4><table class="feas-sens"><thead><tr><th>공사비 \\ ${lab}</th><th>−10%</th><th>기본</th><th>+10%</th></tr></thead><tbody>${['−10%', '기본', '+10%'].map((h, i) => `<tr><th>${h}</th>${s[i].map((m, j) => `<td class="${m != null && m < 0 ? 'neg' : ''}${i === 1 && j === 1 ? ' base' : ''}">${pctS(m)}</td>`).join('')}</tr>`).join('')}</tbody></table>` : '';
-  return `<div class="feas-result"><div class="feas-verdict lv-${v.level}"><b>${v.label}</b><span>${esc(v.text)}</span></div><div class="feas-kpi">${kpi.map(([k, val]) => `<div><span>${k}</span><b>${val || '—'}</b></div>`).join('')}</div>${table}${sens}
+  return `<div class="feas-result">${zeroWarn}<div class="feas-verdict lv-${v.level}"><b>${v.label}</b><span>${esc(v.text)}</span></div><div class="feas-kpi">${kpi.map(([k, val]) => `<div><span>${k}</span><b>${val || '—'}</b></div>`).join('')}</div>${table}${sens}
   <div class="feas-dl"><button type="button" class="primary" data-feasdl="word">사업성 검토 보고서 <em>WORD</em></button><button type="button" data-feasdl="excel">사업수지 계산표 <em>EXCEL</em></button><button type="button" data-feasdl="zip">두 파일 한 번에 (ZIP)</button></div>
   <p class="feas-warn small">판정은 입력값 기준 개략 결과이며 확정이 아님.</p></div>`;
 }

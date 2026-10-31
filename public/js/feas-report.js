@@ -71,7 +71,10 @@ function summary(x, R) {
     rows.push(g.map(([k]) => ({t: k, jc: 'center', color: GRAY, sz: 16, fill: 'F7F7F5'})));
     rows.push(g.map(([, val]) => ({t: val || (g.some(c => c[0]) ? '—' : ''), jc: 'center', b: true, sz: 24})));
   }
-  return h1('', '한눈에 보기', true)
+  const zk = [['designRate', '설계·감리비'], ['contRate', '예비비'], ['otherCost', '기타 비용'], ['loanRatio', '대출 비율'], ['loanRate', '대출 금리'], ['months', '공사 기간'], ...(x.mode === 'sale' ? [['saleCostRate', '분양 경비']] : []), ...(x.mode === 'lease' ? [['vacancy', '공실률'], ['opexRate', '운영비'], ['capRate', '환원율']] : [])];
+  const zeros = x.mode === 'own' ? zk.slice(0, 6).filter(([k]) => num(x[k]) == null).map(([, l]) => l) : zk.filter(([k]) => num(x[k]) == null).map(([, l]) => l);
+  const zeroLine = zeros.length ? p(r(`※ 0으로 계산된 항목 ${zeros.length}개 : ${zeros.join(' · ')} — 해당 비용이 빠져 결과가 실제보다 유리하게 산출되었을 수 있음.`, {sz: 17, b: true, red: true}), {after: 100}) : '';
+  return h1('', '한눈에 보기', true) + zeroLine
     + p(r('판정  ', {sz: 20, b: true, color: GRAY}) + r(v.label, {sz: 30, b: true, color}) + r('   ' + v.text, {sz: 19}), {shd: SOFT, ind: 200, indR: 200, before: 80, after: 160})
     + table([Wc, Wc, BODY_W - Wc * 2], null, rows, {keep: true, sz: 16, pad: 40})
     + p(r('■ ', {sz: 16, red: true}) + r('빨간 글씨', {sz: 16, b: true, red: true}) + r(' : 기본값·참고값·미입력 항목. 실제 견적·시세·대출 조건으로 바꾸어 다시 계산할 사항임.', {sz: 16, color: GRAY}), {before: 120, after: 60})
