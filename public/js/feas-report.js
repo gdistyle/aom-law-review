@@ -4,6 +4,7 @@ import {feasibility, sensitivity, FEAS_NOTE} from './feasibility.js';
 import {FEAS_DEFAULTS, FEAS_BASIS, krw, toUser} from './feas-ui.js';
 import {displayDate, fmt} from './core.js';
 import {redFlags} from './feas-flags.js';
+import {analyze, costShares, eok} from './feas-analysis.js';
 export {redFlags};
 
 const {r, p, gap, table, h1, h2, note, picture, ORANGE, GRAY, SOFT, BODY_W} = W;
@@ -88,6 +89,21 @@ function summary(x, R) {
     + table([Wc, Wc, BODY_W - Wc * 2], null, rows, {keep: true, sz: 16, pad: 40})
     + p(r('■ ', {sz: 16, red: true}) + r('빨간 글씨', {sz: 16, b: true, red: true}) + r(' : 기본값·참고값·미입력 항목과 그 값으로 계산된 결과. 실제 견적·시세·대출 조건으로 바꾸어 다시 계산할 사항임.', {sz: 16, color: GRAY}), {before: 120, after: 60})
     + note('※ 판정 기준 — 분양: 손실이면 미흡, 이익률이 목표 미만이면 검토 필요, 목표 이상이면 양호 / 임대: 임대 수익률이 대출금리 미만이면 미흡, 목표 미만이면 검토 필요, 목표 이상이면 양호.');
+}
+
+
+/* 결과 분석 및 결론 — 결론 상자 + 총사업비 구성 막대(편집 가능한 표) + 분석 문장 */
+function analysisSection(x) {
+  const A = analyze(x); if (!A.points.length) return '';
+  const COL = ['F37021', '3A3B3F', '8C8F94', 'C9A27A', 'B9BCC0', 'E2B48F', '5E6166'];
+  const sh = costShares(A.R, x.mode);
+  let widths = sh.map(s => Math.max(160, Math.round(s.share * BODY_W))); const diff = BODY_W - widths.reduce((a, b) => a + b, 0); widths[widths.indexOf(Math.max(...widths))] += diff;
+  const bar = table(widths, null, [sh.map((s, i) => ({t: s.share >= 0.08 ? (Math.round(s.share * 1000) / 10).toFixed(1) + '%' : '', jc: 'center', b: true, sz: 15, color: 'FFFFFF', fill: COL[i % COL.length]}))], {sz: 15, pad: 30});
+  const legend = table([3200, 2600, 2600, BODY_W - 8400], ['구 분', '금 액', '구성비', '비 고'], sh.map((s, i) => [{t: '■ ' + s.label, b: true, color: COL[i % COL.length]}, {t: eok(s.value), jc: 'right'}, {t: (Math.round(s.share * 1000) / 10).toFixed(1) + '%', jc: 'center'}, {t: s.note, sz: 15, color: GRAY}]), {sz: 16, pad: 40, keep: true});
+  return h1('', '결과 분석 및 결론', true)
+    + p(r('결론  ', {b: true, sz: 20, color: ORANGE}) + r(A.conclusion, {sz: 19, b: true, red: A.conclusionRed}), {shd: SOFT, ind: 200, indR: 200, before: 60, after: 160, keep: true})
+    + h2(`총사업비 구성 (${eok(A.R.total)})`) + bar + legend
+    + h2('분석 내용') + A.points.map(q => p(r('· ' + q.text, {sz: 18, red: q.red}), {after: 50, ind: 200})).join('');
 }
 
 function conditions(x) {
@@ -177,6 +193,6 @@ function closing() {
 
 export async function exportFeasReport(P, x, logo = null) {
   const R = feasibility(x);
-  const body = cover(P, logo) + summary(x, R) + costs(x, R) + income(x, R) + sens(x) + conditions(x) + verdictAndNotes(x, R) + closing();
+  const body = cover(P, logo) + summary(x, R) + analysisSection(x) + costs(x, R) + income(x, R) + sens(x) + conditions(x) + verdictAndNotes(x, R) + closing();
   return packDocx(body, {title: '사업성 검토 자료 (개략 · 초안)', author: P.author, logo, tag: '개략 검토 · 확정 아님'});
 }

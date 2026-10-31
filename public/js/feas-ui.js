@@ -4,6 +4,7 @@ import {esc, totalArea} from './core.js';
 import {landRefSum} from './multiparcel.js';
 import {charges} from './charges.js';
 import {redFlags} from './feas-flags.js';
+import {analyze, analysisSVG} from './feas-analysis.js';
 
 /* 기본값: 법령으로 정해진 세율만 채우고, 근거가 확인되지 않은 단가는 비워 둔다(빨간 글씨 안내). */
 export const FEAS_DEFAULTS = {
@@ -89,7 +90,7 @@ export const FEAS_REF = {
   buildUnit: {v: Math.round(2328000 * 400 / 121), src: '국토교통부 기본형건축비 2026. 9. 15. 고시 — ㎡당 232만 8천 원 (16~25층·전용 60~85㎡ 공동주택 기준, 다른 용도는 실제 공사비와 다를 수 있음)'},
   loanRate: {v: 4.4, src: '한국은행 예금은행 신규취급액 기준 전체 대출금리 2026년 8월 (2026. 9. 30. 발표)'}
 };
-const readOut = (k, v) => v == null ? '' : PER_PY.has(k) ? `= ㎡당 ${won(v)}원` : TOTAL.has(k) ? `= ${krw(v)}` : '';
+const readOut = (k, v) => v == null ? '' : PER_PY.has(k) ? `= 평당 ${krw(v * PY)} (㎡당 ${won(v)}원)` : TOTAL.has(k) ? `= ${krw(v)}` : '';
 
 export function renderFeas(p, onChange) {
   const box = document.getElementById('feasBox'); if (!box) return;
@@ -112,7 +113,7 @@ export function renderFeas(p, onChange) {
     const field = ([k, label, unit, help]) => { const v = f[k], ref = FEAS_REF[k];
       const placeholder = k === 'landCost' && a.landRef != null ? `비우면 ${nice(Math.round(a.landRef))}` : k === 'gross' && a.gross != null ? `비우면 ${nice(a.gross)}` : k === 'otherCost' && a.levy > 0 ? `비우면 ${nice(Math.round(a.levy))}` : ref ? `예: ${nice(ref.v)}` : '숫자만 입력';
       const isDef = FEAS_DEFAULTS[k] != null && num(v) === FEAS_DEFAULTS[k];
-      return `<label class="feas-field"><span>${label}</span><div class="feas-in"><input data-fin="${k}" inputmode="decimal" autocomplete="off" value="${v == null ? '' : esc(niceK(k, toUser(k, num(v))))}" placeholder="${esc(placeholder)}"${isDef ? ' class="uncertain"' : ''}><b>${unit}</b></div><em class="feas-read">${readOut(k, num(v))}</em><small class="feas-help">${esc(help)}${k === 'otherCost' && a.levy > 0 ? ' 비우면 농지보전부담금 자동 산정값을 씀.' : ''}</small>${ref ? `<small class="feas-ref uncertain">회색 예시 출처: ${esc(ref.src)}</small>` : ''}</label>`; };
+      return `<label class="feas-field"><span>${label}</span><div class="feas-in"><input data-fin="${k}" inputmode="decimal" autocomplete="off" value="${v == null ? '' : esc(niceK(k, toUser(k, num(v))))}" placeholder="${esc(placeholder)}"${isDef ? ' class="uncertain"' : ''}><b>${unit}</b></div><em class="feas-read">${num(v) != null ? readOut(k, num(v)) : k === 'landCost' && a.landRef != null ? `<span class="feas-ex">비우면 ${krw(a.landRef)}</span>` : k === 'otherCost' && a.levy > 0 ? `<span class="feas-ex">비우면 ${krw(a.levy)}</span>` : ref && MONEY.has(k) ? `<span class="feas-ex">예시 ${readOut(k, fromUser(k, ref.v)).replace(/^= /, '')}</span>` : ''}</em><small class="feas-help">${esc(help)}${k === 'otherCost' && a.levy > 0 ? ' 비우면 농지보전부담금 자동 산정값을 씀.' : ''}</small>${ref ? `<small class="feas-ref uncertain">회색 예시 출처: ${esc(ref.src)}</small>` : ''}</label>`; };
     html += step(4, '단가를 넣으십시오 <small>(모르면 시공사·중개사무소에 물어볼 값)</small>', `<p class="feas-note">칸 안의 <span class="ph">회색 숫자</span>는 참고용 예시일 뿐 계산에 쓰이지 않습니다. 칸을 눌러 <b>숫자만 직접 입력</b>해야 계산됩니다.</p><div class="feas-grid">${need.map(field).join('')}</div>`);
     html += `<details class="feas-more"${f._open ? ' open' : ''}><summary>세부 값 (모르면 그대로 두십시오)</summary><div class="feas-grid">${rest.map(field).join('')}</div><p class="small"><span class="uncertain">빨간 칸</span> = 기본값(법령 세율 등). 바꾸면 검정으로 바뀝니다. 빈칸은 0으로 계산합니다.</p></details>`;
     html += resultHtml(x);
@@ -152,7 +153,7 @@ function resultHtml(x) {
   else kpi.push(['㎡당 사업비', r.perM2 != null ? won(r.perM2) + ' 원/㎡' : '', F.total]);
   const s = sensitivity(x), lab = x.mode === 'sale' ? '분양가' : '임대료';
   const sens = s ? `<h4>공사비·${lab}가 바뀌면? <small>(${x.mode === 'sale' ? '이익률' : '임대 수익률'})</small></h4><table class="feas-sens"><thead><tr><th>공사비 \\ ${lab}</th><th>−10%</th><th>기본</th><th>+10%</th></tr></thead><tbody>${['−10%', '기본', '+10%'].map((h, i) => `<tr><th>${h}</th>${s[i].map((m, j) => `<td class="${m != null && m < 0 ? 'neg' : ''}${i === 1 && j === 1 ? ' base' : ''}">${pctS(m)}</td>`).join('')}</tr>`).join('')}</tbody></table>` : '';
-  return `<div class="feas-result">${zeroWarn}<div class="feas-verdict lv-${v.level}"><b>${v.label}</b><span>${esc(v.text)}</span></div><div class="feas-kpi">${kpi.map(([k, val, red]) => `<div><span>${k}</span><b${red && val ? ' class="uncertain"' : ''}>${val || '—'}</b></div>`).join('')}</div>${table}${sens}
+  return `<div class="feas-result">${zeroWarn}<div class="feas-verdict lv-${v.level}"><b>${v.label}</b><span>${esc(v.text)}</span></div>${(() => { try { const A = analyze(x); if (!A.points.length) return ''; return `<div class="feas-analysis"><h3>결과 분석</h3><div class="fa-concl${A.conclusionRed ? ' uncertain' : ''}"><b>결론</b> ${esc(A.conclusion)}</div>${analysisSVG(x, A)}<ul class="fa-points">${A.points.map(q => `<li class="${q.red ? 'uncertain' : ''}">${esc(q.text)}</li>`).join('')}</ul></div>`; } catch (e) { console.warn(e); return ''; } })()}<div class="feas-kpi">${kpi.map(([k, val, red]) => `<div><span>${k}</span><b${red && val ? ' class="uncertain"' : ''}>${val || '—'}</b></div>`).join('')}</div>${table}${sens}
   <div class="feas-dl"><button type="button" class="primary" data-feasdl="word">사업성 검토 보고서 <em>WORD</em></button><button type="button" data-feasdl="pdf">보고서 <em>PDF</em></button><button type="button" data-feasdl="excel">사업수지 계산표 <em>EXCEL</em></button><button type="button" data-feasdl="zip">전부 한 번에 (ZIP)</button></div>
   <p class="feas-warn small">판정은 입력값 기준 개략 결과이며 확정이 아님.</p></div>`;
 }
