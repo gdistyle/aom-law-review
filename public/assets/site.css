@@ -279,3 +279,4 @@ body{background:#F3F3F1}
 .feas-ex{color:#8c8f94;font-style:normal}
 .fa-h{font:700 15px "맑은 고딕","Malgun Gothic",sans-serif;fill:#303236}.fa-t{font:600 13.5px "맑은 고딕","Malgun Gothic",sans-serif;fill:#303236}.fa-sw{stroke:#9a9da2;stroke-width:1}
 .dl-ready{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:9999;display:flex;flex-direction:column;gap:8px;width:min(560px,calc(100vw - 24px))}.dl-item{display:flex;align-items:center;gap:10px;background:#303236;color:#fff;border-radius:10px;padding:10px 12px;box-shadow:0 6px 20px rgba(0,0,0,.25);font-size:13px}.dl-item span{flex:1;min-width:0;overflow-wrap:anywhere}.dl-item small{color:#c9cbce}.dl-save{background:#F37021;color:#fff;padding:7px 14px;border-radius:7px;text-decoration:none;font-weight:700;white-space:nowrap}.dl-item button{background:none;border:0;color:#c9cbce;font-size:16px;cursor:pointer}
+.is-wait{opacity:.75}
