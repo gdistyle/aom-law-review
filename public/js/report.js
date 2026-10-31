@@ -6,6 +6,7 @@ import {shortLaw} from './legal.js';
 import {scaleChecklist} from './checklist.js';
 import {stripMarks} from './context.js';
 import {parcelRows} from './multiparcel.js';
+import {permitSteps} from './permits.js';
 
 const ORANGE = 'F37021', DARK = '303236', GRAY = '6B6E73', LINE = 'D9D9D6', SOFT = 'FFF4EC', HEAD = '3A3B3F', RED = 'E00000';
 const PAGE_W = 16838, PAGE_H = 11906, MARGIN = 1134, BODY_W = PAGE_W - MARGIN * 2; // A4 가로, 좌우 2cm
@@ -185,7 +186,10 @@ function maxScale(P) {
     ['지하 층수', bs ? `${bs} 층` : '없음', '', false]
   ].filter(x => x[1]);
   return h1('Ⅱ', '계획 조건 및 법정 최대 규모') + h2('계획 조건') + table([3000, 3600, BODY_W - 6600], ['항 목', '적용', '비 고'], plan.map(([k, v, f, red]) => [{t: k, b: true, jc: 'center'}, {t: v, b: true, red, jc: 'center'}, {t: f, sz: 16, color: GRAY, red}]), {zebra: true})
-    + h2('법정 최대 규모') + table([3000, 3600, BODY_W - 6600], ['항 목', '산정 결과', '산정 근거'], rows.map(([k, v, f, red]) => [{t: k, b: true, jc: 'center'}, {t: v, b: true, red, jc: 'center'}, {t: f, sz: 16, color: GRAY}]), {zebra: true});
+    + h2('법정 최대 규모') + table([3000, 3600, BODY_W - 6600], ['항 목', '산정 결과', '산정 근거'], rows.map(([k, v, f, red]) => [{t: k, b: true, jc: 'center'}, {t: v, b: true, red, jc: 'center'}, {t: f, sz: 16, color: GRAY}]), {zebra: true})
+    + (() => { const PS = permitSteps(P); const c = [900, 3800, 3800]; c.push(BODY_W - c.reduce((a2, b2) => a2 + b2, 0));
+      return h2('인허가 절차 (일반 순서)') + table(c, ['순서', '절 차', '해당 조건', '비고 · 근거'], PS.steps.map(s => [{t: String(s.no), jc: 'center'}, {t: s.step, b: true, red: s.red}, {t: s.when, sz: 16}, {t: [s.note, s.refs.map(x => `${shortLaw(x.name)} ${x.article}`).join(' · ')].filter(Boolean).join('\n'), sz: 15, color: GRAY, red: s.red}]), {sz: 16, pad: 40})
+        + p('※ ' + PS.note, {red: true, sz: 16, after: 60}); })();
 }
 
 function lawReview(P) {
