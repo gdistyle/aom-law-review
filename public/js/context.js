@@ -153,7 +153,8 @@ export function siteDirections(items = [], regions = [], here = null) {
 }
 export function directionSentence(dirs) {
   const land = dirs.filter(d => d.name).map(d => `${d.dir}쪽으로 «${d.name}»(${km(d.distance)})`);
-  const reg = dirs.filter(d => d.region).map(d => `${d.dir}쪽은 «${d.region}»`);
+  const byReg = new Map(); for (const d of dirs.filter(d => d.region)) byReg.set(d.region, [...(byReg.get(d.region) || []), d.dir]);
+  const reg = [...byReg].map(([name, ds]) => `${ds.join('·')}쪽은 «${name}»`);
   const a = land.length ? `${land.join(', ')}이(가) 자리함.` : '';
   const b = reg.length ? ` 생활권은 ${reg.join(', ')} 일대와 맞닿음.` : '';
   return fixJosa((a + b).trim());

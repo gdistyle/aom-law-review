@@ -165,7 +165,7 @@ function siteStory(){const el=$('siteStory');if(!el)return;if(!p.pnu||!p.locatio
  const near=k=>nearbyItems.some(o=>o.kind===k&&o.distance<=(k==='지하철역'?500:800));const ts=terrainSummary(p.model?.terrain?.points||null);
  const score=u=>{let v=0;if(/근린생활|업무|판매/.test(u)&&near('지하철역'))v+=3;if(/상업/.test(zone)&&/근린생활|업무|판매|숙박/.test(u))v+=2;if(/주거/.test(zone)&&/주택|제1종/.test(u))v+=2;if(/녹지|관리/.test(zone)&&/단독주택|근린생활/.test(u))v+=2;if((near('공원')||nearbyItems.some(o=>o.kind==='경관-산'&&o.distance<1500))&&/주택|문화|관광|제2종/.test(u))v+=1;if(ts&&ts.slope>=8&&/단독주택/.test(u))v+=2;if(/공업/.test(zone)&&/공장|창고/.test(u))v+=3;return v;};
  const ranked=cand.map(x=>x.use).sort((a,b)=>score(b)-score(a));
- if(!Array.isArray(p.storyUses)||p.storyUsesFor!==p.pnu){p.storyUses=p.purpose&&cand.some(x=>x.use===p.purpose)?[p.purpose]:ranked.slice(0,3);p.storyUsesFor=p.pnu;}
+ if(cand.length&&(!Array.isArray(p.storyUses)||p.storyUsesFor!==p.pnu)){p.storyUses=p.purpose&&cand.some(x=>x.use===p.purpose)?[p.purpose]:ranked.slice(0,3);p.storyUsesFor=p.pnu;}if(!Array.isArray(p.storyUses))p.storyUses=[];
  p.storyUses=p.storyUses.filter(u=>cand.some(x=>x.use===u));
  const uses=p.storyUses;c.useOptions=cand;
 const b=selectedBuilding(p),from=b?.mainPurpsCdNm||'';
