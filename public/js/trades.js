@@ -68,7 +68,7 @@ export function renderTrades(box, p, state, onLoad) {
   } else {
     html += `<div class="tr-scroll"><table class="feas-auto tr-stat"><thead><tr><th>구분</th><th>거래</th><th>평당 중앙값 (만 원)</th><th>㎡당 중앙값 (원)</th><th>㎡당 범위 (원)</th><th>× 대지면적 (만 원)</th></tr></thead><tbody>
       ${row(`같은 동 전체 (${dong})`, S.all)}${S.jimok ? row(`같은 지목 (${p.land.category.value})`, S.jimok) : ''}${S.zone ? row(`같은 용도지역 (${p.land.zone.value})`, S.zone) : ''}</tbody></table></div>
-      <p class="uncertain small">중앙값 = 가격을 줄 세웠을 때 가운데 값(극단적인 거래의 영향을 덜 받음). 「× 대지면적」은 중앙값을 이 대지 면적(${n1(area)} ㎡)에 곱한 단순 참고값이며 실제 매입가가 아님 — 땅마다 도로 접함·모양·경사·개발 가능성이 달라 가격 차이가 큼. 해제·지분 거래 ${S.excluded}건은 통계에서 제외.</p>`;
+      <p class="uncertain small">중앙값 = 가격을 줄 세웠을 때 가운데 값(극단적인 거래의 영향을 덜 받음). 「× 대지면적」은 중앙값을 ${area ? `이 대지 면적(${n1(area)} ㎡)` : '대지 면적(미수집)'}에 곱한 단순 참고값이며 실제 매입가가 아님 — 땅마다 도로 접함·모양·경사·개발 가능성이 달라 가격 차이가 큼. 해제·지분 거래 ${S.excluded}건은 통계에서 제외.</p>`;
     const L = S.list.slice(0, 40);
     html += `<details${state.open ? ' open' : ''} class="tr-more"><summary>거래 목록 보기 (${S.list.length}건${S.list.length > 40 ? ', 최근 40건 표시' : ''})</summary><div class="tr-scroll"><table class="feas-auto tr-list"><thead><tr><th>계약일</th><th>지번</th><th>지목</th><th>용도지역</th><th>면적 (㎡)</th><th>거래금액 (만 원)</th><th>㎡당 (원)</th><th>평당 (만 원)</th></tr></thead><tbody>
       ${L.map(t => `<tr class="${t.ok ? '' : 'tr-x'}"><td class="c">${t.y}. ${String(t.m).padStart(2, '0')}. ${String(t.d || '').padStart(2, '0')}.</td><td class="c">${esc(t.jibun)}</td><td class="c">${esc(t.jimok)}</td><td>${esc(t.zone)}</td><td class="r">${n1(t.area)}</td><td class="r">${n0(t.amount)}</td><td class="r">${n0(t.perM2)}</td><td class="r">${n1(t.perPy)}</td></tr>`).join('')}
