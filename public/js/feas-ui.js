@@ -82,7 +82,11 @@ export const toUser = (k, v) => v == null ? null : PER_PY.has(k) ? v * PY / 1e4 
 export const fromUser = (k, v) => v == null ? null : PER_PY.has(k) ? v * 1e4 / PY : TOTAL.has(k) ? v * 1e4 : v;
 const nice = v => v == null || !Number.isFinite(v) ? '' : (Math.round(v * 100) / 100).toLocaleString('ko-KR', {maximumFractionDigits: 2});
 /* 회색 참고값(공식 근거 확인된 값만): {key: {v: 입력 단위 값, src: '출처·기준 시점'}} */
-export const FEAS_REF = {};
+/* 회색 예시값(계산에 쓰지 않음). 공식 발표값만 넣고 출처·기준일을 함께 표시. 값은 화면 단위(만 원/평, %). */
+export const FEAS_REF = {
+  buildUnit: {v: Math.round(232.8 * 400 / 121 * 10) / 10, src: '국토교통부 기본형건축비 2026. 9. 15. 고시 — ㎡당 232만 8천 원 (16~25층·전용 60~85㎡ 공동주택 기준, 다른 용도는 실제 공사비와 다를 수 있음)'},
+  loanRate: {v: 4.4, src: '한국은행 예금은행 신규취급액 기준 전체 대출금리 2026년 8월 (2026. 9. 30. 발표)'}
+};
 const readOut = (k, v) => v == null ? '' : PER_PY.has(k) ? `= ㎡당 ${won(v)}원` : TOTAL.has(k) ? `= ${krw(v)}` : '';
 
 export function renderFeas(p, onChange) {
@@ -106,7 +110,7 @@ export function renderFeas(p, onChange) {
     const field = ([k, label, unit, help]) => { const v = f[k], ref = FEAS_REF[k];
       const placeholder = k === 'landCost' && a.landRef != null ? `비우면 ${nice(a.landRef / 1e4)} (공시지가 기준)` : k === 'gross' && a.gross != null ? `비우면 ${nice(a.gross)}` : k === 'otherCost' && a.levy > 0 ? `비우면 ${nice(a.levy / 1e4)} (농지보전부담금)` : ref ? `예: ${nice(ref.v)}` : '숫자만 입력';
       const isDef = FEAS_DEFAULTS[k] != null && num(v) === FEAS_DEFAULTS[k];
-      return `<label class="feas-field"><span>${label}</span><div class="feas-in"><input data-fin="${k}" inputmode="decimal" autocomplete="off" value="${v == null ? '' : esc(nice(toUser(k, num(v))))}" placeholder="${esc(placeholder)}"${isDef ? ' class="uncertain"' : ''}><b>${unit}</b></div><em class="feas-read">${readOut(k, num(v))}</em>${ref ? `<small class="feas-ref">회색 예시 출처: ${esc(ref.src)}</small>` : ''}<small class="feas-help">${esc(help)}</small></label>`; };
+      return `<label class="feas-field"><span>${label}</span><div class="feas-in"><input data-fin="${k}" inputmode="decimal" autocomplete="off" value="${v == null ? '' : esc(nice(toUser(k, num(v))))}" placeholder="${esc(placeholder)}"${isDef ? ' class="uncertain"' : ''}><b>${unit}</b></div><em class="feas-read">${readOut(k, num(v))}</em>${ref ? `<small class="feas-ref uncertain">회색 예시 출처: ${esc(ref.src)}</small>` : ''}<small class="feas-help">${esc(help)}</small></label>`; };
     html += step(4, '단가를 넣으십시오 <small>(모르면 시공사·중개사무소에 물어볼 값)</small>', `<p class="feas-note">칸 안의 <span class="ph">회색 숫자</span>는 참고용 예시일 뿐 계산에 쓰이지 않습니다. 칸을 눌러 <b>숫자만 직접 입력</b>해야 계산됩니다.</p><div class="feas-grid">${need.map(field).join('')}</div>`);
     html += `<details class="feas-more"${f._open ? ' open' : ''}><summary>세부 값 (모르면 그대로 두십시오)</summary><div class="feas-grid">${rest.map(field).join('')}</div><p class="small"><span class="uncertain">빨간 칸</span> = 기본값(법령 세율 등). 바꾸면 검정으로 바뀝니다. 빈칸은 0으로 계산합니다.</p></details>`;
     html += resultHtml(x);
