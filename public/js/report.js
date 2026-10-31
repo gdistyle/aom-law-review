@@ -7,6 +7,7 @@ import {scaleChecklist} from './checklist.js';
 import {stripMarks} from './context.js';
 import {parcelRows} from './multiparcel.js';
 import {permitSteps} from './permits.js';
+import {duties, DUTY_NOTE} from './duties.js';
 import {charges} from './charges.js';
 import {zonePlain} from './zoneplain.js';
 
@@ -195,6 +196,9 @@ function maxScale(P) {
     + (() => { const PS = permitSteps(P); const c = [900, 3800, 3800]; c.push(BODY_W - c.reduce((a2, b2) => a2 + b2, 0));
       return h2('인허가 절차 (일반 순서)') + table(c, ['순서', '절 차', '해당 조건', '비고 · 근거'], PS.steps.map(s => [{t: String(s.no), jc: 'center'}, {t: s.step, b: true, red: s.red}, {t: s.when, sz: 16}, {t: [s.note, s.refs.map(x => `${shortLaw(x.name)} ${x.article}`).join(' · ')].filter(Boolean).join('\n'), sz: 15, color: GRAY, red: s.red}]), {sz: 16, pad: 40})
         + p('※ ' + PS.note, {red: true, sz: 16, after: 60}); })()
+    + (() => { if (!P.pnu) return ''; const D = duties(P), lab = {yes: '해당', no: '해당 없음', unknown: '판정 불가'}, c = [2800, 1300, 3400, 2600]; c.push(BODY_W - c.reduce((a2, b2) => a2 + b2, 0));
+      return h2('설계 의무 대상 (참고자료)') + table(c, ['항 목', '판 정', '기준 (대표)', '판정에 쓴 규모', '근 거'], D.rows.map(r => [{t: r.item, b: true, jc: 'center'}, {t: lab[r.result], jc: 'center', b: r.result === 'yes', color: r.result === 'yes' ? ORANGE : r.result === 'no' ? GRAY : undefined, red: r.result === 'unknown'}, {t: r.basis, sz: 16}, {t: r.scale, sz: 16, red: true}, {t: `${shortLaw(r.ref.name)} ${r.ref.article}`, sz: 15, jc: 'center', color: GRAY}]), {sz: 16, pad: 40})
+        + p('※ ' + DUTY_NOTE, {red: true, sz: 16, after: 60}); })()
     + (() => { const C = charges(P); if (!C.length) return ''; const c = [3600, 3200]; c.push(BODY_W - c.reduce((a2, b2) => a2 + b2, 0));
       return h2('농지·산지 전용 부담금 (개략)') + table(c, ['구 분', '산정 금액', '산정 기준 · 근거'], C.map(x => [{t: x.kind, b: true, jc: 'center'}, {t: x.ok ? `${fmt(Math.round(x.total))} 원` : '자동 산정 안 함', jc: 'center', b: true, red: true}, {t: `${x.note}\n${x.ref.name} ${x.ref.article}`, sz: 15, red: true}]), {sz: 16, pad: 40}); })();
 }
