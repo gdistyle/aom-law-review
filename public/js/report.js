@@ -107,9 +107,9 @@ function summary(P, imgs) {
   }
   if (imgs) {
     const w = Math.floor((BODY_W - 300) / 2);
-    x += h2('위치도') + `<w:tbl><w:tblPr><w:tblW w:w="${BODY_W}" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblBorders>${['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(s => `<w:${s} w:val="nil"/>`).join('')}</w:tblBorders></w:tblPr><w:tblGrid><w:gridCol w:w="${w}"/><w:gridCol w:w="300"/><w:gridCol w:w="${w}"/></w:tblGrid><w:tr>`
+    x += h2('위치도 (지적도 · 항공사진)') + `<w:tbl><w:tblPr><w:tblW w:w="${BODY_W}" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblBorders>${['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(s => `<w:${s} w:val="nil"/>`).join('')}</w:tblBorders></w:tblPr><w:tblGrid><w:gridCol w:w="${w}"/><w:gridCol w:w="300"/><w:gridCol w:w="${w}"/></w:tblGrid><w:tr>`
       + [[imgs.cad, 'rIdSite1', 9101, '지적도'], null, [imgs.photo, 'rIdSite2', 9102, '항공사진']].map(c => c
-        ? `<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/></w:tcPr>${p(picture(c[1], c[2], c[0].w, c[0].h, w - 100), {jc: 'center', after: 40})}${p(r(c[3], {sz: 16, color: GRAY}), {jc: 'center', after: 0})}</w:tc>`
+        ? `<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/></w:tcPr>${p(picture(c[1], c[2], c[0].w, c[0].h, Math.min(w - 100, Math.round(3900 * c[0].w / Math.max(c[0].h, 1)))), {jc: 'center', after: 40})}${p(r(c[3], {sz: 16, color: GRAY}), {jc: 'center', after: 0})}</w:tc>`
         : `<w:tc><w:tcPr><w:tcW w:w="300" w:type="dxa"/></w:tcPr><w:p/></w:tc>`).join('') + '</w:tr></w:tbl>';
   }
   return x;
