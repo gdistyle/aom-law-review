@@ -253,3 +253,11 @@ body{background:#F3F3F1}
 .charge{padding:8px 10px;border:1px solid var(--line);border-radius:8px;margin:6px 0}.charge b{font-size:13px}.charge .amt{margin-left:8px;font-weight:700;color:var(--red,#E00000)}.charge a{color:var(--aom)}
 
 .zp b{font-weight:600;font-size:12px}.zp small{color:#6b6e73;font-size:11.5px}
+
+/* 일조·그림자 */
+.shadow-box{margin-top:16px;padding-top:12px;border-top:1px solid var(--line)}.shadow-box h3{margin:0 0 8px;font-size:14px}.shadow-box h3 small{font-weight:400;color:#6b6e73}
+.sh-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}.sh-wrap{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}.sh-svg{display:block;width:100%;height:auto}
+.sh-bg{fill:#fff}.sh-par{fill:none;stroke:#c9cbce;stroke-width:.8}.sh-shadow{fill:#3a3b3f;fill-opacity:.09;stroke:none}.sh-site{fill:none;stroke:#F37021;stroke-width:2}.sh-bld{fill:#F37021;fill-opacity:.55;stroke:#c4561a;stroke-width:.6}
+.sh-nc{fill:#fff;stroke:#303236;stroke-width:1.2}.sh-n{fill:#303236}.sh-nt{font:700 13px sans-serif;fill:#303236}.sh-sunc{fill:#fff;fill-opacity:.85;stroke:#9a9da1;stroke-dasharray:3 3}.sh-ray{stroke:#d18a00;stroke-width:1.5}.sh-t{font:11px sans-serif;fill:#303236}.sh-scale{fill:#303236}
+.sh-table{margin-top:8px}.sh-table td{text-align:center}
+.sh-cap{font-weight:700}
