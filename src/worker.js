@@ -53,6 +53,22 @@ async function address(u,env){
  return {address:a.address_name,pnu,lon:number(a.x||x.x),lat:number(a.y||x.y),region1:a.region_1depth_name,region2:a.region_2depth_name,region3:a.region_3depth_name,main:a.main_address_no,sub:a.sub_address_no,mountain:a.mountain_yn};});
  return json({ok:true,items,isEnd:!!data.meta?.is_end,source:publicSource('카카오 로컬 주소검색','https://developers.kakao.com/docs/ko/kakaomap/rest-api')});
 }
+async function nearby(u,env){
+ if(!configured(env,'KAKAO_REST_KEY'))return missing('kakao');
+ const x=number(u.searchParams.get('x')),y=number(u.searchParams.get('y'));
+ if(!(x>124&&x<132&&y>32&&y<40))throw new Error('INVALID_INPUT');
+ // 카카오 로컬 카테고리 검색 + 공원 키워드 검색. 이름·분류·거리만 반환(주소·전화 미반환).
+ const CATS=[['SW8','지하철역',1000],['SC4','학교',500],['CT1','문화시설',800],['AT4','관광명소',1000],['PO3','공공기관',600],['HP8','병원',500],['MT1','대형마트',1000]];
+ const H={Authorization:'KakaoAK '+env.KAKAO_REST_KEY};
+ const one=async(url,label)=>{try{const d=await upstreamJSON(url,env,H);return (Array.isArray(d.documents)?d.documents:[]).slice(0,5).map(o=>({name:String(o.place_name||'').slice(0,60),kind:label,group:String(o.category_name||'').split('>').pop().trim().slice(0,30),distance:number(o.distance)})).filter(o=>o.name&&Number.isFinite(o.distance));}catch{return [];}};
+ const jobs=CATS.map(([code,label,r])=>{const url=new URL('https://dapi.kakao.com/v2/local/search/category.json');for(const [k,v]of Object.entries({category_group_code:code,x:String(x),y:String(y),radius:String(r),sort:'distance',size:'5'}))url.searchParams.set(k,v);return one(url,label);});
+ const park=new URL('https://dapi.kakao.com/v2/local/search/keyword.json');for(const [k,v]of Object.entries({query:'공원',x:String(x),y:String(y),radius:'800',sort:'distance',size:'5'}))park.searchParams.set(k,v);
+ jobs.push(one(park,'공원').then(a=>a.filter(o=>/공원|숲|녹지/.test(o.name+o.group))));
+ const river=new URL('https://dapi.kakao.com/v2/local/search/keyword.json');for(const [k,v]of Object.entries({query:'천',x:String(x),y:String(y),radius:'800',sort:'distance',size:'5'}))river.searchParams.set(k,v);
+ jobs.push(one(river,'하천').then(a=>a.filter(o=>/하천|강$|천$|호수/.test(o.group+' '+o.name))));
+ const items=(await Promise.all(jobs)).flat();
+ return json({ok:true,items,source:publicSource('카카오 로컬 장소검색','https://developers.kakao.com/docs/ko/kakaomap/rest-api')});
+}
 async function buildings(u,env){
  if(!configured(env,'DATA_GO_KR_KEY'))return missing('building');
  const pnu=checkQuery(u,'pnu',/^\d{19}$/),params=splitPNU(pnu),kind=u.searchParams.get('kind')||'title';if(!OPS[kind])throw new Error('INVALID_INPUT');
@@ -143,6 +159,7 @@ export default {async fetch(request,env){
  try{
   if(u.pathname==='/api/config')return json({ok:true,kakaoJsKey:env.KAKAO_JS_KEY||'',lawOc:env.LAW_OC||'',vworldKey:env.VWORLD_KEY||'',vworldDomain:env.VWORLD_DOMAIN||'',vworldBuildingLayer:env.VWORLD_BUILDING_LAYER||'',vworldFloorsField:env.VWORLD_BUILDING_FLOORS_FIELD||'',services:{kakao:configured(env,'KAKAO_REST_KEY'),building:configured(env,'DATA_GO_KR_KEY'),land:configured(env,'VWORLD_KEY'),law:configured(env,'LAW_OC')},eumTemplate:publicEumTemplate(env.EUM_PARCEL_URL_TEMPLATE),buildingLayer:!!env.VWORLD_BUILDING_LAYER});
   if(u.pathname==='/api/address')return await address(u,env);
+  if(u.pathname==='/api/nearby')return await nearby(u,env);
   if(u.pathname==='/api/buildings')return await buildings(u,env);
   if(u.pathname==='/api/land')return await land(u,env);
   if(u.pathname==='/api/spatial')return await spatial(u,env);

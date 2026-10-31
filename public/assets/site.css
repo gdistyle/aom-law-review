@@ -150,3 +150,13 @@ body{background:#F3F3F1}
 .consult-copy{font-size:12.5px;padding:5px 10px}
 .install-app{width:100%;margin-top:10px;padding:10px;border:1.5px dashed #c8c8c5;background:#fff;border-radius:8px;font-size:13.5px;color:#303236}
 .install-app:hover{border-color:var(--red);color:var(--red)}
+
+/* 대지 맥락 · 컨셉 */
+.site-story{margin:12px 0 4px;padding:14px 16px;background:#fff;border:1px solid var(--line);border-left:4px solid var(--red);border-radius:8px}
+.site-story h3{margin:0 0 6px;font-size:15px}.site-story h3 small{font-weight:400;font-size:11.5px;margin-left:6px}
+.site-story h4{margin:10px 0 3px;font-size:13px;color:#595959}
+.site-story ul{margin:0;padding-left:18px;font-size:12.8px;line-height:1.7}
+.site-story .ctx-char{margin:0 0 4px;font-weight:600;color:var(--red);font-size:13.5px}
+.site-story .ctx-story{margin:0;font-size:13.3px;line-height:1.75;word-break:keep-all}
+.ctx-sig small{color:#777}
+.consult-home{font-size:13px;color:#303236;text-decoration:none;border-top:1px solid var(--line);padding-top:8px;margin-top:4px}.consult-home:hover{color:var(--red)}
