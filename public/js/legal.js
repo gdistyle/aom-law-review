@@ -161,7 +161,7 @@ export function legalHeight(p,purpose){const out=[];const zones=p.land.zones.map
   out.push({floors:null,gross:null,text:'개발제한구역 : 별표1의 허용 건축물·입지 요건(지정 당시 지목 대, 기존 주택 등)에 해당하는 경우에만 건축 가능'});}
   else out.push({floors:null,gross:null,text:'개발제한구역 시행령 별표2 원문 미수신 — 층수·연면적 상한 미반영'});}
  const zone=p.land.zone.value,no=APPENDIX_BY_ZONE[zone],an=getLaw(p.laws,DECREE)?.annexes?.find(a=>a.number===String(no)&&!a.branch);
- if(an?.text){const T=norm(boxClean(an.text)),head=T.split(/1\.(?=[가-힣「])/)[0];const m=[...head.matchAll(/(\d+)층이하/g)].map(x=>+x[1]);const k=T.search(/1\.건축할수있는건축물\(/);if(k>=0){const f1=T.slice(k,k+160).match(/^1\.건축할수있는건축물\((\d+)층이하/);if(f1)m.push(+f1[1]);}if(m.length)out.push({floors:Math.min(...m),gross:null,text:`[「국토계획법 시행령」 제71조 별표${no}] ${zone} 안에서 건축할 수 있는 건축물 : ${Math.min(...m)}층 이하`});}
+ if(an?.text){const T=norm(boxClean(an.text)),head=T.split(/1\.(?=[가-힣「])/)[0];const m=[...head.matchAll(/(\d+)층이하/g)].map(x=>+x[1]);const k=T.search(/1\.건축할수있는건축물[(\[]/);if(k>=0){const f1=T.slice(k,k+160).match(/^1\.건축할수있는건축물[(\[](\d+)층이하/);if(f1)m.push(+f1[1]);}if(m.length)out.push({floors:Math.min(...m),gross:null,text:`[「국토계획법 시행령」 제71조 별표${no}] ${zone} 안에서 건축할 수 있는 건축물 : ${Math.min(...m)}층 이하`});}
  const fl=out.map(x=>x.floors).filter(x=>x>0),gr=out.map(x=>x.gross).filter(x=>x>0);
  const gb=out.find(x=>x.bcr!=null&&x.far!=null);return {floors:fl.length?Math.min(...fl):null,gross:gr.length?Math.min(...gr):null,gb:gb?{bcr:gb.bcr,far:gb.far,gross:gb.gross}:null,lines:out.map(x=>x.text)};}
 const fmt0=v=>Number(v).toLocaleString('ko-KR');

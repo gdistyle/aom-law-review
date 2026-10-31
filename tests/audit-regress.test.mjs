@@ -36,3 +36,9 @@ test('조례 부설주차장 설치기준 표(첨부 HWP 글자) — 하남시 �
   assert.deepEqual(ordinanceParking(law, '단독주택').house, {min: 50, base: 134, step: 81});
   assert.equal(ordinanceParking(law, '창고시설').unit, 300);
 });
+import {legalHeight} from '../public/js/legal.js';
+test('제1종일반주거 별표4 "[4층 이하" (대괄호) 인식', () => {
+  const txt = '■ 국토의 계획 및 이용에 관한 법률 시행령 [별표 4]\n  제1종일반주거지역안에서 건축할 수 있는\n  건축물(제71조제1항제3호관련)\n  1. 건축할 수 있는 건축물[4층 이하(「주택법 시행령」 제10조제1항제2호에\n  따른 단지형 연립주택 및 같은 항 제3호에 따른 단지형 다세대주택인 경우에\n  는 5층 이하를 말하며)의 건축물만 해당한다.';
+  const p = {...b, land: {...b.land, zones: [], zone: {value: '제1종일반주거지역'}}, laws: [{name: '국토의 계획 및 이용에 관한 법률 시행령', current: true, effectiveDate: '20260101', articles: [], annexes: [{number: '4', branch: '', title: '', text: txt}]}]};
+  assert.equal(legalHeight(p, '').floors, 4);
+});
