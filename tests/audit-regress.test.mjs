@@ -7,11 +7,11 @@ import {krw, autoValues} from '../public/js/feas-ui.js';
 import {duties} from '../public/js/duties.js';
 import {sameDong} from '../public/js/trades.js';
 const b = blankProject();
-test('자연녹지 별표17 "4층 이하" 인식 → 연면적 = 건축면적 × 4', () => {
+test('자연녹지 별표17 "4층 이하" 인식 + 서울시 조례 자연녹지 용적률 50% ("비율 이하로" 뒤 숫자만 있는 형식)', () => {
   const f = JSON.parse(readFileSync(new URL('./fixtures/buam99.json', import.meta.url)));
   const p = {...b, ...f, land: {...b.land, ...f.land, zones: [], zone: {value: '자연녹지지역'}, area: {value: 1000}}};
   const r = reviewProject(p);
-  assert.equal(r.limits.legalHeight.floors, 4); assert.equal(r.limits.maxFootprint, 200); assert.equal(r.limits.maxGross, 800);
+  assert.equal(r.limits.legalHeight.floors, 4); assert.equal(r.limits.maxFootprint, 200); assert.equal(r.limits.far.value, 50); assert.equal(r.limits.maxGross, 500);
 });
 test('층수 제한·선택 시 주차 시설면적·사업성 연면적 일치', () => {
   const p = {...b, pnu: '1', land: {...b.land, area: {value: 2374.1}, zone: {value: '일반상업지역'}}, manual: {...b.manual, bcr: 80, far: 1300, floorLimit: 3}, floors: 3, purpose: '제2종 근린생활시설'};
@@ -41,4 +41,12 @@ test('제1종일반주거 별표4 "[4층 이하" (대괄호) 인식', () => {
   const txt = '■ 국토의 계획 및 이용에 관한 법률 시행령 [별표 4]\n  제1종일반주거지역안에서 건축할 수 있는\n  건축물(제71조제1항제3호관련)\n  1. 건축할 수 있는 건축물[4층 이하(「주택법 시행령」 제10조제1항제2호에\n  따른 단지형 연립주택 및 같은 항 제3호에 따른 단지형 다세대주택인 경우에\n  는 5층 이하를 말하며)의 건축물만 해당한다.';
   const p = {...b, land: {...b.land, zones: [], zone: {value: '제1종일반주거지역'}}, laws: [{name: '국토의 계획 및 이용에 관한 법률 시행령', current: true, effectiveDate: '20260101', articles: [], annexes: [{number: '4', branch: '', title: '', text: txt}]}]};
   assert.equal(legalHeight(p, '').floors, 4);
+});
+
+import {extractRatio} from '../public/js/legal.js';
+test('조례 용적률: "(단, 지구단위계획: N)" 구분, 지역 단서는 미채택', () => {
+  const t = '1. 제1종전용주거지역: 80퍼센트 2. 제2종일반주거지역: 240퍼센트 (단, 지구단위계획: 250퍼센트) 3. 중심상업지역: 1천퍼센트(단, 서울도심: 800퍼센트)';
+  assert.equal(extractRatio(t, '제2종일반주거지역'), 240); assert.equal(extractRatio(t, '제2종일반주거지역', false, true), 250);
+  assert.equal(extractRatio(t, '제1종전용주거지역'), 80); assert.equal(extractRatio(t, '중심상업지역'), null);
+  assert.equal(extractRatio('2. 제2종일반주거지역 : 100퍼센트 이상 250퍼센트 이하', '제2종일반주거지역', true), 250);
 });

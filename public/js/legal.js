@@ -67,7 +67,7 @@ export function lawNamesFor(p) {
  return [...set];
 }
 /** 첫 항 본문/호에서 정확히 일치하는 지역 행만 추출. 조건부·복수 수치는 자동 채택하지 않음. */
-export function extractRatio(text,zone,range=false) {
+export function extractRatio(text,zone,range=false,district=false) {
  const lines=plain(text).replace(/([^\d\s])(\d{1,2}\.\s)/g,'$1\n$2').replace(/([①-⑳])/g,'\n$1').replace(/(\d+)\s*천\s*(\d{0,3})(?=\s*퍼센트)/g,(m,a,b)=>String(+a*1000+(+b||0))).split(/\n|(?=\s\d+\.\s)/).map(s=>s.trim()).filter(Boolean);
  const target=norm(zone); const matches=[];
  for(const line of lines){
@@ -76,24 +76,28 @@ export function extractRatio(text,zone,range=false) {
   const tail=clean.slice(idx+target.length);
   // 동일 행에 다른 용도지역/특례가 섞이면 모호함.
   if(ZONES.some(z=>z!==zone&&tail.includes(norm(z))))continue;
+  // '240퍼센트 (단, 지구단위계획: 250퍼센트)' 형식: 기본값과 지구단위계획구역 값을 구분해 읽음
+  const dm=!range&&tail.match(new RegExp('^[:：ㆍ·\\-]?'+NUM+'(?:퍼센트|%)(?:이하)?\\(단,?지구단위계획(?:구역)?(?:안)?(?:의경우)?[:：]?'+NUM+'(?:퍼센트|%)(?:이하)?\\)'));
+  if(dm){matches.push(number(district?dm[2]:dm[1]));continue;}
   if(/다만|경우|특례|완화|인센티브|정비사업|지구단위/.test(tail))continue;
-  const pattern=range?new RegExp('^[:：ㆍ·\-]?'+NUM+'퍼센트이상'+NUM+'퍼센트이하'):new RegExp('^[:：ㆍ·\-]?'+NUM+'(?:퍼센트|%)이하');
+  if(/^[:：ㆍ·\-]?[\d,.]+(?:퍼센트|%)(?:이하)?\(단/.test(tail))continue;   // '(단, 서울도심: …)' 등 지역 단서는 자동 채택하지 않음
+  const pattern=range?new RegExp('^[:：ㆍ·\-]?'+NUM+'퍼센트이상'+NUM+'퍼센트이하'):new RegExp('^[:：ㆍ·\-]?'+NUM+'(?:퍼센트|%)(?:이하)?(?!이상|초과)(?:$|[^\\d])');
   const m=tail.match(pattern);if(m)matches.push(number(m[range?2:1]));
  }
  const vals=[...new Set(matches.filter(v=>v!==null&&v>=0&&v<=3000))];return vals.length===1?vals[0]:null;
 }
-function ratioFrom(law,zone,type) {
+function ratioFrom(law,zone,type,district=false) {
  if(!law?.current)return null;
  const patterns=type==='bcr'?/용도지역.*건폐율/:/용도지역.*용적률/;
  const articles=law.articles.filter(a=>patterns.test(norm(a.title))&&!/완화|특례|예외/.test(norm(a.title)));
  const result=[];
  for(const a of articles){
-  const val=extractRatio((a.hang1||a.text).split(/②/)[0],zone,false);
+  const val=extractRatio((a.hang1||a.text).split(/②/)[0],zone,false,district);
   if(val!==null)result.push({value:val,article:a});
   // 별표 본문이 실제로 제공된 경우에만 사용. 이미지/PDF 별표의 숫자는 추정하지 않음.
   for(const m of a.text.matchAll(/별표\s*(\d+)(?:의\s*(\d+))?/g)){
    const annex=law.annexes.find(x=>x.number===String(+m[1])&&x.branch===String(m[2]?+m[2]:''));
-   const av=annex?extractRatio(annex.text,zone,false):null;if(av!==null)result.push({value:av,article:a,annex:annex.number});
+   const av=annex?extractRatio(annex.text,zone,false,district):null;if(av!==null)result.push({value:av,article:a,annex:annex.number});
   }
  }
  if(!result.length||new Set(result.map(r=>r.value)).size!==1)return null;return result[0];
@@ -105,7 +109,7 @@ export function resolveRatios(p){
  const out={bcr:datum(),far:datum(),district,upperBcr:null,upperFar:null};
  for(const [type,no,baseIndex] of [['bcr',84,0],['far',85,2]]){
   const a=getArticle(d,no), upper=a?extractRatio(a.hang1||a.text,zone,type==='far'):null;out[type==='bcr'?'upperBcr':'upperFar']=upper;
-  const loc=ratioFrom(o.plan,zone,type), baseline=BASELINES[zone]?.[baseIndex];
+  const loc=ratioFrom(o.plan,zone,type,district), baseline=BASELINES[zone]?.[baseIndex];
   if(district&&(!p.manual.districtResolved||number(p.manual[type])===null)){out[type]=datum(loc&&upper!==null&&loc.value<=upper?loc.value:(upper??null),'조례 기준 가정치 · 지구단위계획 시행지침 우선 적용',true);out[type].provisional=true;out[type].local=loc;out[type].upper=upper;out[type].baseline=baseline;continue;}
   if(number(p.manual[type])!==null){out[type]=datum(number(p.manual[type]),'사용자 입력',true);out[type].local=loc;out[type].upper=upper;out[type].baseline=baseline;continue;}
   if(loc && upper!==null && loc.value<=upper)out[type]=datum(loc.value,o.plan.name,loc.value!==undefined&&upper!==baseline);
