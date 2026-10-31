@@ -234,3 +234,5 @@ body{background:#F3F3F1}
 .feas-sens td.base{font-weight:700;outline:2px solid var(--aom);outline-offset:-2px}.feas-sens td.neg{color:var(--red,#E00000)}
 .feas-result h4{margin:8px 0 6px;font-size:13px}.feas-result h4 small{font-weight:400;opacity:.7}
 .feas-dl{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}.feas-dl button{padding:9px 12px;font-size:13px}.feas-dl em{font-style:normal;font-size:11px;opacity:.8;margin-left:4px}
+
+.link-table{margin:8px 0}.link-table th{width:auto}.link-table thead th{background:#3a3b3f;color:#fff}.link-table td a{color:var(--aom);font-weight:600;white-space:nowrap}

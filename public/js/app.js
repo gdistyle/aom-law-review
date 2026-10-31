@@ -123,7 +123,7 @@ try{const c=document.createElement('canvas').getContext('2d'),s='가나다라마
 
 /* 구역 탭: 왼쪽(모바일은 위쪽) 목록을 누르면 해당 구역만 표시 */
 const DEFAULT_ADDRESS='하남시 대청로 22-17';
-const SECS=['s0','s1','s2','s3','s4','s5','s6','s7','s8'];
+const SECS=['s0','s1','s2','s3','s4','s5','s6','s7','s8','s9'];
 /* 상세 창: 왼쪽 항목을 누르면 지도 위에 해당 구역만 표시 */
 function showSec(id){if(!SECS.includes(id))return closeDrawer();for(const k of SECS){const el=$(k);if(el)el.hidden=k!==id;}const sec=$(id);$('drawerNo').textContent=(sec.querySelector('.eyebrow')?.textContent||'').split('/')[0].trim();$('drawerTitle').textContent=sec.querySelector('h2,h1')?.textContent||'';$('drawer').hidden=false;$('drawer').querySelector('.drawer-body').scrollTop=0;for(const b of document.querySelectorAll('[data-open]'))b.classList.toggle('on',b.dataset.open===id);try{if(location.hash!=='#'+id)history.pushState({sec:id},'','#'+id);}catch{}if(id==='s6')updateModels();if(id==='s7')try{drawTerrainMap();}catch{}}
 function closeDrawer(fromHistory=false){$('drawer').hidden=true;for(const b of document.querySelectorAll('[data-open]'))b.classList.remove('on');try{if(!fromHistory&&location.hash)history.pushState(null,'',location.pathname+location.search);}catch{}mainMapRelayout();}
