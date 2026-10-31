@@ -3,6 +3,8 @@
    빨간 글씨 = 가정·미대조·원문 미수신 값. 주황 = A.O.M 대표색(제목 표식·표 강조). */
 import {esc, fmt, displayDate, titleOf, totalArea, selectedBuilding} from './core.js';
 import {shortLaw} from './legal.js';
+import {scaleChecklist} from './checklist.js';
+import {stripMarks} from './context.js';
 
 const ORANGE = 'F37021', DARK = '303236', GRAY = '6B6E73', LINE = 'D9D9D6', SOFT = 'FFF4EC', HEAD = '3A3B3F', RED = 'E00000';
 const PAGE_W = 16838, PAGE_H = 11906, MARGIN = 1134, BODY_W = PAGE_W - MARGIN * 2; // A4 가로, 좌우 2cm
@@ -164,7 +166,13 @@ function lawReview(P) {
     {t: (rw.refs || []).map(x => shortLaw(x.name) + ' ' + x.article).filter(Boolean).slice(0, 3).join('\n') || rw.group, sz: 16, color: GRAY, red: rw.refs?.some(x => !x.current)}
   ]);
   if (empty.length) t.push([{t: '기타 지역·지구', b: true, jc: 'center'}, {t: '지정', jc: 'center'}, {t: empty.join(', ') + '\n각 지정 근거 법령에 따른 행위제한 적용 — 관계 기관 협의·개별 확인 대상', red: true, sz: 17}, {t: '토지이용계획 확인', sz: 16, color: GRAY}]);
-  return h1('Ⅲ', '관련 법규 검토 (참고)') + table([2400, 2300, BODY_W - 2400 - 2300 - 2900, 2900], ['항 목', '대 상', '검토 내용', '근거 조문'], t, {zebra: true});
+  let x = h1('Ⅲ', '관련 법규 검토 (참고)') + table([2400, 2300, BODY_W - 2400 - 2300 - 2900, 2900], ['항 목', '대 상', '검토 내용', '근거 조문'], t, {zebra: true});
+  const L = limitsOf(P);
+  if (L) {
+    const ck = scaleChecklist({zone: P.land?.zone?.value || '', purpose: P.purpose || '', floors: L.floors, gross: L.l.maxGross});
+    if (ck.length) x += h2('규모별 검토 항목 (법정 최대 규모로 건축 시)') + table([3000, 3400, BODY_W - 3000 - 3400 - 3000, 3000], ['항 목', '판 정', '기 준', '근 거'], ck.map(c => [{t: c.item, b: true, jc: 'center'}, {t: c.result, red: true, jc: 'center'}, {t: c.basis, sz: 17}, {t: c.law, sz: 16, color: GRAY}]), {zebra: true});
+  }
+  return x;
 }
 
 function context(P) {
@@ -174,7 +182,17 @@ function context(P) {
   for (const f of c.facts || []) { const k = f.indexOf(' : '); rows.push(k > 0 ? [f.slice(0, k), f.slice(k + 3)] : ['현황', f]); }
   if (c.signature?.length) rows.push(['주변 주요 시설', c.signature.map(o => `${o.name} (${o.kind}, ${Math.round(o.distance).toLocaleString('ko-KR')}m)`).join('\n')]);
   if (c.concepts?.length) rows.push(['계획 착안점', c.concepts.map(x => '· ' + x).join('\n')]);
+  if (c.dirSentence) rows.unshift(['동서남북', stripMarks(c.dirSentence)]);
   let x = h1('Ⅳ', '대지 맥락 · 계획 착안점 (참고)') + table([3000, BODY_W - 3000], null, rows.map(([k, v]) => [{t: k, b: true, fill: 'F2F2F0', jc: 'center'}, v]));
+  if (c.stories?.length) {
+    x += h2('용도별 건축 이야기');
+    for (const st of c.stories) {
+      x += p(r(st.use, {sz: 20, b: true, color: ORANGE}) + (st.allowed === false ? r('  허용 용도 아님', {sz: 16, red: true}) : c.usesFromFallback ? r('  허용 여부 대조 대상', {sz: 16, red: true}) : ''), {keep: true, before: 120, after: 40});
+      x += p(stripMarks(st.story), {sz: 19, lh: 300, keep: true, after: 40});
+      if (st.requirements?.length) x += p(r('건축 요건  ', {sz: 16, b: true, color: ORANGE}) + r(st.requirements.join(' · '), {sz: 16, color: GRAY}), {keep: !!st.change, after: 40});
+      if (st.change) x += p(r('용도변경  ', {sz: 16, b: true, color: ORANGE}) + r(st.change, {sz: 16, red: true}), {after: 60});
+    }
+  }
   if (c.story) x += h2('요약') + p(c.story, {sz: 19, lh: 300});
   if (c.cautions?.length) x += note(c.cautions.map(s => '· ' + s).join('\n'), true);
   if (c.assumptions?.length) x += note('※ ' + c.assumptions.join(' · '));

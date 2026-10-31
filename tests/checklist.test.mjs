@@ -1,0 +1,13 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {scaleChecklist,useChange,facilityGroup} from '../public/js/checklist.js';
+import {siteDirections,directionSentence,useStories,stripMarks} from '../public/js/context.js';
+test('규모별: 부암동 99 규모(3층·232㎡·주택)',()=>{const c=scaleChecklist({zone:'자연녹지지역',purpose:'단독주택',floors:3,gross:232});const m=Object.fromEntries(c.map(x=>[x.item,x.result]));
+ assert.equal(m['건축허가 · 신고'],'건축허가 대상');assert.equal(m['구조안전 확인 · 내진설계'],'대상');assert.match(m['승강기'],/아님/);assert.match(m['에너지절약계획서'],/아님/);assert.ok(!m['일조 등 확보를 위한 높이 제한']);});
+test('규모별: 관리지역 소규모 → 신고, 주거지역 → 정북일조, 6층·2천㎡ → 승강기',()=>{assert.equal(scaleChecklist({zone:'계획관리지역',purpose:'단독주택',floors:2,gross:150})[0].result,'건축신고 가능 범위');
+ const c=scaleChecklist({zone:'제2종일반주거지역',purpose:'업무시설',floors:7,gross:3000});assert.ok(c.some(x=>x.item.startsWith('일조')));assert.equal(c.find(x=>x.item==='승강기').result,'승용승강기 설치 대상');assert.equal(c.find(x=>x.item==='에너지절약계획서').result,'제출 대상');});
+test('용도변경 시설군 판정',()=>{assert.equal(facilityGroup('제2종 근린생활시설').n,7);assert.equal(useChange('단독주택','제1종 근린생활시설').kind,'허가');assert.equal(useChange('판매시설','업무시설').kind,'신고');assert.equal(useChange('단독주택','공동주택').kind,'기재변경');assert.equal(useChange('','업무시설'),null);});
+test('동서남북: 방위별 대표 경관과 행정동',()=>{const items=[{name:'한강',kind:'경관-강',distance:1200,bearing:5},{name:'아차산',kind:'경관-산',distance:2400,bearing:80},{name:'가나역',kind:'지하철역',distance:300,bearing:190}];
+ const d=siteDirections(items,[{dir:'남',gu:'강남구',dong:'역삼1동'}],{gu:'강동구',dong:'천호동'});assert.equal(d.find(x=>x.dir==='북').name,'한강');assert.equal(d.find(x=>x.dir==='남').region,'강남구 역삼1동');
+ const s=directionSentence(d);assert.match(s,/북쪽으로 «한강»\(1\.2km\)/);assert.match(stripMarks(s),/남쪽은 강남구 역삼1동/);});
+test('용도별 이야기: 같은 지번이면 같은 문장, 요건·용도변경 포함',()=>{const a={uses:['단독주택','제1종 근린생활시설'],dirs:[{dir:'북',name:'한강',kind:'경관-강',distance:1200}],ctx:{facts:['교통 : 가나역 300m (도보 약 4분)']},pnu:'1111018400100990000',req:()=>['지상 3층 이하'],change:u=>u==='제1종 근린생활시설'?'허가':null};
+ const x=useStories(a),y=useStories(a);assert.deepEqual(x,y);assert.equal(x.length,2);assert.match(x[0].story,/«한강»/);assert.deepEqual(x[0].requirements,['지상 3층 이하']);assert.equal(x[1].change,'허가');});

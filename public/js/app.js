@@ -9,7 +9,8 @@ import {allowedUses} from './legal-detail.js';
 import {readGuideline,searchGuideline} from './guideline.js';
 import {vworldApi} from './vworldclient.js';
 import {hangulInput} from './hangul.js';
-import {siteContext,contextText} from './context.js';
+import {siteContext,contextText,siteDirections,directionSentence,useStories,stripMarks,terrainSummary} from './context.js';
+import {scaleChecklist,useChange} from './checklist.js';
 hangulInput(document.getElementById('address'));const LOAD={};let usesKey='';let guidePages=null,guideName='';
 const $=id=>document.getElementById(id);let p=blankProject(),config={services:{}},epoch=0,controller=new AbortController(),busy=0,modelResult={models:[],site:null},mapLoaded=null;
 const apiMessages=[];
@@ -152,12 +153,25 @@ function autoMax(){p.legalMaxFloors=null;floorChips();floorGrid();const l=p.revi
 for(const id of ['purpose','purpose2','operation'])$(id).addEventListener('change',()=>{inputs();render();updateModels(false);});
 
 /* 지번 조회 즉시 '법정 최대' 요약 */
-let nearbyFor='',nearbyItems=[],nearbyBusy=false;
-async function loadNearby(){const L=p.location;if(!L?.lon||!L?.lat)return;const key=L.lon.toFixed(5)+','+L.lat.toFixed(5);if(key===nearbyFor||nearbyBusy)return;nearbyBusy=true;try{const r=await fetch(`/api/nearby?x=${L.lon}&y=${L.lat}`);const d=await r.json();if(d.ok){nearbyItems=d.items||[];source(p,d.source);}else nearbyItems=[];nearbyFor=key;}catch{nearbyItems=[];nearbyFor=key;}finally{nearbyBusy=false;}siteStory();}
-function siteStory(){const el=$('siteStory');if(!el)return;if(!p.pnu||!p.location?.lon){el.hidden=true;p.context=null;return;}loadNearby();const zone=p.land?.zone?.value||'';const c=siteContext({zone,places:nearbyItems,buildings:p.geometry?.buildings||[],terrainPoints:p.model?.terrain?.points||null});p.context=c;p.contextText=contextText(p.address,c);
+let nearbyFor='',nearbyItems=[],nearbyRegions=[],nearbyHere=null,nearbyBusy=false;
+async function loadNearby(){const L=p.location;if(!L?.lon||!L?.lat)return;const key=L.lon.toFixed(5)+','+L.lat.toFixed(5);if(key===nearbyFor||nearbyBusy)return;nearbyBusy=true;try{const r=await fetch(`/api/nearby?x=${L.lon}&y=${L.lat}`);const d=await r.json();if(d.ok){nearbyItems=d.items||[];nearbyRegions=d.regions||[];nearbyHere=d.here||null;source(p,d.source);}else nearbyItems=[];nearbyFor=key;}catch{nearbyItems=[];nearbyFor=key;}finally{nearbyBusy=false;}siteStory();}
+function siteStory(){const el=$('siteStory');if(!el)return;if(!p.pnu||!p.location?.lon){el.hidden=true;p.context=null;return;}loadNearby();const zone=p.land?.zone?.value||'';const c=siteContext({zone,places:nearbyItems,buildings:p.geometry?.buildings||[],terrainPoints:p.model?.terrain?.points||null});
+ const dirs=siteDirections(nearbyItems,nearbyRegions,nearbyHere);c.dirs=dirs;c.dirSentence=directionSentence(dirs);
+ const L=p.review?.limits,cap=number(p.manual?.floorLimit)>0,lh=L?.legalHeight,floors=L?(cap?number(p.manual.floorLimit):lh?.floors>0?lh.floors:(L.maxGross>0&&L.maxFootprint>0?Math.ceil(L.maxGross/L.maxFootprint-1e-9):null)):null;
+ let allowed=null;try{const a=allowedUses(p);if(a)allowed=new Set(a.map(x=>x.use));}catch{}
+ const fallback=/상업/.test(zone)?['제2종 근린생활시설','업무시설','공동주택']:/공업/.test(zone)?['공장','창고시설','업무시설']:/주거/.test(zone)?['단독주택','공동주택','제1종 근린생활시설']:['단독주택','제1종 근린생활시설','제2종 근린생활시설'];
+ const uses=p.purpose?[p.purpose,...(p.purpose2?[p.purpose2]:[])]:(allowed&&allowed.size?[...allowed].slice(0,3):fallback);
+ const b=selectedBuilding(p),from=b?.mainPurpsCdNm||'';
+ const req=u=>{if(!L||L.maxFootprint==null)return[];const r=[];if(floors)r.push(`지상 ${floors}층 이하`);r.push(`건축면적 ${fmt(L.maxFootprint,2)}㎡ 이하`);if(L.maxGross!=null)r.push(`연면적 ${fmt(L.maxGross,2)}㎡ 이하`);if(L.parking!=null&&(!L.parkingPurpose||String(L.parkingPurpose).includes(u.replace(/^제\d종\s*/,''))||u===L.parkingPurpose))r.push(`부설주차 ${fmt(L.parking)}대`);else r.push('부설주차 용도별 별도 산정');if(L.landscapeExempt)r.push('조경 면제');else if(L.landscapeArea!=null)r.push(`조경 ${fmt(L.landscapeArea,2)}㎡ 이상`);const ck=scaleChecklist({zone,purpose:u,floors,gross:L.maxGross});for(const x of ck)if(/대상$|허가 대상|신고 가능|적용$|검토$/.test(x.result))r.push(`${x.item}: ${x.result}`);return r;};
+ const change=u=>from?useChange(from,u)?.text||null:null;
+ c.stories=useStories({uses,dirs,ctx:c,terrain:terrainSummary(p.model?.terrain?.points||null),pnu:p.pnu,req,change,allowed});c.usesFromFallback=!p.purpose&&!(allowed&&allowed.size);
+ c.checklist=L?scaleChecklist({zone,purpose:p.purpose||'',floors,gross:L.maxGross}):[];
+ p.context=c;p.contextText=contextText(p.address,c)+(c.dirSentence?'\n\n■ 동서남북\n'+stripMarks(c.dirSentence):'')+(c.stories?.length?'\n\n■ 용도별 건축 이야기\n'+c.stories.map(s=>`[${s.use}] ${stripMarks(s.story)}\n  요건: ${s.requirements.join(' · ')}${s.change?'\n  용도변경: '+s.change:''}`).join('\n'):'');
+ const hl=t=>esc(t).replace(/«([^»]+)»/g,'<span class="loc">$1</span>');
  const li=a=>a.map(x=>`<li>${esc(x)}</li>`).join('');const sig=c.signature.map(o=>`<li><b>${esc(o.name)}</b> <small>${esc(o.kind)} · ${Math.round(o.distance).toLocaleString('ko-KR')}m</small></li>`).join('');
  const waiting=nearbyFor?'':'<p class="small muted">주변 시설 조회 중…</p>';
- el.innerHTML=`<h3>대지 맥락 · 컨셉 <small class="muted">자동 생성 참고 자료</small></h3>${waiting}${c.character?`<p class="ctx-char">${esc(c.character)}</p>`:''}${c.story?`<p class="ctx-story">${esc(c.story)}</p>`:''}${c.facts.length?`<h4>주변 현황</h4><ul>${li(c.facts)}</ul>`:''}${sig?`<h4>주변 주요 시설</h4><ul class="ctx-sig">${sig}</ul>`:''}${c.concepts.length?`<h4>계획 착안점</h4><ul>${li(c.concepts)}</ul>`:''}${c.cautions.length?`<h4>유의사항</h4><ul class="uncertain">${li(c.cautions)}</ul>`:''}<p class="uncertain small">${esc(c.assumptions.join(' · '))}. 설계 판단은 건축사 검토를 거칠 것.${p.model?.terrain?'':' 지형 자료 수신 후 지형 항목이 추가됨.'}</p>`;el.hidden=false;}
+ const stories=c.stories.map(s=>`<div class="ctx-use"><b>${esc(s.use)}</b>${s.allowed===false?' <span class="uncertain small">허용 용도 아님</span>':c.usesFromFallback?' <span class="uncertain small">허용 여부 대조 대상</span>':''}<p>${hl(s.story)}</p>${s.requirements.length?`<p class="ctx-req"><span>건축 요건</span> ${esc(s.requirements.join(' · '))}</p>`:''}${s.change?`<p class="ctx-req uncertain"><span>용도변경</span> ${esc(s.change)}</p>`:''}</div>`).join('');
+ el.innerHTML=`<h3>대지 맥락 · 컨셉 <small class="muted">자동 생성 참고 자료</small></h3>${waiting}${c.character?`<p class="ctx-char">${esc(c.character)}</p>`:''}${c.dirSentence?`<p class="ctx-dir">${hl(c.dirSentence)}</p>`:''}${c.story?`<p class="ctx-story">${esc(c.story)}</p>`:''}${c.facts.length?`<h4>주변 현황</h4><ul>${li(c.facts)}</ul>`:''}${sig?`<h4>주변 주요 시설</h4><ul class="ctx-sig">${sig}</ul>`:''}${c.concepts.length?`<h4>계획 착안점</h4><ul>${li(c.concepts)}</ul>`:''}${stories?`<h4>용도별 건축 이야기</h4>${stories}`:''}${c.cautions.length?`<h4>유의사항</h4><ul class="uncertain">${li(c.cautions)}</ul>`:''}<p class="uncertain small">${esc(c.assumptions.join(' · '))}. 건축 요건은 법정 최대 규모 기준 규칙 판정. 설계 판단은 건축사 검토를 거칠 것.${p.model?.terrain?'':' 지형 자료 수신 후 지형 항목이 추가됨.'}</p>`;el.hidden=false;}
 const ready=()=>{if(!p.pnu)throw new Error('지번을 먼저 조회하십시오. 조회 전에는 문서를 만들지 않습니다.');if(document.querySelector('.tools .ld.loading'))throw new Error('자료 조회 중입니다. 조회가 끝난 뒤 다시 받으십시오.');};
 function maxSummary(){const el=$('maxSummary');if(!el)return;const l=p.review?.limits;if(!p.pnu||!l||l.maxFootprint==null){el.hidden=true;return;}const cap=number(p.manual.floorLimit)>0;const lh=l.legalHeight;const n=cap?number(p.manual.floorLimit):lh?.floors>0?lh.floors:Math.ceil(l.maxGross/l.maxFootprint-1e-9);if(p.legalMaxFloors!==n){p.legalMaxFloors=n;if(!(number(p.floors)>0)||number(p.floors)>n){p.floors=n;$('floors').value=n;}try{floorChips();}catch{}}
  const rr=!!(l.bcr.uncertain||l.far.uncertain);const box=(k,v,u,sub='',red=false)=>`<div class="${red?'red':''}"><span>${k}</span><b>${v}</b><small>${u}</small>${sub?`<em>${sub}</em>`:''}</div>`;

@@ -120,3 +120,86 @@ export function contextText(address, c) {
   L.push('', '※ ' + c.assumptions.join(' · ') + '. 설계 판단은 건축사 검토를 거칠 것.');
   return L.join('\n');
 }
+
+/* ---------- 동서남북 · 용도별 이야기 (규칙 + 문장 틀, AI 미사용) ---------- */
+const SECT = ['북', '동', '남', '서'];
+const sectorOf = b => SECT[Math.round(((Number(b) % 360) + 360) % 360 / 90) % 4];
+const PRI = ['경관-강', '경관-산', '경관-공원', '지하철역', '관광명소', '문화시설', '공원', '하천'];
+const km = m => m >= 1000 ? `${(m / 1000).toFixed(1)}km` : `${Math.round(m)}m`;
+const clean = n => String(n).replace(/\s*(정상|입구|주차장|산책로|둘레길)$/, '').trim();
+
+/** «이름» 표시는 화면에서 강조색, 문서·텍스트에서는 그대로 이름만 남긴다. */
+export const stripMarks = s => String(s || '').replace(/[«»]/g, '');
+
+export function siteDirections(items = [], regions = [], here = null) {
+  const out = [];
+  for (const d of SECT) {
+    const cand = items.filter(o => Number.isFinite(o.bearing) && sectorOf(o.bearing) === d);
+    let pick = null;
+    for (const k of PRI) { const c = cand.filter(o => o.kind === k).sort((a, b) => a.distance - b.distance)[0]; if (c) { pick = c; break; } }
+    const reg = regions.find(r => r.dir === d);
+    const regName = reg && here && (reg.dong !== here.dong || reg.gu !== here.gu) ? (reg.gu !== here?.gu ? `${reg.gu} ${reg.dong}` : reg.dong) : '';
+    if (pick || regName) out.push({dir: d, name: pick ? clean(pick.name) : '', kind: pick?.kind || '', distance: pick?.distance ?? null, region: regName});
+  }
+  return out;
+}
+export function directionSentence(dirs) {
+  const land = dirs.filter(d => d.name).map(d => `${d.dir}쪽으로 «${d.name}»(${km(d.distance)})`);
+  const reg = dirs.filter(d => d.region).map(d => `${d.dir}쪽은 «${d.region}»`);
+  const a = land.length ? `${land.join(', ')}이(가) 자리함.` : '';
+  const b = reg.length ? ` 생활권은 ${reg.join(', ')} 일대와 맞닿음.` : '';
+  return (a + b).trim();
+}
+
+const hash = s => { let h = 0; for (const c of String(s || '')) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; };
+const CAT = u => /단독주택/.test(u) ? 'house' : /공동주택/.test(u) ? 'apt' : /근린생활/.test(u) ? 'shop' : /업무/.test(u) ? 'office' : /문화|집회|종교|관광|숙박/.test(u) ? 'culture' : /공장|창고/.test(u) ? 'work' : 'etc';
+const T = {
+  house: [
+    v => `${v.view ? `${v.view}을(를) 바라보는 ` : ''}${v.slopeTxt}가족의 집. ${v.parkTxt}${v.openTxt}낮에는 빛이 깊이 드는 거실과 마당이, 저녁에는 동네의 고요함이 머무는 집으로 계획함.`,
+    v => `${v.view ? `«${stripMarks(v.view)}»의 풍경을 일상으로 들이는 ` : '동네의 결을 닮은 '}단독주택. ${v.slopeTxt2}${v.parkTxt}작은 마당과 테라스를 중심으로 가족의 시간이 이어지는 구성이 어울림.`
+  ],
+  apt: [
+    v => `${v.stationTxt}${v.view ? `${v.view} 조망을 나누어 갖는 ` : ''}이웃과 함께 사는 집. 저층부에는 공유 공간을, 상부에는 세대별 조망과 채광을 확보하는 공동주택으로 계획함.`,
+    v => `${v.parkTxt}생활 편의를 가까이 둔 공동주택. ${v.slopeTxt2}세대마다 빛과 바람이 고르게 드는 배치가 핵심임.`
+  ],
+  shop: [
+    v => `${v.stationTxt}${v.streetTxt}1층은 가로에 열린 가게로, 2층 이상은 ${v.view ? `${v.view}을(를) 향한 ` : ''}작은 공방·사무실·카페로 이어지는 근린생활시설.`,
+    v => `동네 사람들이 오가며 들르는 근린생활시설. ${v.parkTxt}${v.stationTxt}보행 동선과 맞닿는 전면부를 투명하게 열어 가로의 풍경을 만드는 것이 핵심임.`
+  ],
+  office: [
+    v => `${v.stationTxt}출퇴근 동선이 짧은 업무시설. ${v.view ? `상부 업무 공간에서 ${v.view}을(를) 조망하고, ` : ''}저층부는 방문객을 맞는 열린 로비로 계획함.`,
+    v => `일하는 사람의 하루를 편안하게 하는 업무시설. ${v.parkTxt}${v.slopeTxt2}채광과 환기를 고르게 확보하는 평면이 어울림.`
+  ],
+  culture: [
+    v => `${v.view ? `${v.view}의 풍경이 머무는 ` : ''}사람들이 찾아와 오래 머무는 장소. ${v.attrTxt}${v.slopeTxt2}경관을 향해 열린 라운지와 테라스가 공간의 중심이 됨.`,
+    v => `${v.attrTxt}지역의 이야기를 담는 문화 공간. ${v.parkTxt}방문객의 동선을 따라 풍경이 차례로 펼쳐지는 구성이 어울림.`
+  ],
+  work: [v => `차량 동선과 작업 동선을 분리한 생산·보관 공간. ${v.slopeTxt2}하역·주차 공간을 대지 전면에 확보하는 배치가 핵심임.`],
+  etc: [v => `대지의 조건을 존중하는 건축. ${v.parkTxt}${v.slopeTxt2}주변 맥락과 어울리는 규모로 계획함.`]
+};
+
+/**
+ * 용도별 이야기 + 건축 요건 + (기존 건물이 있으면) 용도변경 절차
+ * @param {{uses:string[], dirs:Array, ctx:object, terrain:object|null, pnu:string, req:(use:string)=>string[], change:(use:string)=>string|null, allowed:Set<string>|null}} a
+ */
+export function useStories({uses = [], dirs = [], ctx = {}, terrain = null, pnu = '', req = () => [], change = () => null, allowed = null} = {}) {
+  const land = dirs.filter(d => d.name && /경관/.test(d.kind)).sort((a, b) => a.distance - b.distance)[0] || dirs.find(d => d.name);
+  const view = land ? `${land.dir}쪽 «${land.name}»` : '';
+  const facts = ctx.facts || [];
+  const st = facts.find(f => f.startsWith('교통 :')), park = facts.find(f => f.startsWith('녹지 :'));
+  const sig = (ctx.signature || []).find(o => /문화시설|관광명소/.test(o.kind));
+  const v = {
+    view,
+    slopeTxt: terrain && terrain.slope >= 3 ? `${terrain.down}쪽으로 내려앉는 경사를 품은 ` : '',
+    slopeTxt2: terrain && terrain.slope >= 3 ? `${terrain.down}쪽으로 약 ${terrain.slope.toFixed(0)}% 낮아지는 지형을 살려 레벨을 나누고, ` : '',
+    openTxt: terrain && terrain.slope >= 2 && /남/.test(terrain.down) ? '남쪽으로 열린 경사를 따라 ' : '',
+    parkTxt: park ? `«${park.split(' : ')[1].replace(/\s[\d,.]+m$/, '')}»이(가) 가까워 ` : '',
+    stationTxt: st ? `«${st.split(' : ')[1].split(' ')[0]}»에서 걸어 닿는 ` : '',
+    streetTxt: st ? '역으로 향하는 보행 흐름을 받아 ' : '',
+    attrTxt: sig ? `«${sig.name}» 등 주변 문화 자원과 이어지는 ` : ''
+  };
+  return uses.map((u, i) => {
+    const list = T[CAT(u)] || T.etc, story = list[(hash(pnu) + i) % list.length](v).replace(/\s+/g, ' ').trim();
+    return {use: u, story, requirements: req(u), change: change(u), allowed: allowed ? allowed.has(u) : null};
+  });
+}

@@ -183,3 +183,8 @@ body{background:#F3F3F1}
 .consult-call{justify-content:center;font-size:15px;font-weight:600}
 :root,body,button,input,select,textarea{font-family:"Pretendard","맑은 고딕","Malgun Gothic",sans-serif}
 .red-legend{margin:8px 0 4px;font-size:12px;color:#6b6e73;line-height:1.6;word-break:keep-all}.red-legend b{color:var(--uncertain)}
+.site-story .loc{color:var(--aom);font-weight:700}
+.site-story .ctx-dir{margin:4px 0 8px;font-size:13.3px;line-height:1.75;word-break:keep-all}
+.ctx-use{margin:8px 0;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#fcfcfb}
+.ctx-use>b{font-size:13.5px}.ctx-use p{margin:6px 0 0;font-size:13px;line-height:1.7;word-break:keep-all}
+.ctx-req{font-size:12px!important;color:#595959}.ctx-req span{display:inline-block;margin-right:6px;padding:1px 7px;border-radius:999px;background:var(--aom-soft);color:var(--aom);font-weight:600;font-size:11px}
