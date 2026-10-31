@@ -160,3 +160,5 @@ body{background:#F3F3F1}
 .site-story .ctx-story{margin:0;font-size:13.3px;line-height:1.75;word-break:keep-all}
 .ctx-sig small{color:#777}
 .consult-home{font-size:13px;color:#303236;text-decoration:none;border-top:1px solid var(--line);padding-top:8px;margin-top:4px}.consult-home:hover{color:var(--red)}
+.top-home{margin-left:auto;align-self:center;font-size:13.5px;color:#303236;text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 14px;white-space:nowrap}.top-home:hover{color:var(--red);border-color:var(--red)}
+@media(max-width:760px){.top-home{display:inline-block;margin:8px 0 10px}}
