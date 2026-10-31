@@ -114,7 +114,7 @@ export function renderFeas(p, onChange) {
     const h = b.innerHTML; b.disabled = true; b.textContent = '만드는 중…';
     try {
       const ex = await import('./exports.js');
-      const f = b.dataset.feasdl === 'zip' ? await ex.exportFeasZip(p) : await ex.generateFile(b.dataset.feasdl === 'word' ? 'feasWord' : 'feasExcel', p);
+      const f = b.dataset.feasdl === 'zip' ? await ex.exportFeasZip(p) : await ex.generateFile({word: 'feasWord', pdf: 'feasPdf', excel: 'feasExcel'}[b.dataset.feasdl], p);
       ex.download(f.blob, f.name);
     } catch (e) { console.error(e); alert('파일을 만들지 못했습니다: ' + (e.message || e)); }
     finally { b.disabled = false; b.innerHTML = h; }
@@ -143,6 +143,6 @@ function resultHtml(x) {
   const s = sensitivity(x), lab = x.mode === 'sale' ? '분양가' : '임대료';
   const sens = s ? `<h4>공사비·${lab}가 바뀌면? <small>(${x.mode === 'sale' ? '이익률' : '임대 수익률'})</small></h4><table class="feas-sens"><thead><tr><th>공사비 \\ ${lab}</th><th>−10%</th><th>기본</th><th>+10%</th></tr></thead><tbody>${['−10%', '기본', '+10%'].map((h, i) => `<tr><th>${h}</th>${s[i].map((m, j) => `<td class="${m != null && m < 0 ? 'neg' : ''}${i === 1 && j === 1 ? ' base' : ''}">${pctS(m)}</td>`).join('')}</tr>`).join('')}</tbody></table>` : '';
   return `<div class="feas-result">${zeroWarn}<div class="feas-verdict lv-${v.level}"><b>${v.label}</b><span>${esc(v.text)}</span></div><div class="feas-kpi">${kpi.map(([k, val]) => `<div><span>${k}</span><b>${val || '—'}</b></div>`).join('')}</div>${table}${sens}
-  <div class="feas-dl"><button type="button" class="primary" data-feasdl="word">사업성 검토 보고서 <em>WORD</em></button><button type="button" data-feasdl="excel">사업수지 계산표 <em>EXCEL</em></button><button type="button" data-feasdl="zip">두 파일 한 번에 (ZIP)</button></div>
+  <div class="feas-dl"><button type="button" class="primary" data-feasdl="word">사업성 검토 보고서 <em>WORD</em></button><button type="button" data-feasdl="pdf">보고서 <em>PDF</em></button><button type="button" data-feasdl="excel">사업수지 계산표 <em>EXCEL</em></button><button type="button" data-feasdl="zip">전부 한 번에 (ZIP)</button></div>
   <p class="feas-warn small">판정은 입력값 기준 개략 결과이며 확정이 아님.</p></div>`;
 }
