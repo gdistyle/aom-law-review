@@ -62,3 +62,11 @@ test('조례 대지 안의 공지 표(하남시 형식) — 공동주택 3종·�
   assert.equal(ordinanceSetback(law, '공장', 300, '').boundary, 0.5);
   assert.equal(ordinanceSetback(law, '제2종 근린생활시설', 1500, '').boundary, 1);
 });
+test('reviewProject에서 대지 안의 공지 결론 문구까지 연결', () => {
+  const t = ['[별표 3] 대지 안의 공지 기준', '1. 공동주택', '모든 지역', '아파트', '연립주택', '다세대', '적용 대상', '3미터', '이상', '2미터', '이상', '1미터', '이상', '모든 건축선', '3미터', '이상', '2미터', '이상', '1미터', '이상', '인접 대지경계선'].join('\n');
+  const p = {...b, address: '경기 하남시 감북동 413-83', location: {region1: '경기', region2: '하남시'}, land: {...b.land, area: {value: 337}, zone: {value: '제1종일반주거지역'}}, manual: {...b.manual, bcr: 60, far: 200}, purpose: '공동주택',
+    laws: [{name: '하남시 건축 조례', kind: 'ordin', current: true, effectiveDate: '20250101', articles: [{number: '31', branch: '', title: '대지 안의 공지', text: '별표 3', effectiveDate: '20250101'}], annexes: [{number: '3', branch: '', title: '[별표 3] 대지 안의 공지 기준(제31조 관련)', text: t}]}]};
+  const r = reviewProject(p);
+  assert.equal(r.limits.setback.multi[2].line, 1);
+  assert.match(r.rows.find(x => x.id === 'setback').summary, /다세대 건축선 1 m 이상/);
+});
