@@ -183,7 +183,7 @@ function context(P) {
   if (c.signature?.length) rows.push(['주변 주요 시설', c.signature.map(o => `${o.name} (${o.kind}, ${Math.round(o.distance).toLocaleString('ko-KR')}m)`).join('\n')]);
   if (c.concepts?.length) rows.push(['계획 착안점', c.concepts.map(x => '· ' + x).join('\n')]);
   if (c.dirSentence) rows.unshift(['동서남북', stripMarks(c.dirSentence)]);
-  let x = h1('Ⅳ', '대지 맥락 · 계획 착안점 (참고)') + table([3000, BODY_W - 3000], null, rows.map(([k, v]) => [{t: k, b: true, fill: 'F2F2F0', jc: 'center'}, v]));
+  let x = h1('Ⅴ', '대지 특성 · 건축 컨셉 (참고)') + table([3000, BODY_W - 3000], null, rows.map(([k, v]) => [{t: k, b: true, fill: 'F2F2F0', jc: 'center'}, v]));
   if (c.stories?.length) {
     x += h2('용도별 건축 이야기');
     for (const st of c.stories) {
@@ -201,7 +201,7 @@ function context(P) {
 
 function sanctions(P) {
   const art = t => [...new Set(String(t || '').split('\n').map(s => s.trim()).filter(s => /^「/.test(s)).map(s => { const m = s.match(/^(「[^」]+」\s*제[\d조의\s]+(?:\([^)]*\))?)/); return m ? m[1].trim() : s.split(' : ')[0]; }))];
-  const num = ['Ⅰ', 'Ⅱ', 'Ⅲ', 'Ⅳ', 'Ⅴ'][P.context && (P.context.facts?.length || P.context.concepts?.length) ? 4 : 3];
+  const num = 'Ⅳ';
   return h1(num, '법적 제재 유의사항')
     + table([4200, BODY_W - 4200], ['위반 유형', '관련 조문'], P.review.sanctions.map(s => [{t: s.item, b: true}, art(s.text).join('\n') || s.text]), {zebra: true})
     + note('위반 시 공사 중지·철거 등 시정명령, 이행강제금 및 벌칙이 부과될 수 있음. 세부 기준은 각 조문 원문 확인.');
@@ -230,7 +230,7 @@ const STYLES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles
 
 export async function exportReport(P, imgs = null, logo = null) {
   if (typeof JSZip === 'undefined') throw new Error('압축 모듈 미로드');
-  const body = cover(P, logo) + summary(P, imgs) + siteOverview(P) + maxScale(P) + lawReview(P) + context(P) + sanctions(P) + closing();
+  const body = cover(P, logo) + summary(P, imgs) + siteOverview(P) + maxScale(P) + lawReview(P) + sanctions(P) + context(P) + closing();
   const sect = `<w:sectPr><w:headerReference w:type="default" r:id="rIdH"/><w:footerReference w:type="default" r:id="rIdF"/><w:pgSz w:w="${PAGE_W}" w:h="${PAGE_H}" w:orient="landscape"/><w:pgMar w:top="1134" w:right="${MARGIN}" w:bottom="1020" w:left="${MARGIN}" w:header="567" w:footer="510" w:gutter="0"/><w:titlePg/></w:sectPr>`;
   const doc = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ${NS}><w:body>${body}${sect}</w:body></w:document>`;
   const zip = new JSZip();
