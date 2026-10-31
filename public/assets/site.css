@@ -249,3 +249,5 @@ body{background:#F3F3F1}
 .fmt-link{background:#5B5E63}
 
 .permit-box{margin-top:14px}.permit-box h3{margin:0 0 4px;font-size:14px}.permit-list{margin:8px 0;padding:0;list-style:none;counter-reset:pm}.permit-list li{counter-increment:pm;display:grid;grid-template-columns:28px 1fr;column-gap:8px;padding:8px 0;border-top:1px solid var(--line);font-size:12.5px;line-height:1.55;word-break:keep-all}.permit-list li::before{content:counter(pm);grid-row:span 4;width:22px;height:22px;border-radius:50%;background:var(--aom);color:#fff;display:grid;place-items:center;font-size:11.5px;font-weight:700}.permit-list li.red b{color:var(--red,#E00000)}.permit-list .when{color:#6b6e73}.permit-list .note{font-size:12px}.permit-list .refs a{color:var(--aom);font-size:11.5px}.permit-list .refs a.uncertain{color:var(--red,#E00000)}
+
+.charge{padding:8px 10px;border:1px solid var(--line);border-radius:8px;margin:6px 0}.charge b{font-size:13px}.charge .amt{margin-left:8px;font-weight:700;color:var(--red,#E00000)}.charge a{color:var(--aom)}

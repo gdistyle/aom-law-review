@@ -42,7 +42,8 @@ function inputRows(x) {
   if (f.mode !== 'own') { const v = num(f.netRatio); add('분양·임대 면적 비율', v == null ? '미입력 (100%로 계산)' : `${v} %`, '연면적 중 실제 분양·임대 가능 면적 (주차장·공용부 제외)', v == null); }
   unit('buildUnit', '공사비 단가', '원/㎡', '연면적 1평당 공사비');
   rate('designRate', '설계·감리비', '공사비 대비');
-  unit('otherCost', '기타 비용', '원', '학교용지·광역교통·하수도 원인자 부담금, 측량·인입·철거 공사 등');
+  if (f._otherAuto) add('기타 비용', `${(Math.round(f.otherCost / 1e4 * 100) / 100).toLocaleString('ko-KR')} 만 원 (${krw(f.otherCost)})`, '농지보전부담금 자동 산정값(공시지가 기준, 전용 면적 = 대지 전체 가정) — 다른 부담금·비용 미포함', true);
+  else unit('otherCost', '기타 비용', '원', '학교용지·광역교통·하수도 원인자 부담금, 측량·인입·철거 공사 등');
   rate('contRate', '예비비', '공사비 대비');
   if (f.landMode === 'buy') rate('landTaxRate', '토지 취득세율', FEAS_BASIS.landTaxRate);
   rate('buildTaxRate', '건물 취득세율', FEAS_BASIS.buildTaxRate);
@@ -74,7 +75,7 @@ function summary(x, R) {
     rows.push(g.map(([, val]) => ({t: val || (g.some(c => c[0]) ? '—' : ''), jc: 'center', b: true, sz: 24})));
   }
   const zk = [...(x.mode !== 'own' ? [['netRatio', '분양·임대 면적 비율(100%로 계산)']] : []), ['designRate', '설계·감리비'], ['contRate', '예비비'], ['otherCost', '기타 비용'], ['loanRatio', '대출 비율'], ['loanRate', '대출 금리'], ['months', '공사 기간'], ...(x.mode === 'sale' ? [['saleCostRate', '분양 경비']] : []), ...(x.mode === 'lease' ? [['vacancy', '공실률'], ['opexRate', '운영비'], ['capRate', '환원율']] : [])];
-  const zeros = x.mode === 'own' ? zk.slice(0, 6).filter(([k]) => num(x[k]) == null).map(([, l]) => l) : zk.filter(([k]) => num(x[k]) == null).map(([, l]) => l);
+  const zeros = (x.mode === 'own' ? zk.slice(0, 6) : zk).filter(([k]) => num(x[k]) == null && !(k === 'otherCost' && x._otherAuto)).map(([, l]) => l);
   const zeroLine = zeros.length ? p(r(`※ 비어 있는 항목 ${zeros.length}개 : ${zeros.join(' · ')} — 비용이 0원으로, 면적 비율이 100%로 잡혀 결과가 실제보다 유리하게 산출되었을 수 있음.`, {sz: 17, b: true, red: true}), {after: 100}) : '';
   return h1('', '한눈에 보기', true) + zeroLine
     + p(r('판정  ', {sz: 20, b: true, color: GRAY}) + r(v.label, {sz: 30, b: true, color}) + r('   ' + v.text, {sz: 19}), {shd: SOFT, ind: 200, indR: 200, before: 80, after: 160})

@@ -104,7 +104,7 @@ export function buildFeasSheet(P, x) {
   input('landCost', '토지 매입가', '만 원', x.landMode === 'own' ? '보유 토지 (0)' : num(x._landRaw) == null ? (a.multi ? '필지별 공시지가 × 면적 합계 참고값 — 실거래가와 다름' : '공시지가 × 대지면적 참고값 — 실거래가와 다름') : '직접 입력값', 'money', x.landMode === 'own' ? 0 : num(x.landCost), x.landMode !== 'own' && num(x._landRaw) == null);
   input('buildUnit', '공사비 단가', '만 원/평', '연면적 1평당 공사비 (계산 시 원/㎡로 환산)');
   input('designRate', '설계·감리비율', '%', '공사비 대비', 'rate');
-  input('otherCost', '기타 비용', '만 원', '인허가 부담금·측량·인입 공사 등');
+  input('otherCost', '기타 비용', '만 원', x._otherAuto ? '농지보전부담금 자동 산정값 (다른 부담금·비용 미포함)' : '인허가 부담금·측량·인입 공사 등', 'money', num(x.otherCost), x._otherAuto || num(x.otherCost) == null);
   input('contRate', '예비비율', '%', '공사비 대비', 'rate');
   input('landTaxRate', '토지 취득세율', '%', FEAS_BASIS.landTaxRate, 'rate');
   input('buildTaxRate', '건물 취득세율', '%', FEAS_BASIS.buildTaxRate, 'rate');

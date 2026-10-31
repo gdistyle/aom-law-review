@@ -2,6 +2,7 @@
 import {feasibility, sensitivity, FEAS_NOTE} from './feasibility.js';
 import {esc, totalArea} from './core.js';
 import {landRefSum} from './multiparcel.js';
+import {charges} from './charges.js';
 
 /* 기본값: 법령으로 정해진 세율만 채우고, 근거가 확인되지 않은 단가는 비워 둔다(빨간 글씨 안내). */
 export const FEAS_DEFAULTS = {
@@ -36,13 +37,15 @@ export function krw(v) {
 export function feasInput(p) {
   const f = {...FEAS_DEFAULTS, ...(p.feas || {})};
   const auto = autoValues(p);
-  return {...f, _landRaw: f.landCost, _grossRaw: f.gross, siteArea: auto.siteArea, gross: num(f.gross) ?? auto.gross, landCost: f.landMode === 'buy' ? (num(f.landCost) ?? auto.landRef) : 0, _auto: auto};
+  const levy = auto.levy, otherAuto = num(f.otherCost) == null && levy > 0;
+  return {...f, otherCost: otherAuto ? levy : f.otherCost, _otherAuto: otherAuto, _landRaw: f.landCost, _grossRaw: f.gross, siteArea: auto.siteArea, gross: num(f.gross) ?? auto.gross, landCost: f.landMode === 'buy' ? (num(f.landCost) ?? auto.landRef) : 0, _auto: auto};
 }
 export function autoValues(p) {
   const siteArea = totalArea(p), l = p.review?.limits || {};
   const price = num(p.land?.price?.value);
   const multi = (p.extra || []).length > 0;
-  return {siteArea, gross: num(l.maxGross), landRef: multi ? landRefSum(p) : price != null && siteArea ? price * siteArea : null, price, multi, purpose: p.purpose || ''};
+  let levy = 0; try { levy = charges(p).filter(c => c.ok).reduce((t, c) => t + c.total, 0); } catch {}
+  return {siteArea, gross: num(l.maxGross), landRef: multi ? landRefSum(p) : price != null && siteArea ? price * siteArea : null, price, multi, levy, purpose: p.purpose || ''};
 }
 
 const FIELDS = [
@@ -101,7 +104,7 @@ export function renderFeas(p, onChange) {
     const need = vis.filter(([k]) => NEED.includes(k));
     const rest = vis.filter(([k]) => !NEED.includes(k));
     const field = ([k, label, unit, help]) => { const v = f[k], ref = FEAS_REF[k];
-      const placeholder = k === 'landCost' && a.landRef != null ? `비우면 ${nice(a.landRef / 1e4)} (공시지가 기준)` : k === 'gross' && a.gross != null ? `비우면 ${nice(a.gross)}` : ref ? `예: ${nice(ref.v)}` : '숫자만 입력';
+      const placeholder = k === 'landCost' && a.landRef != null ? `비우면 ${nice(a.landRef / 1e4)} (공시지가 기준)` : k === 'gross' && a.gross != null ? `비우면 ${nice(a.gross)}` : k === 'otherCost' && a.levy > 0 ? `비우면 ${nice(a.levy / 1e4)} (농지보전부담금)` : ref ? `예: ${nice(ref.v)}` : '숫자만 입력';
       const isDef = FEAS_DEFAULTS[k] != null && num(v) === FEAS_DEFAULTS[k];
       return `<label class="feas-field"><span>${label}</span><div class="feas-in"><input data-fin="${k}" inputmode="decimal" autocomplete="off" value="${v == null ? '' : esc(nice(toUser(k, num(v))))}" placeholder="${esc(placeholder)}"${isDef ? ' class="uncertain"' : ''}><b>${unit}</b></div><em class="feas-read">${readOut(k, num(v))}</em>${ref ? `<small class="feas-ref">회색 예시 출처: ${esc(ref.src)}</small>` : ''}<small class="feas-help">${esc(help)}</small></label>`; };
     html += step(4, '단가를 넣으십시오 <small>(모르면 시공사·중개사무소에 물어볼 값)</small>', `<p class="feas-note">칸 안의 <span class="ph">회색 숫자</span>는 참고용 예시일 뿐 계산에 쓰이지 않습니다. 칸을 눌러 <b>숫자만 직접 입력</b>해야 계산됩니다.</p><div class="feas-grid">${need.map(field).join('')}</div>`);
@@ -131,7 +134,7 @@ function resultHtml(x) {
   if (req.length) return `<div class="feas-result"><p class="feas-warn"><b>필수 항목을 넣어야 계산됩니다</b> : ${req.join(' · ')}</p></div>`;
   const zeroKeys = [...(x.mode !== 'own' ? [['netRatio', '분양·임대 면적 비율(100%로 계산)']] : []), ['designRate', '설계·감리비'], ['contRate', '예비비'], ['otherCost', '기타 비용'], ['loanRatio', '대출 비율'], ['loanRate', '대출 금리'], ['months', '공사 기간'],
     ...(x.mode === 'sale' ? [['saleCostRate', '분양 경비']] : []), ...(x.mode === 'lease' ? [['vacancy', '공실률'], ['opexRate', '운영비'], ['capRate', '환원율']] : [])];
-  const zeros = zeroKeys.filter(([k]) => num(x[k]) == null).map(([, l]) => l);
+  const zeros = zeroKeys.filter(([k]) => num(x[k]) == null && !(k === 'otherCost' && x._otherAuto)).map(([, l]) => l);
   const zeroWarn = zeros.length ? `<p class="feas-warn"><b>비어 있는 항목 ${zeros.length}개</b> : ${zeros.join(' · ')} — 비워 두면 비용이 빠지거나(0원) 면적이 100%로 잡혀 결과가 실제보다 좋게 나옴. 채울 것.</p>` : '';
   const rows = [['토지비', r.land], ['토지 취득세', r.landTax], ['공사비', r.build], ['설계·감리비', r.design], ['건물 취득세', r.buildTax], ['기타 비용', r.other], ['예비비', r.cont], ['대출 이자', r.interest]];
   if (x.mode === 'sale') rows.push(['분양 경비', r.saleCost]);

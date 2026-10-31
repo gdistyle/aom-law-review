@@ -60,7 +60,7 @@ export function jurisdiction(location,address='') {
 }
 export function lawNamesFor(p) {
  const zones=p.land.zones.map(z=>z.name).join(' '), set=new Set([PLAN,DECREE,BLD,BD,PARK,PD,'토지이용규제 기본법']);
- if(['전','답','과수원'].includes(p.land.category.value))set.add('농지법');
+ if(['전','답','과수원'].includes(p.land.category.value)){set.add('농지법');set.add('농지법 시행령');}
  if(p.land.category.value==='임야')set.add('산지관리법');
  if(zones.includes('개발제한구역')){set.add(GREEN);set.add(GREEN+' 시행령');set.add(GREEN+' 시행규칙');}
  for(const z of p.land.zones){const match=zoneBasis(z.name);if(z.lawName)set.add(z.lawName);else if(match)set.add(match[0]);}

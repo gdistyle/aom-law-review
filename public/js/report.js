@@ -7,6 +7,7 @@ import {scaleChecklist} from './checklist.js';
 import {stripMarks} from './context.js';
 import {parcelRows} from './multiparcel.js';
 import {permitSteps} from './permits.js';
+import {charges} from './charges.js';
 
 const ORANGE = 'F37021', DARK = '303236', GRAY = '6B6E73', LINE = 'D9D9D6', SOFT = 'FFF4EC', HEAD = '3A3B3F', RED = 'E00000';
 const PAGE_W = 16838, PAGE_H = 11906, MARGIN = 1134, BODY_W = PAGE_W - MARGIN * 2; // A4 가로, 좌우 2cm
@@ -189,7 +190,9 @@ function maxScale(P) {
     + h2('법정 최대 규모') + table([3000, 3600, BODY_W - 6600], ['항 목', '산정 결과', '산정 근거'], rows.map(([k, v, f, red]) => [{t: k, b: true, jc: 'center'}, {t: v, b: true, red, jc: 'center'}, {t: f, sz: 16, color: GRAY}]), {zebra: true})
     + (() => { const PS = permitSteps(P); const c = [900, 3800, 3800]; c.push(BODY_W - c.reduce((a2, b2) => a2 + b2, 0));
       return h2('인허가 절차 (일반 순서)') + table(c, ['순서', '절 차', '해당 조건', '비고 · 근거'], PS.steps.map(s => [{t: String(s.no), jc: 'center'}, {t: s.step, b: true, red: s.red}, {t: s.when, sz: 16}, {t: [s.note, s.refs.map(x => `${shortLaw(x.name)} ${x.article}`).join(' · ')].filter(Boolean).join('\n'), sz: 15, color: GRAY, red: s.red}]), {sz: 16, pad: 40})
-        + p('※ ' + PS.note, {red: true, sz: 16, after: 60}); })();
+        + p('※ ' + PS.note, {red: true, sz: 16, after: 60}); })()
+    + (() => { const C = charges(P); if (!C.length) return ''; const c = [3600, 3200]; c.push(BODY_W - c.reduce((a2, b2) => a2 + b2, 0));
+      return h2('농지·산지 전용 부담금 (개략)') + table(c, ['구 분', '산정 금액', '산정 기준 · 근거'], C.map(x => [{t: x.kind, b: true, jc: 'center'}, {t: x.ok ? `${fmt(Math.round(x.total))} 원` : '자동 산정 안 함', jc: 'center', b: true, red: true}, {t: `${x.note}\n${x.ref.name} ${x.ref.article}`, sz: 15, red: true}]), {sz: 16, pad: 40}); })();
 }
 
 function lawReview(P) {
