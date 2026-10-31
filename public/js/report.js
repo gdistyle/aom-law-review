@@ -209,11 +209,9 @@ function sanctions(P) {
 
 function closing() {
   const box = (t, o = {}) => p(t, {shd: SOFT, ind: 200, indR: 200, keep: true, ...o});
-  return box(r('건축 상담', {sz: 18, b: true, color: ORANGE}), {before: 240, after: 40})
-    + box(r('A.O.M 종합건축사사무소', {sz: 24, b: true}), {after: 60})
-    + box(r('신축 · 증축 · 용도변경 · 대수선 · 리모델링 · 인허가', {sz: 18}), {after: 40})
-    + box(r('전화 031-791-2536   ·   https://aomand.com   ·   경기도 하남시 대청로22번길 17, 206호 (신장동)', {sz: 18, color: GRAY}), {after: 160})
-    + note('※ 본 자료는 공개 자료(토지이음·건축물대장·법제처 현행 법령)를 기반으로 자동 작성한 초안으로, 참고 자료로만 사용함. 지구단위계획·조례·현장 여건 등에 따라 실제와 다를 수 있으므로, 최종 판단은 건축사 검토 및 인허가권자 협의에 따름.', true);
+  return box(r('건축 상담   ', {sz: 18, b: true, color: ORANGE}) + r('A.O.M 종합건축사사무소', {sz: 22, b: true}) + r('   신축 · 증축 · 용도변경 · 대수선 · 리모델링 · 인허가', {sz: 18, b: true}), {before: 160, after: 30})
+    + box(r('본 자료를 기초로 대지의 실제 건축 가능 규모·인허가 절차·사업성을 건축사가 직접 검토함.', {sz: 18}), {after: 30})
+    + box(r('전화 031-791-2536   ·   https://aomand.com   ·   경기도 하남시 대청로22번길 17, 206호 (신장동)', {sz: 18, color: GRAY}), {after: 0});
 }
 
 /* ---------- 패키지 ---------- */
