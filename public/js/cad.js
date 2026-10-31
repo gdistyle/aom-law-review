@@ -1,6 +1,7 @@
 import {esc,MASS_NOTE,TERRAIN_NOTE} from './core.js';
 import {DxfWriter,Units,point2d,point3d,LWPolylineFlags,TextHorizontalAlignment,TextVerticalAlignment} from '../vendor/tarikjabiri-dxf-2.9.0.mjs';
-import {siteGeometry,modelTriangles,prismTriangles,triangulate} from './geometry.js';
+import {siteGeometry,modelTriangles,prismTriangles,triangulate,buildableArea,outlineLoops,buildModels} from './geometry.js';
+import {number} from './core.js';
 const num=n=>Number(n).toFixed(5);
 const MATS=[['max','0.75 0.77 0.79 0.28'],['mass','0.91 0.22 0.18 1'],['ground','0.65 0.69 0.64 1'],['boundary','0.88 0 0 1'],['terrain','0.56 0.70 0.45 1'],['road','0.55 0.56 0.58 1'],['site','0.96 0.80 0.78 1'],['building','0.82 0.82 0.80 1'],['parcel','0.35 0.35 0.35 1']];
 export function dae(meshes,lines=[],note=''){
@@ -41,13 +42,32 @@ export function dxfBytes(p){return new TextEncoder().encode(dxf(p));}
 export function jibunLabel(j){const t=String(j||'').trim();const m=t.match(/^(산?\s*\d+(?:-\d+)?)\s*(\S*)$/);return m?(m[1].replace(/\s+/g,'')+(m[2]?' '+m[2]:'')):t;}
 /** CAD 2D — DXF R2007(AC1021, UTF-8). AutoCAD 2007 이상·ODA·LibreCAD 등에서 한글 레이어·문자 그대로 열림. */
 export function dxf(p){const site=siteGeometry(p),d=new DxfWriter();d.setUnits(Units.Meters);
- const LAYERS=[['대상필지',1],['주변필지',8],['지번문자',7],['도로',4],['주변건물',9]];for(const [n,c]of LAYERS)d.addLayer(n,c,'CONTINUOUS');
+ const LAYERS=[['대상필지',1],['주변필지',8],['지번문자',7],['도로',4],['주변건물',9],['도로측경계',30],['정북측경계',5],['건축가능영역',3],['최대건축면적안',6],['배치주기',1]];for(const [n,c]of LAYERS)d.addLayer(n,c,'CONTINUOUS');
  const st=d.tables.addStyle('KOR');st.fontFileName='malgun.ttf';
  const P=v=>Math.round(v*1e5)/1e5;
  const poly=(ps,layer,closed)=>{if(ps.length<2)return;d.addLWPolyline(ps.map(a=>({point:point2d(P(a[0]),P(a[1]))})),{flags:closed?LWPolylineFlags.Closed:LWPolylineFlags.None,layerName:layer});};
- const text=(x,y,h,str,layer)=>{const t=d.addText(point3d(P(x),P(y),0),h,String(str),{horizontalAlignment:TextHorizontalAlignment.Center,verticalAlignment:TextVerticalAlignment.Middle,secondAlignmentPoint:point3d(P(x),P(y),0),layerName:layer});t.textStyle='KOR';};
+ const text=(x,y,h,str,layer,left)=>{const t=d.addText(point3d(P(x),P(y),0),h,String(str),{horizontalAlignment:left?TextHorizontalAlignment.Left:TextHorizontalAlignment.Center,verticalAlignment:TextVerticalAlignment.Middle,secondAlignmentPoint:point3d(P(x),P(y),0),layerName:layer});t.textStyle='KOR';};
  if(site)for(const [features,isBuilding]of[[p.geometry.parcels||[],false],[p.geometry.buildings||[],true]])for(const f of features){const g=f.geometry;if(!g)continue;const polys=g.type==='Polygon'?g.coordinates:g.type==='MultiPolygon'?g.coordinates.flat():g.type==='LineString'?[g.coordinates]:g.coordinates;const target=(f.properties?.pnu===p.pnu&&p.pnu)||f.properties?.target,layer=isBuilding?'주변건물':target?'대상필지':f.properties?.category==='도로'||/도$/.test(String(f.properties?.jibun||'').trim())?'도로':'주변필지';for(const r of polys){const ps=r.map(site.project).filter(a=>Number.isFinite(a[0])&&Number.isFinite(a[1]));if(ps.length>2&&ps[0][0]===ps.at(-1)[0]&&ps[0][1]===ps.at(-1)[1])ps.pop();poly(ps,layer,!g.type.includes('Line'));}
   const ps=polys[0]?.map(site.project);if(!ps?.length)continue;const x=ps.reduce((s,a)=>s+a[0],0)/ps.length,y=ps.reduce((s,a)=>s+a[1],0)/ps.length;if(!Number.isFinite(x)||!Number.isFinite(y))continue;
   if(!isBuilding&&f.properties?.jibun)text(x,y,target?2.5:1.8,jibunLabel(f.properties.jibun),'지번문자');}
+ if(site)placement(p,site,poly,text);
  if(site){const b=site.bounds;d.document.setViewCenter?.(point3d(P((b.minX+b.maxX)/2),P((b.minY+b.maxY)/2),0));}
  return d.stringify();}
+
+const f2=v=>Number(v).toLocaleString('ko-KR',{maximumFractionDigits:2});
+/** 배치도 레이어: 도로측·정북측 지정 경계, 건축 가능 영역, 최대 건축면적안 외곽, 주기(가정·한계 문구). */
+function placement(p,site,poly,text){const b=site.bounds,size=Math.max(b.maxX-b.minX,b.maxY-b.minY),h=Math.max(.6,Math.min(2,size/45));
+ // 주기는 주변 필지·도로까지 포함한 전체 도면 아래쪽에 왼쪽 정렬로 배치(도형과 겹침 방지)
+ let minY=b.minY,minX=b.minX;for(const f of [...(p.geometry.parcels||[]),...(p.geometry.buildings||[])])for(const c of (f.geometry?.coordinates||[]).flat(Infinity).reduce((a,v,i,arr)=>i%2?a:(a.push([arr[i],arr[i+1]]),a),[])){const q=site.project(c);if(Number.isFinite(q[1])){minY=Math.min(minY,q[1]);minX=Math.min(minX,q[0]);}}
+ for(const [ids,layer]of[[p.model.roadEdges||[],'도로측경계'],[p.model.northEdges||[],'정북측경계']])for(const i of ids){const e=site.edges[i];if(e)poly([e.a,e.b],layer,false);}
+ let ba=null;try{ba=buildableArea(p);}catch{}
+ if(ba)for(const l of outlineLoops(ba.pieces))poly(l,'건축가능영역',true);
+ let m=null;try{const r=p.review?.limits?buildModels(p):null;m=r?.models?.find(x=>x.id==='maximum')||null;}catch{}
+ if(m?.layers?.[0])for(const l of outlineLoops(m.layers[0].pieces))poly(l,'최대건축면적안',true);
+ const sb=number(p.manual.setback),rs=number(p.manual.roadSetback),lines=['[배치 검토 주기]',
+  `대지 안의 공지 ${sb===null?'미입력(0 m로 작도)':f2(sb)+' m'} / 도로측 후퇴 ${rs===null?'미입력(0 m로 작도)':f2(rs)+' m'}${(p.model.roadEdges||[]).length?'':' / 도로측 경계 미지정'}`,
+  p.review?.limits?.residential?((p.model.northEdges||[]).length?(ba?.north!=null?`정북 일조 이격 ${f2(ba.north)} m (1층 상단 높이 기준)`:'정북 일조 기준 수치 미확보(미반영)'):'정북측 경계 미지정(일조 이격 미반영)'):'정북 일조 이격: 주거지역 아님(미적용)',
+  ba?`건축 가능 영역(녹색) ${f2(ba.area)} ㎡`:'건축 가능 영역: 대상 필지 경계 없음',
+  m?.layers?.[0]?`최대 건축면적안(자홍색) ${f2(m.footprint)} ㎡ · 건폐율 ${m.bcr==null?'-':f2(m.bcr)+' %'}`:'최대 건축면적안: 건폐율·용적률 미확보로 미작도',
+  '연속지적도 기반 검토용 가정도이며 측량·허가 도면이 아님. 가각전제·곡선 도로·조례 특례 미반영. 현황측량 및 건축사 검토 필수.'];
+ lines.forEach((t,k)=>text(minX,minY-h*3-k*h*1.8,k?h*.8:h,t,'배치주기',true));}
