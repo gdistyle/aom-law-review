@@ -4,7 +4,7 @@ const W='http://schemas.openxmlformats.org/wordprocessingml/2006/main';
 const S='http://schemas.openxmlformats.org/spreadsheetml/2006/main';
 const font='<w:rFonts w:ascii="맑은 고딕" w:hAnsi="맑은 고딕" w:eastAsia="맑은 고딕" w:cs="맑은 고딕"/>';
 function run(text,{red=false,bold=false,italic=false,size=18}={}){return `<w:r><w:rPr>${font}${red?'<w:color w:val="E00000"/>':''}${bold?'<w:b/>':''}${italic?'<w:i/>':''}<w:sz w:val="${size}"/><w:szCs w:val="${size}"/></w:rPr><w:t xml:space="preserve">${esc(redactFreeText(text)||' ')}</w:t></w:r>`;}
-function para(text,opts={}){return `<w:p><w:pPr><w:jc w:val="${opts.align||'left'}"/><w:spacing w:after="80" w:line="240" w:lineRule="auto"/>${opts.keep?'<w:keepNext/>':''}${opts.pageBreak?'<w:pageBreakBefore/>':''}</w:pPr>${String(text??'').split('\n').map(t=>run(t,opts)).join('<w:r><w:br/></w:r>')}</w:p>`;}
+function para(text,opts={}){return `<w:p><w:pPr><w:widowControl/><w:ind w:left="0" w:firstLine="0"/><w:jc w:val="${opts.align||'left'}"/><w:spacing w:after="80" w:line="240" w:lineRule="auto"/>${opts.keep?'<w:keepNext/>':''}${opts.pageBreak?'<w:pageBreakBefore/>':''}</w:pPr>${String(text??'').split('\n').map(t=>run(t,opts)).join('<w:r><w:br/></w:r>')}</w:p>`;}
 function cell(text,width,opts={}){return `<w:tc><w:tcPr><w:tcW w:w="${width}" w:type="dxa"/><w:vAlign w:val="center"/>${opts.fill?`<w:shd w:fill="${opts.fill}"/>`:''}</w:tcPr>${para(text,opts).replace(opts.white?'<w:rPr>':'__NO__',opts.white?'<w:rPr><w:color w:val="FFFFFF"/>':'')}</w:tc>`;}
 export function wordTable(headers,rows,widths){
  const header='<w:tr><w:trPr><w:tblHeader/></w:trPr>'+headers.map((h,i)=>cell(h,widths[i],{bold:true,white:true,fill:'595959',align:'center'})).join('')+'</w:tr>';
@@ -74,8 +74,8 @@ export async function exportWord(p){
  const zip=await JSZip.loadAsync(await template('법규검토서_틀.docx'));
  let xml=await zip.file('word/document.xml').async('string');
  const tocTemplate=await (await fetch('/templates/'+encodeURIComponent('목차줄_서식.xml'))).text();
- const tocNames=['대지개요','기존건축물 현황','관련 법규 검토 (참고)','설계 개요 (법정 최대 규모)',...(p.context&&(p.context.facts?.length||p.context.concepts?.length)?['대지 맥락 · 계획 착안점 (참고)']:[]),'법적 제재 유의사항'];const toc=tocNames.map((name,i)=>tocTemplate.replace('Ⅰ',['Ⅰ','Ⅱ','Ⅲ','Ⅳ','Ⅴ','Ⅵ'][i]).replace('대지개요',name)).join('');
- {const k=xml.indexOf('w:firstLine="5133"'),ps=xml.lastIndexOf('<w:p>',k),te=xml.indexOf('{{TOC}}');if(k>0&&ps>0&&te>k)xml=xml.slice(0,ps)+'<w:p><w:pPr><w:spacing w:before="1600" w:after="500"/><w:ind w:firstLine="9485"/></w:pPr><w:r><w:rPr>'+font+'<w:b/><w:sz w:val="32"/><w:szCs w:val="32"/><w:color w:val="222222"/></w:rPr><w:t xml:space="preserve">목   차</w:t></w:r></w:p>'+xml.slice(te);}
+ const tocNames=['대지개요','기존건축물 현황','관련 법규 검토 (참고)','설계 개요 (법정 최대 규모)',...(p.context&&(p.context.facts?.length||p.context.concepts?.length)?['대지 맥락 · 계획 착안점 (참고)']:[]),'법적 제재 유의사항'];const toc=tocNames.map((name,i)=>`<w:p><w:pPr><w:keepLines/><w:spacing w:before="0" w:after="200" w:line="300" w:lineRule="auto"/><w:ind w:left="4200" w:firstLine="0"/><w:jc w:val="left"/></w:pPr><w:r><w:rPr>${font}<w:b/><w:sz w:val="24"/><w:szCs w:val="24"/><w:color w:val="303236"/></w:rPr><w:t xml:space="preserve">${['Ⅰ','Ⅱ','Ⅲ','Ⅳ','Ⅴ','Ⅵ'][i]}.  ${esc(name)}</w:t></w:r></w:p>`).join('');
+ {const k=xml.indexOf('w:firstLine="5133"'),ps=xml.lastIndexOf('<w:p>',k),te=xml.indexOf('{{TOC}}');if(k>0&&ps>0&&te>k)xml=xml.slice(0,ps)+'<w:p><w:pPr><w:spacing w:before="1600" w:after="500"/><w:ind w:left="4200" w:firstLine="0"/><w:jc w:val="left"/></w:pPr><w:r><w:rPr>'+font+'<w:b/><w:sz w:val="32"/><w:szCs w:val="32"/><w:color w:val="222222"/></w:rPr><w:t xml:space="preserve">목   차</w:t></w:r></w:p>'+xml.slice(te);}
  xml=coverPage(xml,p);
  xml=xml.replaceAll('{{TITLE}}',esc(titleOf(p))).replaceAll('{{DATE}}',esc(displayDate(p.date)));
  // 원본 TOC/BODY는 w:t가 아닌 body 직하 텍스트 자리표시자. XML 조각 직접 대입.
