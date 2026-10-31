@@ -79,7 +79,7 @@ function p_(c, o) { return p(c, o); }
 
 function summary(P, imgs) {
   const L = limitsOf(P), area = totalArea(P);
-  let x = h1('', '한눈에 보기', true);
+  let x = h1('', '한눈에 보기', true) + p(r('■ ', {sz: 16, red: true}) + r('빨간 글씨', {sz: 16, b: true, red: true}) + r(' : 가정값(주용도 미선택 등), 조례·지구단위계획 시행지침과 대조하지 못한 값, 법령 원문을 받지 못한 항목. 건축사 검토 시 우선 대조할 사항임.', {sz: 16, color: GRAY}), {after: 120});
   if (L) {
     const {l} = L;
     const cells = [
