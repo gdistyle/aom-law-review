@@ -88,6 +88,7 @@ const niceK = (k, v) => v == null || !Number.isFinite(v) ? '' : MONEY.has(k) ? M
 /* 회색 예시값(계산에 쓰지 않음). 공식 발표값만 넣고 출처·기준일을 함께 표시. 값은 화면 단위(원/평, %). */
 export const FEAS_REF = {
   buildUnit: {v: Math.round(2328000 * 400 / 121), src: '국토교통부 기본형건축비 2026. 9. 15. 고시 — ㎡당 232만 8천 원 (16~25층·전용 60~85㎡ 공동주택 기준, 다른 용도는 실제 공사비와 다를 수 있음)'},
+  months: {v: 12, src: '일반 예시값(A.O.M 지정) — 공식 기준 아님, 규모·공법에 따라 달라지므로 실제 공정계획으로 확인'},
   loanRate: {v: 4.4, src: '한국은행 예금은행 신규취급액 기준 전체 대출금리 2026년 8월 (2026. 9. 30. 발표)'}
 };
 const readOut = (k, v) => v == null ? '' : PER_PY.has(k) ? `= 평당 ${krw(v * PY)} (㎡당 ${won(v)}원)` : TOTAL.has(k) ? `= ${krw(v)}` : '';
