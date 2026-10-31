@@ -157,6 +157,27 @@ function zoneBasis(name){
  return map.find(([re])=>re.test(name))?.slice(1)||null;
 }
 export function shortLaw(name){return name.replace(DECREE,'국토계획법 시행령').replace(PLAN,'국토계획법').replace(GREEN,'개발제한구역법');}
+
+/* 항목별 결론 한 줄 (이 대지 기준 수치). 법령 일반 기준은 조문 그대로의 대표 수치만 사용. */
+function addSummaries(p,rows,L){
+ const f=v=>v==null||!Number.isFinite(Number(v))?null:Math.round(Number(v)*100)/100;const F=v=>f(v)==null?'-':f(v).toLocaleString('ko-KR');
+ const rw=number(p.manual?.roadWidth),road=p.land?.road?.value||'';
+ const S={
+  bcr:()=>L.bcr?.value!=null?`건폐율 ${L.bcr.value}% 이하 → 건축면적 최대 ${F(L.maxFootprint)} ㎡`:'',
+  far:()=>L.far?.value!=null?`용적률 ${L.far.value}% 이하 → 지상 연면적 최대 ${F(L.maxGross)} ㎡`:'',
+  use:r=>r.text?`${p.purpose} : 허용 용도 목록에 있음${r.uncertain?' (조건부 — 조건 대조)':''}`:`${p.purpose||'주용도'} : 허용 여부를 별표에서 판정하지 못함`,
+  road:()=>`너비 4 m 이상 도로에 2 m 이상 접해야 함 (연면적 2,000 ㎡ 이상은 6 m 도로에 4 m 이상)${road?` · 현황 : ${road}`:''}`,
+  deadend:()=>'막다른 도로 길이 10 m 미만 → 너비 2 m, 10~35 m → 3 m, 35 m 이상 → 6 m (도시지역 밖 읍·면 4 m)',
+  buildingLine:()=>rw!=null?(rw<4?`도로 너비 ${rw} m (4 m 미만) → 도로 중심선에서 2 m 후퇴한 선이 건축선 (대지 쪽 ${F(2-rw/2)} m 후퇴)`:`도로 너비 ${rw} m (4 m 이상) → 대지와 도로의 경계선이 건축선`):'도로 너비 4 m 이상이면 도로 경계선이 건축선, 4 m 미만이면 도로 중심선에서 2 m 후퇴한 선이 건축선',
+  sunlight:()=>'정북 쪽 인접 대지경계선에서 높이 10 m 이하 부분은 1.5 m 이상, 10 m 초과 부분은 해당 높이의 1/2 이상 띄움',
+  landscape:()=>L.landscape!=null?`대지면적의 ${L.landscape}% 이상 조경 → ${F(L.landscapeArea)} ㎡ 이상`:'대지면적 200 ㎡ 이상이면 조경 설치 (면적 비율은 조례)',
+  setback:()=>'건축선·인접 대지경계선에서 띄울 거리는 용도·규모별로 조례에서 정함 (시행령 별표 2 범위)',
+  parking:()=>L.parking!=null?`부설주차장 ${F(L.parking)}대 이상 (${L.parkingBasis||'조례 기준'})`:'주용도·시설면적이 정해지면 조례 기준으로 대수 산정',
+  district:()=>'지구단위계획 시행지침의 용도·건폐율·용적률·높이·건축선이 우선 적용',
+  development:()=>'형질변경·토지분할 등을 수반하면 개발행위허가 필요 (건축허가 시 의제 처리)'
+ };
+ for(const r of rows){const g=S[r.id];if(g){try{r.summary=g(r)||'';}catch{r.summary='';}}}
+}
 export function reviewProject(p){
  const rows=[],sanctions=[],limits=resolveRatios(p),o=ordinances(p),area=totalArea(p),purpose=p.purpose;
  const R=(name,no='',kind='law',branch='')=>reference(p.laws,name,no,kind,branch);
@@ -263,7 +284,7 @@ export function reviewProject(p){
   limits.landscapeFormula=(limits.landscapeOptional?limits.landscapeOptional+' · ':'')+(limits.landscapeExempt?limits.landscapeExempt:limits.landscapeArea!=null?`[${number(p.manual.landscape)!=null?'수동 입력 비율':T?`건축조례 제${T.article.number}조${T.small?` · 대지 ${T.small[0]}㎡ 이상 ${T.small[1]}㎡ 미만`:` · 연면적 ${T.lo?f2(T.lo)+'㎡ 이상 ':''}${T.hi!==Infinity?f2(T.hi)+'㎡ 미만':''} 구간(${limits.planLabel} ${f2(T.gross)}㎡ 기준)`}`:'건축조례'}] 대지면적 ${f2(area)}㎡ × ${limits.landscape}% = ${f2(limits.landscapeArea)}㎡ 이상`:'건축조례 조경 비율 원문 자동 추출 불가 — 08 적용값 입력 대상');}
  limits.north=residential?extractNorth(getLaw(p.laws,BD)):null;
  limits.residential=residential;
- const out={rows,sanctions,limits};detailRows(p,out,o.plan?.name||'');assertRowLinks(rows);assertRowLinks(sanctions);return out;
+ addSummaries(p,rows,limits);const out={rows,sanctions,limits};detailRows(p,out,o.plan?.name||'');assertRowLinks(rows);assertRowLinks(sanctions);return out;
 }
 function penaltyRefs(p,name){const law=getLaw(p.laws,name);return (law?.articles||[]).filter(a=>/벌칙|과태료/.test(a.title)).map(a=>reference(p.laws,name,a.number,'law',a.branch));}
 export function judgmentPacket(p){return [titleForPacket(p),`대지면적: ${totalArea(p)??''}㎡`,`용도지역: ${p.land.zone.value||''}`,'',...p.review.rows.map(r=>`[${r.id}] ${r.item}\n${r.text}\n근거: ${r.refs.map(x=>x.name+' '+x.article+' (시행일 '+(x.effectiveDate||'')+')').join(' / ')}\n판단: ${r.judgment||''}`),'','빈 판단 칸: '+p.review.rows.filter(r=>!r.judgment).map(r=>r.id).join(', '),'작성 형식: [행 ID] 판단 내용. 원문에 없는 사항 및 미확정 내용은 단정하지 말 것.'].join('\n');}

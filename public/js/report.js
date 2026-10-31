@@ -209,7 +209,7 @@ function lawReview(P) {
   const t = rows.map(rw => [
     {t: rw.item, b: true, jc: 'center'},
     {t: rw.target || '-', jc: 'center', red: rw.uncertain},
-    {t: brief(rw), red: !rw.verified, sz: 17},
+    {t: rw.summary ? rw.summary : brief(rw), b: !!rw.summary, red: !rw.verified || (rw.summary && rw.uncertain), sz: 17},
     {t: (rw.refs || []).map(x => shortLaw(x.name) + ' ' + x.article).filter(Boolean).slice(0, 3).join('\n') || rw.group, sz: 16, color: GRAY, red: rw.refs?.some(x => !x.current)}
   ]);
   if (empty.length) t.push([{t: '기타 지역·지구', b: true, jc: 'center'}, {t: '지정', jc: 'center'}, {t: empty.join(', ') + '\n각 지정 근거 법령에 따른 행위제한 적용 — 관계 기관 협의·개별 확인 대상', red: true, sz: 17}, {t: '토지이용계획 확인', sz: 16, color: GRAY}]);
