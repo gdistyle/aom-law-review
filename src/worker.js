@@ -65,12 +65,13 @@ async function nearby(u,env){
  const cat=(code,r,size=5)=>{const url=new URL('https://dapi.kakao.com/v2/local/search/category.json');for(const [k,v]of Object.entries({category_group_code:code,x:String(x),y:String(y),radius:String(r),sort:'distance',size:String(size)}))url.searchParams.set(k,v);return url;};
  const kw=(q,r,size=15)=>{const url=new URL('https://dapi.kakao.com/v2/local/search/keyword.json');for(const [k,v]of Object.entries({query:q,x:String(x),y:String(y),radius:String(r),sort:'distance',size:String(size)}))url.searchParams.set(k,v);return url;};
  const nm=o=>String(o.place_name||''),cn=o=>String(o.category_name||'');
+ const WATER=o=>{const last=cn(o).split('>').pop().trim();return /하천|강|호수|저수지|계곡/.test(last)&&/^여행|자연|명소|하천|지명/.test(cn(o).replace(/\s/g,''))&&/(강|천|호|저수지|계곡)$/.test(nm(o).trim())&&!BAD.test(nm(o))&&!/의원|병원|약국|학원|센터|마트|식당|카페/.test(nm(o)+cn(o));};
  const jobs=[one(cat('SW8',1000),'지하철역'),one(cat('SC4',500),'학교'),one(cat('CT1',800),'문화시설'),one(cat('AT4',1000),'관광명소'),one(cat('PO3',600),'공공기관'),one(cat('MT1',1000),'대형마트'),
   one(kw('공원',800),'공원',o=>/공원|숲/.test(cn(o))&&/공원|숲/.test(nm(o))&&!BAD.test(nm(o))),
-  one(kw('하천',800),'하천',o=>/하천|강|호수|저수지/.test(cn(o))&&!BAD.test(nm(o))),
+  one(kw('하천',800),'하천',WATER),
   // 동서남북 경관 요소(반경 5km): 강·하천, 산, 큰 공원
-  one(kw('강',5000),'경관-강',o=>/하천|강|호수/.test(cn(o))&&!BAD.test(nm(o)),8),
-  one(kw('천',5000),'경관-강',o=>/하천/.test(cn(o))&&!BAD.test(nm(o)),8),
+  one(kw('강',5000),'경관-강',WATER,8),
+  one(kw('천',5000),'경관-강',WATER,8),
   one(kw('산',5000),'경관-산',o=>/산$|봉$/.test(nm(o).trim())&&/산|자연/.test(cn(o))&&!BAD.test(nm(o)),10),
   one(kw('공원',3000),'경관-공원',o=>/근린공원|도시공원|체육공원|생태공원|공원$/.test(cn(o)+nm(o))&&/공원/.test(nm(o))&&!BAD.test(nm(o))&&!/어린이공원|소공원/.test(nm(o)),8)];
  // 동서남북 1.5km 지점의 행정구역
