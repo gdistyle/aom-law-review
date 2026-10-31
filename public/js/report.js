@@ -93,7 +93,7 @@ function summary(P, imgs) {
     const cells = [
       ['적용 용도지역', P.land?.zone?.value || '', !!P.land?.zone?.uncertain],
       ['대지면적', area != null ? `${fmt(area, 2)} ㎡` : '', !!P.land?.area?.uncertain],
-      ['지상 최대 층수', L.floors ? `${L.floors} 층` : '', L.floorsByRatio],
+      ['지상 최대 층수', L.floorsByRatio ? '법정 제한 없음' : (L.floors ? `${L.floors} 층` : ''), L.floorsByRatio],
       ['건폐율', l.bcr?.value != null ? `${fmt(l.bcr.value)} %` : '', !!l.bcr?.uncertain],
       ['용적률', l.far?.value != null ? `${fmt(l.far.value)} %` : '', !!l.far?.uncertain],
       ['부설주차', l.parking != null ? `${fmt(l.parking)} 대` : '', !!l.parkingPurposeAssumed || L.unsure],
@@ -109,7 +109,7 @@ function summary(P, imgs) {
     const kpi = `<w:tbl><w:tblPr><w:tblW w:w="${W * 3}" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblBorders><w:top w:val="single" w:sz="8" w:color="${HEAD}"/><w:bottom w:val="single" w:sz="8" w:color="${HEAD}"/><w:insideH w:val="single" w:sz="4" w:color="${LINE}"/><w:insideV w:val="single" w:sz="4" w:color="${LINE}"/><w:left w:val="nil"/><w:right w:val="nil"/></w:tblBorders></w:tblPr><w:tblGrid>${('<w:gridCol w:w="' + W + '"/>').repeat(3)}</w:tblGrid>`
       + rows.map(row => `<w:tr><w:trPr><w:cantSplit/></w:trPr>${row.map(c => `<w:tc><w:tcPr><w:tcW w:w="${W}" w:type="dxa"/><w:tcMar><w:top w:w="120" w:type="dxa"/><w:bottom w:w="120" w:type="dxa"/><w:left w:w="200" w:type="dxa"/><w:right w:w="200" w:type="dxa"/></w:tcMar></w:tcPr>${p(r(c.t.trim(), {sz: 16, color: GRAY}), {after: 20})}${p(r(c._v, {sz: 30, b: true, red: c._red}), {after: 0})}</w:tc>`).join('')}</w:tr>`).join('') + '</w:tbl>';
     x += kpi;
-    if (L.floorsByRatio || L.unsure || l.parkingPurposeAssumed) x += note([L.floorsByRatio ? '층수는 법정 높이 제한이 아닌 비율 산정치' : '', l.parkingPurposeAssumed ? `부설주차는 ${l.parkingPurpose} 가정` : '', L.unsure ? '조례·지구단위계획 미대조 수치 포함' : ''].filter(Boolean).join(' · '), true);
+    if (L.floorsByRatio || L.unsure || l.parkingPurposeAssumed) x += note([L.floorsByRatio ? '법정 층수 제한 없음 (건축면적을 최대로 채우면 ' + (L.floors ?? '-') + '층)' : '', l.parkingPurposeAssumed ? `부설주차는 ${l.parkingPurpose} 가정` : '', L.unsure ? '조례·지구단위계획 미대조 수치 포함' : ''].filter(Boolean).join(' · '), true);
   }
   if (imgs) {
     const w = Math.floor((BODY_W - 300) / 2);
@@ -190,7 +190,7 @@ function maxScale(P) {
     ['주용도', P.purpose || '미선택', P.purpose ? '05 계획 조건에서 선택' : '주용도 미선택 — 부설주차·조경 등은 가정값으로 산정', !P.purpose],
     ['부용도', P.purpose2 || '없음', '', false],
     ['행위 구분', P.operation || '신축', '', false],
-    ['지상 층수', fl ? `${fl} 층` : '', fl && L.floors && fl === L.floors ? (L.floorsByRatio ? '건폐율 가득 채운 층수 적용 (법정 층수 제한 없음)' : '법정 최대 층수 적용') : fl ? (L.floorsByRatio ? `건폐율 가득 채운 층수 ${L.floors}층 중 선택` : `법정 최대 ${L.floors ?? '-'}층 중 선택`) : '', L.floorsByRatio],
+    ['지상 층수', fl ? `${fl} 층` : '', fl && L.floors && fl === L.floors ? (L.floorsByRatio ? '건축면적을 최대로 채운 층수 적용 (법정 층수 제한 없음)' : '법정 최대 층수 적용') : fl ? (L.floorsByRatio ? `건축면적을 최대로 채운 층수 ${L.floors}층 중 선택` : `법정 최대 ${L.floors ?? '-'}층 중 선택`) : '', L.floorsByRatio],
     ['지하 층수', bs ? `${bs} 층` : '없음', '', false]
   ].filter(x => x[1]);
   return h1('Ⅱ', '계획 조건 및 법정 최대 규모') + h2('계획 조건') + table([3000, 3600, BODY_W - 6600], ['항 목', '적용', '비 고'], plan.map(([k, v, f, red]) => [{t: k, b: true, jc: 'center'}, {t: v, b: true, red, jc: 'center'}, {t: f, sz: 16, color: GRAY, red}]), {zebra: true})
