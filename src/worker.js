@@ -57,18 +57,28 @@ async function nearby(u,env){
  if(!configured(env,'KAKAO_REST_KEY'))return missing('kakao');
  const x=number(u.searchParams.get('x')),y=number(u.searchParams.get('y'));
  if(!(x>124&&x<132&&y>32&&y<40))throw new Error('INVALID_INPUT');
- // 카카오 로컬 카테고리 검색 + 공원 키워드 검색. 이름·분류·거리만 반환(주소·전화 미반환).
- const CATS=[['SW8','지하철역',1000],['SC4','학교',500],['CT1','문화시설',800],['AT4','관광명소',1000],['PO3','공공기관',600],['MT1','대형마트',1000]];
+ // 카카오 로컬 검색. 이름·분류·거리·방위만 반환(주소·전화 미반환).
  const H={Authorization:'KakaoAK '+env.KAKAO_REST_KEY};
- const one=async(url,label,keep=()=>true)=>{try{const d=await upstreamJSON(url,env,H);return (Array.isArray(d.documents)?d.documents:[]).filter(keep).slice(0,5).map(o=>({name:String(o.place_name||'').slice(0,60),kind:label,group:String(o.category_name||'').split('>').pop().trim().slice(0,30),distance:number(o.distance)})).filter(o=>o.name&&Number.isFinite(o.distance));}catch{return [];}};
- const BAD=/주차장|정류장|노래|카페|약국|아파트|빌라|부동산|교회|학원|마트|편의점|식당|주유소/;
- const jobs=CATS.map(([code,label,r])=>{const url=new URL('https://dapi.kakao.com/v2/local/search/category.json');for(const [k,v]of Object.entries({category_group_code:code,x:String(x),y:String(y),radius:String(r),sort:'distance',size:'5'}))url.searchParams.set(k,v);return one(url,label);});
- const park=new URL('https://dapi.kakao.com/v2/local/search/keyword.json');for(const [k,v]of Object.entries({query:'공원',x:String(x),y:String(y),radius:'800',sort:'distance',size:'15'}))park.searchParams.set(k,v);
- jobs.push(one(park,'공원',o=>/공원|숲/.test(String(o.category_name||''))&&/공원|숲/.test(String(o.place_name||''))&&!BAD.test(String(o.place_name||''))));
- const river=new URL('https://dapi.kakao.com/v2/local/search/keyword.json');for(const [k,v]of Object.entries({query:'하천',x:String(x),y:String(y),radius:'800',sort:'distance',size:'15'}))river.searchParams.set(k,v);
- jobs.push(one(river,'하천',o=>/하천|강|호수|저수지/.test(String(o.category_name||''))&&!BAD.test(String(o.place_name||''))));
+ const BAD=/주차장|정류장|노래|카페|약국|아파트|빌라|부동산|교회|학원|마트|편의점|식당|주유소|휴게소|입구|매표소|화장실|등산로|둘레길|산책로|공영|약수터|쉼터/;
+ const bearing=(lon,lat)=>{const r=Math.PI/180,dl=(lon-x)*r,a=lat*r,b=y*r;const yy=Math.sin(dl)*Math.cos(a),xx=Math.cos(b)*Math.sin(a)-Math.sin(b)*Math.cos(a)*Math.cos(dl);return (Math.atan2(yy,xx)/r+360)%360;};
+ const one=async(url,label,keep=()=>true,limit=5)=>{try{const d=await upstreamJSON(url,env,H);return (Array.isArray(d.documents)?d.documents:[]).filter(keep).slice(0,limit).map(o=>({name:String(o.place_name||'').slice(0,60),kind:label,group:String(o.category_name||'').split('>').pop().trim().slice(0,30),distance:number(o.distance),bearing:Math.round(bearing(number(o.x),number(o.y)))})).filter(o=>o.name&&Number.isFinite(o.distance));}catch{return [];}};
+ const cat=(code,r,size=5)=>{const url=new URL('https://dapi.kakao.com/v2/local/search/category.json');for(const [k,v]of Object.entries({category_group_code:code,x:String(x),y:String(y),radius:String(r),sort:'distance',size:String(size)}))url.searchParams.set(k,v);return url;};
+ const kw=(q,r,size=15)=>{const url=new URL('https://dapi.kakao.com/v2/local/search/keyword.json');for(const [k,v]of Object.entries({query:q,x:String(x),y:String(y),radius:String(r),sort:'distance',size:String(size)}))url.searchParams.set(k,v);return url;};
+ const nm=o=>String(o.place_name||''),cn=o=>String(o.category_name||'');
+ const jobs=[one(cat('SW8',1000),'지하철역'),one(cat('SC4',500),'학교'),one(cat('CT1',800),'문화시설'),one(cat('AT4',1000),'관광명소'),one(cat('PO3',600),'공공기관'),one(cat('MT1',1000),'대형마트'),
+  one(kw('공원',800),'공원',o=>/공원|숲/.test(cn(o))&&/공원|숲/.test(nm(o))&&!BAD.test(nm(o))),
+  one(kw('하천',800),'하천',o=>/하천|강|호수|저수지/.test(cn(o))&&!BAD.test(nm(o))),
+  // 동서남북 경관 요소(반경 5km): 강·하천, 산, 큰 공원
+  one(kw('강',5000),'경관-강',o=>/하천|강|호수/.test(cn(o))&&!BAD.test(nm(o)),8),
+  one(kw('천',5000),'경관-강',o=>/하천/.test(cn(o))&&!BAD.test(nm(o)),8),
+  one(kw('산',5000),'경관-산',o=>/산$|봉$/.test(nm(o).trim())&&/산|자연/.test(cn(o))&&!BAD.test(nm(o)),10),
+  one(kw('공원',3000),'경관-공원',o=>/근린공원|도시공원|체육공원|생태공원|공원$/.test(cn(o)+nm(o))&&/공원/.test(nm(o))&&!BAD.test(nm(o))&&!/어린이공원|소공원/.test(nm(o)),8)];
+ // 동서남북 1.5km 지점의 행정구역
+ const dirs=[['북',0],['동',90],['남',180],['서',270]];
+ const region=dirs.map(async([d,deg])=>{const dist=1500,r=Math.PI/180,lat=y+(dist*Math.cos(deg*r))/111320,lon=x+(dist*Math.sin(deg*r))/(111320*Math.cos(y*r));try{const url=new URL('https://dapi.kakao.com/v2/local/geo/coord2regioncode.json');url.searchParams.set('x',String(lon));url.searchParams.set('y',String(lat));const dd=await upstreamJSON(url,env,H);const h=(dd.documents||[]).find(o=>o.region_type==='H')||(dd.documents||[])[0];return h?{dir:d,gu:String(h.region_2depth_name||''),dong:String(h.region_3depth_name||'')}:null;}catch{return null;}});
+ const here=(async()=>{try{const url=new URL('https://dapi.kakao.com/v2/local/geo/coord2regioncode.json');url.searchParams.set('x',String(x));url.searchParams.set('y',String(y));const dd=await upstreamJSON(url,env,H);const h=(dd.documents||[]).find(o=>o.region_type==='H')||(dd.documents||[])[0];return h?{gu:String(h.region_2depth_name||''),dong:String(h.region_3depth_name||'')}:null;}catch{return null;}})();
  const items=(await Promise.all(jobs)).flat();
- return json({ok:true,items,source:publicSource('카카오 로컬 장소검색','https://developers.kakao.com/docs/ko/kakaomap/rest-api')});
+ return json({ok:true,items,regions:(await Promise.all(region)).filter(Boolean),here:await here,source:publicSource('카카오 로컬 장소·좌표 검색','https://developers.kakao.com/docs/ko/kakaomap/rest-api')});
 }
 async function buildings(u,env){
  if(!configured(env,'DATA_GO_KR_KEY'))return missing('building');
