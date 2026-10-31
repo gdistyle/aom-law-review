@@ -186,6 +186,14 @@ async function trades(u,env){
  const {items,total}=parseTrades(xml);
  return json({ok:true,lawd,ym,items,total,source:publicSource('국토교통부 토지 매매 실거래가 자료','https://www.data.go.kr/data/15126466/openapi.do')});
 }
+
+/* 법제처 자치법규 별표 첨부(HWP) 중계 — law.go.kr flDownload만 허용, 파일 번호 숫자만. 브라우저 CORS 제한 우회용. */
+async function annexFile(u,env){
+ const seq=checkQuery(u,'flSeq',/^\d{4,12}$/);
+ const url=new URL('https://www.law.go.kr/flDownload.do');url.searchParams.set('gubun','ELIS');url.searchParams.set('flSeq',seq);
+ const r=await upstream(url,env,{'User-Agent':'Mozilla/5.0'});
+ return new Response(r.bytes,{headers:{'Content-Type':'application/octet-stream','Cache-Control':'public, max-age=86400','X-Content-Type-Options':'nosniff'}});
+}
 /* 같은 조회는 Cloudflare 무료 캐시에 저장해 기관 API 호출 수를 줄인다 (성공 응답만, 개인 정보 없음). */
 async function cached(u,ttl,make){
  const cache=typeof caches!=='undefined'?caches.default:null;
@@ -207,6 +215,7 @@ export default {async fetch(request,env){
   if(u.pathname==='/api/buildings')return await cached(u,86400,()=>buildings(u,env));
   if(u.pathname==='/api/land')return await cached(u,86400,()=>land(u,env));
   if(u.pathname==='/api/trades'){const ym=u.searchParams.get('ym')||'',now=new Date(Date.now()+9*3600e3),pm=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth()-1,1)),prev=String(pm.getUTCFullYear())+String(pm.getUTCMonth()+1).padStart(2,'0');return await cached(u,ym>=prev?21600:86400*7,()=>trades(u,env));}
+  if(u.pathname==='/api/annexfile')return await annexFile(u,env);
   if(u.pathname==='/api/spatial')return await spatial(u,env);
   if(u.pathname==='/api/law')return await law(u,env);
   if(u.pathname.startsWith('/api/terrain/'))return await terrain(u.pathname,env);
