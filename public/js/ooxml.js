@@ -21,7 +21,7 @@ export function wordBody(p,imgs=null){
  const mainZones=zoneList(p.land.zones.filter(z=>!z.extra)),zAll=zoneList(p.land.zones);
  const parcels=(p.parcels.length?p.parcels:[{lot:(p.address.split(/\s+/).at(-1)||''),area:p.land.area,price:p.land.price,priceDate:p.land.priceDate}]).map((x,i)=>({...x,zones:i===0&&!x.pnu?mainZones:zoneList(p.land.zones.filter(z=>z.extra===x.pnu))}));
  const pd=(parcels.find(x=>x.priceDate?.value)?.priceDate?.value||'').replace('-','/');
- let xml=para('본 검토서는 공개 자료(토지이음·건축물대장·법제처 현행 법령)를 기반으로 자동 작성한 초안으로, 참고 자료로만 사용함. 지구단위계획·조례·현장 여건 등에 따라 실제와 다를 수 있으므로, 최종 판단은 건축사 검토 및 인허가권자 협의에 따름.',{size:17,red:true})+h('Ⅰ. 대지개요')+(p.address?para('. 대지위치 : '+p.address+(p.extra?.length?` 외 ${p.extra.length}필지`:'')):'')+(area!==null?para('. 대지면적 : '+`${fmt(area,2)}㎡(${fmt(area*.3025,2)} 평)`,{red:p.land.area.uncertain}):'')+(zAll.length?para('. 지역지구 : '+zAll.join(', '),{red:p.land.zones.some(z=>z.uncertain)}):'')+para('. 지번현황',{bold:true,keep:true});
+ let xml=para('본 자료는 공개 자료(토지이음·건축물대장·법제처 현행 법령)를 기반으로 자동 작성한 초안으로, 참고 자료로만 사용함. 지구단위계획·조례·현장 여건 등에 따라 실제와 다를 수 있으므로, 최종 판단은 건축사 검토 및 인허가권자 협의에 따름.',{size:17,red:true})+h('Ⅰ. 대지개요')+(p.address?para('. 대지위치 : '+p.address+(p.extra?.length?` 외 ${p.extra.length}필지`:'')):'')+(area!==null?para('. 대지면적 : '+`${fmt(area,2)}㎡(${fmt(area*.3025,2)} 평)`,{red:p.land.area.uncertain}):'')+(zAll.length?para('. 지역지구 : '+zAll.join(', '),{red:p.land.zones.some(z=>z.uncertain)}):'')+para('. 지번현황',{bold:true,keep:true});
  const plotRows=parcels.map(x=>[{text:x.lot||'',align:'center',red:x.area?.uncertain},{text:x.area?.value==null?'':fmt(x.area.value,2),align:'right',red:x.area?.uncertain},{text:x.area?.value==null?'':fmt(x.area.value*.3025,2),align:'right',red:x.area?.uncertain},{text:x.price?.value==null?'':fmt(x.price.value),align:'right',red:x.price?.uncertain},{text:(x.zones||[]).join(', ')},'']);
  plotRows.push([{text:'합계',align:'center',fill:'D9D9D9'},{text:area===null?'':fmt(area,2),align:'right',fill:'D9D9D9',red:p.land.area.uncertain},{text:area===null?'':fmt(area*.3025,2),align:'right',fill:'D9D9D9',red:p.land.area.uncertain},{text:'',fill:'D9D9D9'},{text:'',fill:'D9D9D9'},{text:'',fill:'D9D9D9'}]);
  xml+=wordTable(['지번','면적 Sqm','면적 py',`공시지가 원/㎡${pd?'\n'+pd:''}`,'지역, 지구','비고'],plotRows,[1300,1400,1300,1700,6000,1100]);
@@ -33,7 +33,7 @@ export function wordBody(p,imgs=null){
   const fs=p.building.floors.filter(f=>!b.mgmBldrgstPk||f.mgmBldrgstPk===b.mgmBldrgstPk);
   if(fs.length)xml+=wordTable(['동','층','구조','용도','면적 ㎡'],fs.map(f=>[f.dongNm||'',f.flrNoNm||'',f.strctCdNm||'',f.etcPurps||f.mainPurpsCdNm||'',{text:fmt(f.area),align:'right',red:!!f._manual}]),[1700,1300,2400,5601,1700]);
  }else xml+=para('건축물대장 조회 자료 없음',{red:true});
- xml+=imgXml;xml+=h('Ⅲ. 법규검토',!imgXml);
+ xml+=imgXml;xml+=h('Ⅲ. 관련 법규 검토 (참고)',!imgXml);
  xml+=wordTable(['구 분','항 목','대 상','법규내용','비 고'],p.review.rows.map(r=>[{text:r.group,fill:'D9D9D9',italic:true,align:'center',red:r.refs.some(x=>!x.current)},{text:r.item,align:'center'},{text:r.target,align:'center',red:r.uncertain},{text:r.text,red:!r.verified},{text:r.judgment|| (r.uncertain?r.refs.map(x=>shortLaw(x.name)+' '+x.article).join('\n'):''),red:r.uncertain||!!r.judgment}]),[1821,1440,1080,7020,1440]);
  {const l=p.review?.limits;if(l&&l.maxFootprint!=null){const cap=Number(p.manual?.floorLimit)>0,lh=l.legalHeight,fl=cap?Number(p.manual.floorLimit):lh?.floors>0?lh.floors:(l.maxGross>0&&l.maxFootprint>0?Math.ceil(l.maxGross/l.maxFootprint-1e-9):null),ratio=!(cap||lh?.floors>0),rr=!!(l.bcr?.uncertain||l.far?.uncertain);
  const rows=[['적용 용도지역',p.land?.zone?.value||'',!!p.land?.zone?.uncertain],['대지면적',area!==null?`${fmt(area,2)} ㎡ (${fmt(area*.3025,2)} 평)`:'',!!p.land?.area?.uncertain],['적용 건폐율',l.bcr?.value!=null?`${fmt(l.bcr.value)} %`:'',!!l.bcr?.uncertain],['적용 용적률',l.far?.value!=null?`${fmt(l.far.value)} %`:'',!!l.far?.uncertain],['법정 최대 건축면적',`${fmt(l.maxFootprint,2)} ㎡ (${fmt(l.maxFootprint*.3025,2)} 평)`,rr],['법정 최대 연면적(용적률 산정용)',l.maxGross!=null?`${fmt(l.maxGross,2)} ㎡ (${fmt(l.maxGross*.3025,2)} 평)`:'',rr],['지상 최대 층수',fl?`${fl} 층${ratio?' (건폐율 가득 적층 시 비율 산정치)':''}`:'',ratio],['부설주차',l.parking!=null?`${fmt(l.parking)} 대${l.parkingPurposeAssumed?' ('+l.parkingPurpose+' 가정)':''}`:'',!!l.parkingPurposeAssumed||rr],['조경면적',l.landscapeExempt?'조경 의무 면제 대상':l.landscapeArea!=null?`${fmt(l.landscapeArea,2)} ㎡ 이상${l.landscapeOptional?' (녹지지역 면제 선택 가능)':''}`:'',rr&&!l.landscapeExempt]].filter(r=>r[1]);
@@ -41,7 +41,7 @@ export function wordBody(p,imgs=null){
  if(p.issue)xml+=h('판단 내용')+para(p.issue,{red:true});
  xml+=h('Ⅳ. 법적 제재 유의사항')+wordTable(['위반 유형','근거 조문 및 내용'],p.review.sanctions.map(s=>[{text:s.item,align:'center'},{text:s.text,red:/현행 원문 미수신/.test(s.text)}]),[3300,9501]);
  xml+=para('A.O.M 종합건축사사무소  |  제30회 경기도 건축문화상 사용승인부문 금상 (2025, 감애휴가)',{bold:true,size:22,keep:true})+para('신축 · 증축 · 용도변경 · 대수선 · 리모델링 · 인허가 상담 : 010-9239-2532   ·   홈페이지 : https://aomand.com',{size:20})+para('경기도 하남시 대청로22번길 17, 206호 (신장동)',{size:20});
- xml+=para('※ 본 검토서는 공개 자료(토지이음·건축물대장·법제처 현행 법령)를 기반으로 자동 작성한 초안으로, 참고 자료로만 사용함. 지구단위계획·조례·현장 여건 등에 따라 실제와 다를 수 있으므로, 최종 판단은 건축사 검토 및 인허가권자 협의에 따름.',{size:17,red:true});
+ xml+=para('※ 본 자료는 공개 자료(토지이음·건축물대장·법제처 현행 법령)를 기반으로 자동 작성한 초안으로, 참고 자료로만 사용함. 지구단위계획·조례·현장 여건 등에 따라 실제와 다를 수 있으므로, 최종 판단은 건축사 검토 및 인허가권자 협의에 따름.',{size:17,red:true});
  return xml;
 }
 async function template(path){const r=await fetch('/templates/'+encodeURIComponent(path));if(!r.ok)throw new Error('빈 양식 읽기 실패');return r.arrayBuffer();}
@@ -54,7 +54,7 @@ function coverPage(xml,p){const b=xml.indexOf('<w:body>')+8,brk=xml.indexOf('<w:
  const g='8A8A8A';
  const cover=para(run('Strictly Confidential',15,{color:'222222',spacing:10}),{jc:'right',border:true})
   +para(run('{{TITLE}}',36,{color:'222222'}),{jc:'right',before:1100,after:120})
-  +para(run('법규검토서',36,{color:'222222'}),{jc:'right',after:0})
+  +para(run('건축 사전 검토 자료 (초안)',36,{color:'222222'}),{jc:'right',after:0})
   +para(run('{{DATE}}',20,{bold:true,color:'222222'}),{jc:'right',before:360})
   +para(run(`조회 ${esc(kstTime(p.queriedAt))}${p.author?` · 작성 ${esc(p.author)}`:''}`,15,{color:'8A8A8A'}),{jc:'right',before:80})
   +para(logo,{before:1000,after:80})
@@ -66,7 +66,7 @@ export async function exportWord(p){
  const zip=await JSZip.loadAsync(await template('법규검토서_틀.docx'));
  let xml=await zip.file('word/document.xml').async('string');
  const tocTemplate=await (await fetch('/templates/'+encodeURIComponent('목차줄_서식.xml'))).text();
- const toc=['대지개요','기존건축물 현황','법규검토','법적 제재 유의사항'].map((name,i)=>tocTemplate.replace('Ⅰ',['Ⅰ','Ⅱ','Ⅲ','Ⅳ'][i]).replace('대지개요',name)).join('');
+ const toc=['대지개요','기존건축물 현황','관련 법규 검토 (참고)','법적 제재 유의사항'].map((name,i)=>tocTemplate.replace('Ⅰ',['Ⅰ','Ⅱ','Ⅲ','Ⅳ'][i]).replace('대지개요',name)).join('');
  xml=coverPage(xml,p);
  xml=xml.replaceAll('{{TITLE}}',esc(titleOf(p))).replaceAll('{{DATE}}',esc(displayDate(p.date)));
  // 원본 TOC/BODY는 w:t가 아닌 body 직하 텍스트 자리표시자. XML 조각 직접 대입.

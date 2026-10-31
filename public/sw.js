@@ -2,7 +2,7 @@
    - 화면 파일(HTML·CSS·JS·양식)만 캐시한다.
    - /api/* 기관 조회와 외부 기관(법제처·브이월드·카카오) 요청은 캐시하지 않는다 (항상 현행 자료).
    - HTML은 네트워크 우선: 배포 즉시 새 화면이 반영되고, 오프라인일 때만 저장본을 쓴다. */
-const CACHE = 'aom-shell-v1';
+const CACHE = 'aom-shell-v2';
 const SHELL = ['/', '/index.html', '/assets/site.css', '/assets/logo.png', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png'];
 
 self.addEventListener('install', e => {

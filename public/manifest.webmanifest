@@ -1,13 +1,13 @@
 {
-  "name": "A.O.M 법규검토 — 지번으로 보는 건축 가능 규모",
-  "short_name": "AOM 법규검토",
-  "description": "지번 하나로 토지이용계획·건축물대장·건폐율·용적률·최대 층수·주차·조경을 현행 법령 기준으로 확인하고 워드·PDF·CAD로 받는 무료 법규검토 도구. A.O.M 종합건축사사무소 제작.",
+  "name": "A.O.M 건축 사전 검토 — 내 땅의 건축 가능 규모",
+  "short_name": "AOM 건축 사전 검토",
+  "description": "지번 하나로 토지이용계획·건축물대장·건폐율·용적률·최대 층수·주차·조경을 현행 법령 기준으로 확인하고 워드·PDF·CAD로 받는 무료 건축 사전 검토 도구(참고용 초안). A.O.M 종합건축사사무소 제작.",
   "lang": "ko",
   "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
   "background_color": "#f5f5f4",
-  "theme_color": "#e8382f",
+  "theme_color": "#F37021",
   "categories": ["business", "productivity", "utilities"],
   "icons": [
     { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
