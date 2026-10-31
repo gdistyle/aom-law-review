@@ -180,7 +180,7 @@ function maxScale(P) {
     ['적용 용적률', l.far?.value != null ? `${fmt(l.far.value)} %` : '', area != null && l.far?.value != null ? `${fmt(area, 2)} ㎡ × ${fmt(l.far.value)} %` : '', !!l.far?.uncertain],
     ['법정 최대 건축면적', `${fmt(l.maxFootprint, 2)} ㎡ (${py(l.maxFootprint)} 평)`, '대지면적 × 적용 건폐율', L.unsure],
     ['법정 최대 연면적', l.maxGross != null ? `${fmt(l.maxGross, 2)} ㎡ (${py(l.maxGross)} 평)` : '', '용적률 산정용 연면적 (별도 상한 있을 시 상한 적용)', L.unsure],
-    L.floorsByRatio ? (SM ? ['지상 최대 층수', `${SM.floors} 층`, `법정 층수 제한 없음 · 정북 일조 사선 기준 이론상 최대 : 대지 남북 길이 ${fmt(SM.depth, 1)} m × 2 = 허용 높이 ${fmt(SM.height, 1)} m (층고 1층 4.3 m·2층 이상 3.3 m 가정, 북측이 도로 등이면 완화 가능)`, true] : ['지상 최대 층수', '제한 없음', '법정 층수 제한 없음 · 높이는 공동주택 채광·인동거리, 대지 안의 공지, 지구단위계획 등으로 정해짐', true]) : ['지상 최대 층수', L.floors ? `${L.floors} 층` : '', l.legalHeight?.lines?.[0] || '법령 층수 제한', false],
+    L.floorsByRatio ? (SM ? ['지상 최대 층수', '법정 제한 없음', `정북 일조 사선만 적용 시 이론상 ${SM.floors}층 : 대지 남북 길이 ${fmt(SM.depth, 1)} m × 2 = 허용 높이 ${fmt(SM.height, 1)} m (층고 1층 4.3 m·2층 이상 3.3 m 가정). 실제 층수는 공동주택 채광·인동거리, 대지 안의 공지, 지구단위계획, 건축위원회 심의로 결정`, true] : ['지상 최대 층수', '제한 없음', '법정 층수 제한 없음 · 높이는 공동주택 채광·인동거리, 대지 안의 공지, 지구단위계획 등으로 정해짐', true]) : ['지상 최대 층수', L.floors ? `${L.floors} 층` : '', l.legalHeight?.lines?.[0] || '법령 층수 제한', false],
     ['부설주차', l.parking != null ? `${fmt(l.parking)} 대` : '', l.parkingFormula || '', !!l.parkingPurposeAssumed || L.unsure],
     ['조경면적', l.landscapeExempt ? '조경 의무 면제 대상' : l.landscapeArea != null ? `${fmt(l.landscapeArea, 2)} ㎡ 이상` : '', l.landscapeFormula || '', L.unsure && !l.landscapeExempt]
   ].map(x => x[1] ? x : [x[0], '산정 불가', x[2] || '필요 자료(용도지역·대지면적·주용도·조례 원문) 미확보', true]);
