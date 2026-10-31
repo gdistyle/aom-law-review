@@ -137,6 +137,7 @@ function siteOverview(P) {
       ['사용승인일', b.useAprDay ? displayDate(b.useAprDay) : '']
     ].filter(v => v[1]);
     x += table([3000, BODY_W - 3000], null, brow.map(([k, v]) => [{t: k, b: true, fill: 'F2F2F0', jc: 'center'}, v]));
+    x += p('※ 위반건축물 여부는 공공 자료로 제공되지 않아 본 자료에 반영하지 않았음. 증축·용도변경·대수선·매매 전 세움터(www.eais.go.kr) 건축물대장 표제부 상단의 「위반건축물」 표시 유무를 직접 열람할 것. 위반건축물인 경우 위반 사항 해소 전에는 허가가 제한될 수 있음.', {red: true, sz: 17, b: true, before: 60, after: 80});
   } else x += p(P.building?.status === 'empty' ? '건축물대장 조회 결과 등재 건축물 없음 (나대지 또는 대표 지번 등재 여부 대조 대상)' : '건축물대장 조회 자료 없음', {red: true, sz: 18});
   return x;
 }
