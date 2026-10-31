@@ -136,6 +136,7 @@ function siteOverview(P) {
   { const seen = new Set(), zr = [];
     for (const z of (P.land?.zones || [])) { if (seen.has(z.name)) continue; seen.add(z.name); const zp = zonePlain(z.name); if (zp) zr.push([{t: z.name, b: true, jc: 'center'}, zp.what, {t: zp.effect, color: GRAY, sz: 16}]); }
     if (zr.length) x += h2('지역·지구 쉬운 풀이') + table([3600, 5200, BODY_W - 8800], ['지역·지구', '뜻', '건축 시 영향 (일반)'], zr, {sz: 16, pad: 40, zebra: true}) + note('※ 지정 목적 수준의 일반 설명이며, 개별 필지의 구체적 제한은 Ⅲ장 근거 원문과 인허가권자 협의로 확정.'); }
+    if (P.land?.touching?.length) x += note('※ 대지 경계에 접하기만 한 지역·지구 (규제 적용 안 함) : ' + P.land.touching.join(', '));
   const PR = parcelRows(P);
   if (PR.length > 1) {
     const tot = PR.reduce((s, q) => s + (q.area || 0), 0), zs = new Set(PR.map(q => q.zone)), M = P.review?.multi;
