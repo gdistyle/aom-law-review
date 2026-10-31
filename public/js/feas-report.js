@@ -95,7 +95,7 @@ function summary(x, R) {
 /* 결과 분석 및 결론 — 결론 상자 + 총사업비 구성 막대(편집 가능한 표) + 분석 문장 */
 function analysisSection(x) {
   const A = analyze(x); if (!A.points.length) return '';
-  const COL = ['F37021', '3A3B3F', '8C8F94', 'C9A27A', 'B9BCC0', 'E2B48F', '5E6166'];
+  const COL = ['F37021', '3A6EA5', '8C8F94', 'C9A27A', '5E9E6E', 'E2B48F', '7A5FA0'];
   const sh = costShares(A.R, x.mode);
   let widths = sh.map(s => Math.max(160, Math.round(s.share * BODY_W))); const diff = BODY_W - widths.reduce((a, b) => a + b, 0); widths[widths.indexOf(Math.max(...widths))] += diff;
   const bar = table(widths, null, [sh.map((s, i) => ({t: s.share >= 0.08 ? (Math.round(s.share * 1000) / 10).toFixed(1) + '%' : '', jc: 'center', b: true, sz: 15, color: 'FFFFFF', fill: COL[i % COL.length]}))], {sz: 15, pad: 30});

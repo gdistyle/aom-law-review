@@ -62,12 +62,12 @@ export function analyze(x) {
 /** 화면용 그림(SVG): 총사업비 구성 막대 + 민감도 막대 */
 export function analysisSVG(x, a) {
   const R = a.R, sh = costShares(R, x.mode); if (!sh.length) return '';
-  const colors = ['#F37021', '#3A3B3F', '#8C8F94', '#C9A27A', '#B9BCC0', '#E2B48F', '#5E6166'];
+  const colors = ['#F37021', '#3A6EA5', '#8C8F94', '#C9A27A', '#5E9E6E', '#E2B48F', '#7A5FA0'];
   const W = 640; let xx = 0;
   const bar = sh.map((s, i) => { const w = Math.max(0, s.share * W); const r = `<rect x="${xx.toFixed(1)}" y="26" width="${w.toFixed(1)}" height="26" fill="${colors[i % colors.length]}"/>`; xx += w; return r; }).join('');
-  const legend = sh.map((s, i) => `<g transform="translate(${(i % 4) * 160},${70 + Math.floor(i / 4) * 20})"><rect width="11" height="11" fill="${colors[i % colors.length]}"/><text x="16" y="10" class="fa-t">${s.label} ${(Math.round(s.share * 1000) / 10).toFixed(1)}%</text></g>`).join('');
-  const rows = Math.ceil(sh.length / 4);
-  let svg = `<svg viewBox="0 0 ${W} ${80 + rows * 20}" class="fa-svg" role="img" aria-label="총사업비 구성"><text x="0" y="16" class="fa-h">총사업비 구성 (${eok(R.total)})</text>${bar}${legend}</svg>`;
+  const legend = sh.map((s, i) => `<g transform="translate(${(i % 3) * 213},${72 + Math.floor(i / 3) * 24})"><rect width="13" height="13" class="fa-sw" fill="${colors[i % colors.length]}"/><text x="19" y="11" class="fa-t">${s.label} ${(Math.round(s.share * 1000) / 10).toFixed(1)}%</text></g>`).join('');
+  const rows = Math.ceil(sh.length / 3);
+  let svg = `<svg viewBox="0 0 ${W} ${84 + rows * 24}" class="fa-svg" role="img" aria-label="총사업비 구성"><text x="0" y="16" class="fa-h">총사업비 구성 (${eok(R.total)})</text>${bar}${legend}</svg>`;
   const s = sensitivity(x);
   if (s) {
     const lab = x.mode === 'sale' ? '분양가' : '임대료', base = s[1][1];
