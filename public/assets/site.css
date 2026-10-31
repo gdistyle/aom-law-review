@@ -180,3 +180,5 @@ body{background:#F3F3F1}
 .hero-steps b{flex-shrink:0}
 .consult-addr{margin:2px 0 0;font-size:12.5px;color:#595959;word-break:keep-all}
 .brand span{color:var(--aom)!important}
+.consult-call{justify-content:center;font-size:15px;font-weight:600}
+:root,body,button,input,select,textarea{font-family:"Pretendard","맑은 고딕","Malgun Gothic",sans-serif}
