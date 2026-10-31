@@ -165,7 +165,16 @@ function maxScale(P) {
     ['부설주차', l.parking != null ? `${fmt(l.parking)} 대` : '', l.parkingFormula || '', !!l.parkingPurposeAssumed || L.unsure],
     ['조경면적', l.landscapeExempt ? '조경 의무 면제 대상' : l.landscapeArea != null ? `${fmt(l.landscapeArea, 2)} ㎡ 이상` : '', l.landscapeFormula || '', L.unsure && !l.landscapeExempt]
   ].filter(x => x[1]);
-  return h1('Ⅱ', '법정 최대 규모 (설계 개요)') + table([3000, 3600, BODY_W - 6600], ['항 목', '산정 결과', '산정 근거'], rows.map(([k, v, f, red]) => [{t: k, b: true, jc: 'center'}, {t: v, b: true, red, jc: 'center'}, {t: f, sz: 16, color: GRAY}]), {zebra: true});
+  const fl = Number(P.floors) || null, bs = Number(P.basement) || 0;
+  const plan = [
+    ['주용도', P.purpose || '미선택', P.purpose ? '04 계획 조건에서 선택' : '주용도 미선택 — 부설주차·조경 등은 가정값으로 산정', !P.purpose],
+    ['부용도', P.purpose2 || '없음', '', false],
+    ['행위 구분', P.operation || '신축', '', false],
+    ['지상 층수', fl ? `${fl} 층` : '', fl && L.floors && fl === L.floors ? '법정 최대 층수 적용' : fl ? `법정 최대 ${L.floors ?? '-'}층 중 선택` : '', L.floorsByRatio],
+    ['지하 층수', bs ? `${bs} 층` : '없음', '', false]
+  ].filter(x => x[1]);
+  return h1('Ⅱ', '계획 조건 및 법정 최대 규모') + h2('계획 조건') + table([3000, 3600, BODY_W - 6600], ['항 목', '적용', '비 고'], plan.map(([k, v, f, red]) => [{t: k, b: true, jc: 'center'}, {t: v, b: true, red, jc: 'center'}, {t: f, sz: 16, color: GRAY, red}]), {zebra: true})
+    + h2('법정 최대 규모') + table([3000, 3600, BODY_W - 6600], ['항 목', '산정 결과', '산정 근거'], rows.map(([k, v, f, red]) => [{t: k, b: true, jc: 'center'}, {t: v, b: true, red, jc: 'center'}, {t: f, sz: 16, color: GRAY}]), {zebra: true});
 }
 
 function lawReview(P) {
