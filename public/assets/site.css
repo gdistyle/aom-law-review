@@ -139,3 +139,14 @@ body{background:#F3F3F1}
 .xp-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:4px;align-items:center}.xp-row input{margin:0;min-height:38px;font-size:13.5px}.xp-row button{padding:7px 10px;font-size:12.5px}.xp-x{border:0;background:none;color:#999}
 .xp-st{grid-column:1/-1;margin:-2px 0 2px 4px}.xp-st:empty{display:none}
 .add-parcel{border:1.5px dashed #C9C9C6;background:#fff;color:#555;border-radius:8px;padding:8px;font-size:13px}.add-parcel:hover{border-color:var(--red);color:var(--red);background:#FFF8F7}
+
+/* 건축사 상담 · 앱 설치 (공개 서비스) */
+.consult{margin:14px 0 4px;padding:14px 16px;border:1.5px solid var(--red);border-radius:8px;background:#fff;display:flex;flex-direction:column;gap:6px}
+.consult-badge{align-self:flex-start;font-size:11.5px;font-weight:600;color:#fff;background:var(--red);border-radius:999px;padding:2px 10px;letter-spacing:.02em}
+.consult-title{font-size:15px;color:#303236}
+.consult-text{margin:0;font-size:12.5px;color:#595959;line-height:1.6;word-break:keep-all}
+.consult-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:2px}
+.consult-tel{font-size:19px;font-weight:700;color:var(--red);text-decoration:none;letter-spacing:.02em;white-space:nowrap;user-select:all}
+.consult-copy{font-size:12.5px;padding:5px 10px}
+.install-app{width:100%;margin-top:10px;padding:10px;border:1.5px dashed #c8c8c5;background:#fff;border-radius:8px;font-size:13.5px;color:#303236}
+.install-app:hover{border-color:var(--red);color:var(--red)}
