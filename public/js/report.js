@@ -8,6 +8,7 @@ import {stripMarks} from './context.js';
 import {parcelRows} from './multiparcel.js';
 import {permitSteps} from './permits.js';
 import {charges} from './charges.js';
+import {zonePlain} from './zoneplain.js';
 
 const ORANGE = 'F37021', DARK = '303236', GRAY = '6B6E73', LINE = 'D9D9D6', SOFT = 'FFF4EC', HEAD = '3A3B3F', RED = 'E00000';
 const PAGE_W = 16838, PAGE_H = 11906, MARGIN = 1134, BODY_W = PAGE_W - MARGIN * 2; // A4 가로, 좌우 2cm
@@ -130,6 +131,9 @@ function siteOverview(P) {
     ['지역·지구 등', [...new Set(zones)].join(', '), (P.land?.zones || []).some(z => z.uncertain)]
   ].filter(x => x[1]);
   let x = h1('Ⅰ', '대지 개요') + table([3000, BODY_W - 3000], null, rows.map(([k, v, red]) => [{t: k, b: true, fill: 'F2F2F0', jc: 'center'}, {t: v, red}]));
+  { const seen = new Set(), zr = [];
+    for (const z of (P.land?.zones || [])) { if (seen.has(z.name)) continue; seen.add(z.name); const zp = zonePlain(z.name); if (zp) zr.push([{t: z.name, b: true, jc: 'center'}, zp.what, {t: zp.effect, color: GRAY, sz: 16}]); }
+    if (zr.length) x += h2('지역·지구 쉬운 풀이') + table([3600, 5200, BODY_W - 8800], ['지역·지구', '뜻', '건축 시 영향 (일반)'], zr, {sz: 16, pad: 40, zebra: true}) + note('※ 지정 목적 수준의 일반 설명이며, 개별 필지의 구체적 제한은 Ⅲ장 근거 원문과 인허가권자 협의로 확정.'); }
   const PR = parcelRows(P);
   if (PR.length > 1) {
     const tot = PR.reduce((s, q) => s + (q.area || 0), 0), zs = new Set(PR.map(q => q.zone)), M = P.review?.multi;
