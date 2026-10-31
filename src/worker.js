@@ -72,8 +72,8 @@ async function nearby(u,env){
   // 동서남북 경관 요소(반경 5km): 강·하천, 산, 큰 공원
   one(kw('강',5000),'경관-강',WATER,8),
   one(kw('천',5000),'경관-강',WATER,8),
-  one(kw('산',5000),'경관-산',o=>/산$|봉$/.test(nm(o).trim())&&/산|자연/.test(cn(o))&&!BAD.test(nm(o)),10),
-  one(kw('공원',3000),'경관-공원',o=>/근린공원|도시공원|체육공원|생태공원|공원$/.test(cn(o)+nm(o))&&/공원/.test(nm(o))&&!BAD.test(nm(o))&&!/어린이공원|소공원/.test(nm(o)),8)];
+  one(kw('산',5000),'경관-산',o=>/(산|봉)$/.test(nm(o).trim())&&/^(산|봉우리|오름)$/.test(cn(o).split('>').pop().trim())&&!BAD.test(nm(o)),10),
+  one(kw('공원',3000),'경관-공원',o=>/공원$/.test(cn(o).split('>').pop().trim())&&/공원$/.test(nm(o).trim())&&!BAD.test(nm(o))&&!/어린이공원|소공원|놀이터/.test(nm(o)),8)];
  // 동서남북 1.5km 지점의 행정구역
  const dirs=[['북',0],['동',90],['남',180],['서',270]];
  const region=dirs.map(async([d,deg])=>{const dist=1500,r=Math.PI/180,lat=y+(dist*Math.cos(deg*r))/111320,lon=x+(dist*Math.sin(deg*r))/(111320*Math.cos(y*r));try{const url=new URL('https://dapi.kakao.com/v2/local/geo/coord2regioncode.json');url.searchParams.set('x',String(lon));url.searchParams.set('y',String(lat));const dd=await upstreamJSON(url,env,H);const h=(dd.documents||[]).find(o=>o.region_type==='H')||(dd.documents||[])[0];return h?{dir:d,gu:String(h.region_2depth_name||''),dong:String(h.region_3depth_name||'')}:null;}catch{return null;}});
