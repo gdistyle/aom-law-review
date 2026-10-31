@@ -20,10 +20,10 @@ const norm = s => String(s || '').replace(/\s+/g, '');
 /** 같은 법정동(읍·면 뒤의 리 포함) 판정 */
 export const sameDong = (umd, dong) => { if (!dong) return false; const u = String(umd || '').trim().split(/\s+/), d = norm(dong); return norm(umd) === d || u.at(-1) === d; };
 
-/** 거래 1건 → ㎡당(원)·평당(만 원). amount: 만 원, area: ㎡ */
+/** 거래 1건 → ㎡당(원)·평당(원). amount: 만 원(국토교통부 자료 단위), area: ㎡ */
 export function unitOf(t) {
   if (!(t.amount > 0) || !(t.area > 0)) return {perM2: null, perPy: null};
-  return {perM2: t.amount * 10000 / t.area, perPy: t.amount / t.area * PY};
+  return {perM2: t.amount * 10000 / t.area, perPy: t.amount * 10000 / t.area * PY};
 }
 export const usable = t => !t.cancel && !/지분/.test(t.share || '') && t.amount > 0 && t.area > 0;
 
@@ -60,18 +60,18 @@ export function renderTrades(box, p, state, onLoad) {
   const S = tradeStats(state.data, {dong, jimok: p.land?.category?.value, zone: p.land?.zone?.value});
   const area = state.siteArea;
   const lab = l => { const m = l.match(/^(.*?) \((.*)\)$/); return m ? `${esc(m[1])}<br><small class="nw">(${esc(m[2])})</small>` : esc(l); };
-  const row = (label, g) => g && g.n ? `<tr><th>${lab(label)}</th><td class="c">${g.n}건</td><td class="r"><b>${n1(g.perPy)}</b></td><td class="r">${n0(g.perM2)}</td><td class="r">${n0(g.min)} ~ ${n0(g.max)}</td><td class="r uncertain">${area ? n0(g.perM2 * area / 1e4) : ''}</td></tr>`
+  const row = (label, g) => g && g.n ? `<tr><th>${lab(label)}</th><td class="c">${g.n}건</td><td class="r"><b>${n0(g.perPy)}</b></td><td class="r">${n0(g.perM2)}</td><td class="r">${n0(g.min)} ~ ${n0(g.max)}</td><td class="r uncertain">${area ? n0(g.perM2 * area) : ''}</td></tr>`
     : `<tr><th>${lab(label)}</th><td class="c">0건</td><td colspan="4" class="muted">해당 거래 없음</td></tr>`;
   let html = head;
   if (!S.dongCount) {
     html += `<p class="small">최근 12개월 동안 <b>${esc(dong)}</b>에서 신고된 토지 매매가 없습니다. 이웃 동 시세나 감정평가를 참고하십시오.</p>`;
   } else {
-    html += `<div class="tr-scroll"><table class="feas-auto tr-stat"><thead><tr><th>구분</th><th>거래</th><th>평당 중앙값 (만 원)</th><th>㎡당 중앙값 (원)</th><th>㎡당 범위 (원)</th><th>× 대지면적 (만 원)</th></tr></thead><tbody>
+    html += `<div class="tr-scroll"><table class="feas-auto tr-stat"><thead><tr><th>구분</th><th>거래</th><th>평당 중앙값 (원)</th><th>㎡당 중앙값 (원)</th><th>㎡당 범위 (원)</th><th>× 대지면적 (원)</th></tr></thead><tbody>
       ${row(`같은 동 전체 (${dong})`, S.all)}${S.jimok ? row(`같은 지목 (${p.land.category.value})`, S.jimok) : ''}${S.zone ? row(`같은 용도지역 (${p.land.zone.value})`, S.zone) : ''}</tbody></table></div>
       <p class="uncertain small">중앙값 = 가격을 줄 세웠을 때 가운데 값(극단적인 거래의 영향을 덜 받음). 「× 대지면적」은 중앙값을 ${area ? `이 대지 면적(${n1(area)} ㎡)` : '대지 면적(미수집)'}에 곱한 단순 참고값이며 실제 매입가가 아님 — 땅마다 도로 접함·모양·경사·개발 가능성이 달라 가격 차이가 큼. 해제·지분 거래 ${S.excluded}건은 통계에서 제외.</p>`;
     const L = S.list.slice(0, 40);
-    html += `<details${state.open ? ' open' : ''} class="tr-more"><summary>거래 목록 보기 (${S.list.length}건${S.list.length > 40 ? ', 최근 40건 표시' : ''})</summary><div class="tr-scroll"><table class="feas-auto tr-list"><thead><tr><th>계약일</th><th>지번</th><th>지목</th><th>용도지역</th><th>면적 (㎡)</th><th>거래금액 (만 원)</th><th>㎡당 (원)</th><th>평당 (만 원)</th></tr></thead><tbody>
-      ${L.map(t => `<tr class="${t.ok ? '' : 'tr-x'}"><td class="c">${t.y}. ${String(t.m).padStart(2, '0')}. ${String(t.d || '').padStart(2, '0')}.</td><td class="c">${esc(t.jibun)}</td><td class="c">${esc(t.jimok)}</td><td>${esc(t.zone)}</td><td class="r">${n1(t.area)}</td><td class="r">${n0(t.amount)}</td><td class="r">${n0(t.perM2)}</td><td class="r">${n1(t.perPy)}</td></tr>`).join('')}
+    html += `<details${state.open ? ' open' : ''} class="tr-more"><summary>거래 목록 보기 (${S.list.length}건${S.list.length > 40 ? ', 최근 40건 표시' : ''})</summary><div class="tr-scroll"><table class="feas-auto tr-list"><thead><tr><th>계약일</th><th>지번</th><th>지목</th><th>용도지역</th><th>면적 (㎡)</th><th>거래금액 (원)</th><th>㎡당 (원)</th><th>평당 (원)</th></tr></thead><tbody>
+      ${L.map(t => `<tr class="${t.ok ? '' : 'tr-x'}"><td class="c">${t.y}. ${String(t.m).padStart(2, '0')}. ${String(t.d || '').padStart(2, '0')}.</td><td class="c">${esc(t.jibun)}</td><td class="c">${esc(t.jimok)}</td><td>${esc(t.zone)}</td><td class="r">${n1(t.area)}</td><td class="r">${n0(t.amount * 10000)}</td><td class="r">${n0(t.perM2)}</td><td class="r">${n0(t.perPy)}</td></tr>`).join('')}
       </tbody></table></div><p class="small">회색 줄 = 해제되었거나 지분 거래라 통계에서 뺀 거래. 지번은 기관이 개인정보 보호를 위해 일부만 공개합니다.</p></details>`;
   }
   html += `<p class="small">출처: <a href="https://www.data.go.kr/data/15126466/openapi.do" target="_blank" rel="noopener">국토교통부 토지 매매 실거래가 자료 (공공데이터포털) ↗</a> · <a href="https://rt.molit.go.kr/" target="_blank" rel="noopener">국토교통부 실거래가 공개시스템 ↗</a>${state.failed ? ` · <span class="uncertain">${state.failed}개월 자료를 받지 못해 빠져 있음</span>` : ''}</p>`;

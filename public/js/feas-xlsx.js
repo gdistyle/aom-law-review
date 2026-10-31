@@ -82,7 +82,7 @@ export function buildFeasSheet(P, x) {
   put(r, 'A', {v: '사업수지 계산표 (개략 · 초안)', s: S.title}); rows[0].ht = 26; merges.push('A1:E1'); r++;
   put(r, 'A', {v: `${P.address || '대지'}   ·   ${displayDate(P.date)}   ·   A.O.M 종합건축사사무소`, s: S.note}); merges.push(`A${r}:E${r}`); r++;
   put(r, 'A', {v: FEAS_NOTE, s: S.warn}); rows[r - 1].ht = 42; merges.push(`A${r}:E${r}`); r++;
-  put(r, 'A', {v: '사용법 : 노란 칸만 고치면 아래 결과가 자동으로 다시 계산됨. 금액은 만 원, 단가는 만 원/평, 비율은 % 숫자로 입력 (예: 4.6). 빨간 글씨 = 받은 시점의 기본값·참고값·미입력 항목과 그 값으로 계산된 결과 (칸을 고쳐도 글씨 색은 그대로임).', s: S.note}); rows[r - 1].ht = 44; merges.push(`A${r}:E${r}`); r++;
+  put(r, 'A', {v: '사용법 : 노란 칸만 고치면 아래 결과가 자동으로 다시 계산됨. 금액은 원, 단가는 원/평, 비율은 % 숫자로 입력 (예: 4.6). 빨간 글씨 = 받은 시점의 기본값·참고값·미입력 항목과 그 값으로 계산된 결과 (칸을 고쳐도 글씨 색은 그대로임).', s: S.note}); rows[r - 1].ht = 44; merges.push(`A${r}:E${r}`); r++;
   r++;
   const head = () => { ['구분', '항목', '값', '단위', '설명 · 산식'].forEach((t, i) => put(r, 'ABCDE'[i], {v: t, s: S.head})); r++; };
   const section = t => { put(r, 'A', {v: t, s: S.section}); ['B', 'C', 'D', 'E'].forEach(c => put(r, c, {v: '', s: S.section})); merges.push(`A${r}:E${r}`); r++; };
@@ -93,13 +93,13 @@ export function buildFeasSheet(P, x) {
   const a = x._auto || {};
   const def = k => FEAS_DEFAULTS[k] != null && num(x[k]) === FEAS_DEFAULTS[k];
   const MAN = new Set(['landCost', 'otherCost', 'buildUnit', 'saleUnit', 'rentUnit', 'depositUnit']);
-  /* 만 원/평·만 원 입력 칸 → 원/㎡·원 환산 (1평 = 400/121 ㎡) */
-  const W_ = k => ['landCost', 'otherCost'].includes(k) ? `(${at[k]}*10000)` : `(${at[k]}*10000*121/400)`;
+  /* 원/평·원 입력 칸 → 원/㎡·원 환산 (1평 = 400/121 ㎡) */
+  const W_ = k => ['landCost', 'otherCost'].includes(k) ? `(${at[k]})` : `(${at[k]}*121/400)`;
   const input = (k, label, unit, desc, kind = 'money', value = num(x[k]), red = null) => {
     at[k] = 'C' + r; const isRed = red ?? (value == null || def(k));
     put(r, 'A', {v: '입력', s: S.center}); put(r, 'B', {v: label, s: S.label});
     const man = MAN.has(k), shown = man && value != null ? toUser(k, value) : value;
-    put(r, 'C', {v: shown, s: man ? (isRed ? S.inManRed : S.inMan) : kind === 'money' ? (isRed ? S.inMoneyRed : S.inMoney) : (isRed ? S.inRateRed : S.inRate)});
+    put(r, 'C', {v: shown, s: man || kind === 'money' ? (isRed ? S.inMoneyRed : S.inMoney) : (isRed ? S.inRateRed : S.inRate)});
     put(r, 'D', {v: unit, s: S.center}); put(r, 'E', {v: desc, s: S.text}); r++;
   };
   put(r, 'A', {v: '조건', s: S.center}); put(r, 'B', {v: '사업 방식', s: S.label}); put(r, 'C', {v: {sale: '분양', lease: '임대', own: '직접 사용'}[x.mode] || '', s: S.center}); put(r, 'D', {v: '', s: S.center}); put(r, 'E', {v: '방식을 바꾸려면 사이트에서 다시 받기', s: S.text}); r++;
@@ -107,19 +107,19 @@ export function buildFeasSheet(P, x) {
   input('siteArea', '대지면적', '㎡', '토지이용계획 조회값', 'rate', num(a.siteArea), false);
   input('gross', '연면적', '㎡', num(x._grossRaw) != null ? '직접 입력값' : '05 계획 조건 기준 연면적 (법정 최대 이내) — 실제 설계 규모와 다를 수 있음', 'rate', num(x.gross), num(x._grossRaw) == null);
   if (x.mode !== 'own') input('netRatio', '분양·임대 면적 비율', '%', num(x.netRatio) == null ? '비워 두면 100%로 계산 (주차장·공용부 제외 비율 입력)' : '연면적 중 실제 분양·임대 가능 면적', 'rate');
-  input('landCost', '토지 매입가', '만 원', x.landMode === 'own' ? '보유 토지 (0)' : num(x._landRaw) == null ? (a.multi ? '필지별 공시지가 × 면적 합계 참고값 — 실거래가와 다름' : '공시지가 × 대지면적 참고값 — 실거래가와 다름') : '직접 입력값', 'money', x.landMode === 'own' ? 0 : num(x.landCost), x.landMode !== 'own' && num(x._landRaw) == null);
-  input('buildUnit', '공사비 단가', '만 원/평', '연면적 1평당 공사비 (계산 시 원/㎡로 환산)');
+  input('landCost', '토지 매입가', '원', x.landMode === 'own' ? '보유 토지 (0)' : num(x._landRaw) == null ? (a.multi ? '필지별 공시지가 × 면적 합계 참고값 — 실거래가와 다름' : '공시지가 × 대지면적 참고값 — 실거래가와 다름') : '직접 입력값', 'money', x.landMode === 'own' ? 0 : num(x.landCost), x.landMode !== 'own' && num(x._landRaw) == null);
+  input('buildUnit', '공사비 단가', '원/평', '연면적 1평당 공사비 (계산 시 원/㎡로 환산)');
   input('designRate', '설계·감리비율', '%', '공사비 대비', 'rate');
-  input('otherCost', '기타 비용', '만 원', x._otherAuto ? '농지보전부담금 자동 산정값 (다른 부담금·비용 미포함)' : '인허가 부담금·측량·인입 공사 등', 'money', num(x.otherCost), x._otherAuto || num(x.otherCost) == null);
+  input('otherCost', '기타 비용', '원', x._otherAuto ? '농지보전부담금 자동 산정값 (다른 부담금·비용 미포함)' : '인허가 부담금·측량·인입 공사 등', 'money', num(x.otherCost), x._otherAuto || num(x.otherCost) == null);
   input('contRate', '예비비율', '%', '공사비 대비', 'rate');
   input('landTaxRate', '토지 취득세율', '%', FEAS_BASIS.landTaxRate, 'rate');
   input('buildTaxRate', '건물 취득세율', '%', FEAS_BASIS.buildTaxRate, 'rate');
   input('loanRatio', '대출 비율', '%', '이자·분양경비 전 사업비 대비', 'rate');
   input('loanRate', '대출 금리', '%', '연 이자율', 'rate');
   input('months', '공사 기간', '개월', '대출 이자 산정 기간', 'rate');
-  if (x.mode === 'sale') { input('saleUnit', '분양가 단가', '만 원/평', '분양 면적 1평당 분양가 (부가가치세 제외)'); input('saleRate', '분양률', '%', '전체 중 분양 완료 비율', 'rate'); input('saleCostRate', '분양 경비율', '%', '분양수입 대비', 'rate'); }
+  if (x.mode === 'sale') { input('saleUnit', '분양가 단가', '원/평', '분양 면적 1평당 분양가 (부가가치세 제외)'); input('saleRate', '분양률', '%', '전체 중 분양 완료 비율', 'rate'); input('saleCostRate', '분양 경비율', '%', '분양수입 대비', 'rate'); }
   if (x.mode === 'lease') {
-    input('rentUnit', '월 임대료 단가', '만 원/평·월', '임대 면적 1평당 월 임대료'); input('depositUnit', '보증금 단가', '만 원/평', '임대 면적 1평당 보증금');
+    input('rentUnit', '월 임대료 단가', '원/평·월', '임대 면적 1평당 월 임대료'); input('depositUnit', '보증금 단가', '원/평', '임대 면적 1평당 보증금');
     input('vacancy', '공실률', '%', '임대되지 않는 비율', 'rate'); input('opexRate', '운영비율', '%', '임대수입 대비', 'rate');
     input('capRate', '환원율', '%', '건물 가치 = 연 순수입 ÷ 환원율', 'rate'); input('holdYears', '보유 기간', '년', '1~30년 (내부수익률 산정)', 'rate'); input('discountRate', '할인율', '%', '순현재가치 산정용', 'rate');
   }
@@ -164,7 +164,7 @@ if (x.mode !== 'own') calc('netArea', x.mode === 'sale' ? '분양 면적' : '임
     calc('equity', '자기자본', `${$('total')}-${$('loan')}`, R.equity, '총사업비 − 대출금');
     calc('roe', '자기자본 수익률', `IF(${$('equity')}>0,${$('profit')}/${$('equity')},"")`, blankIf(R.roe), '예상 이익 ÷ 자기자본', S.pct, '');
     calc('breakEven', '손익분기 분양가', `IF(AND(${$('netArea')}>0,${$('saleRate')}>0,${$('saleCostRate')}<100),(${$('subtotal')}+${$('interest')})/(${$('netArea')}*${$('saleRate')}/100*(1-${$('saleCostRate')}/100)),"")`, blankIf(R.breakEvenUnit), '이익이 0이 되는 분양 면적 ㎡당 분양가', S.money, '원/㎡');
-    calc('breakEvenPy', '손익분기 분양가 (평)', `IF(${$('breakEven')}="","",${$('breakEven')}*400/121/10000)`, R.breakEvenUnit == null ? '' : R.breakEvenUnit * (400 / 121) / 1e4, '위 값을 만 원/평으로 환산', S.dec, '만 원/평');
+    calc('breakEvenPy', '손익분기 분양가 (평)', `IF(${$('breakEven')}="","",${$('breakEven')}*400/121)`, R.breakEvenUnit == null ? '' : R.breakEvenUnit * (400 / 121), '위 값을 원/평으로 환산', S.money, '원/평');
     calc('verdict', '판정', `IF(OR(ISBLANK(${$('buildUnit')}),ISBLANK(${$('saleUnit')}),${$('total')}<=0,${$('margin')}=""),"판정 불가",IF(${$('profit')}<0,"미흡",IF(ISBLANK(${$('target')}),"검토 필요",IF(${$('margin')}>=${$('target')}/100,"양호","검토 필요"))))`, R.verdict.label, '손실 → 미흡 / 목표 미만 → 검토 필요 / 목표 이상 → 양호', S.verdict, '');
   } else if (x.mode === 'lease') {
     calc('grossRent', '연 임대수입', `${W_('rentUnit')}*${$('netArea')}*12*(1-${$('vacancy')}/100)`, R.grossRent, '월 임대료 단가 × 임대 면적 × 12 × (1 − 공실률)');

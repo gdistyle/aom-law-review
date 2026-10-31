@@ -51,23 +51,23 @@ export function autoValues(p) {
 
 const FIELDS = [
   // [key, 라벨, 단위, 설명, 표시 조건]
-  ['landCost', '토지 매입가', '만 원', '실제 살 가격. 비우면 공시지가 × 대지면적을 참고값으로 씀(실거래가와 다름).', f => f.landMode === 'buy'],
+  ['landCost', '토지 매입가', '원', '실제 살 가격. 비우면 공시지가 × 대지면적을 참고값으로 씀(실거래가와 다름).', f => f.landMode === 'buy'],
   ['gross', '연면적', '㎡', '건물 바닥면적 합계. 비우면 05에서 정한 층수 기준 연면적(법정 최대 이내)을 씀.', () => true],
   ['netRatio', '분양·임대 면적 비율', '% (연면적 대비)', '주차장·계단·복도 등 공용부를 뺀, 실제로 팔거나 세놓을 수 있는 면적의 비율. 비우면 100%로 계산되어 결과가 실제보다 좋게 나옴.', f => f.mode !== 'own'],
-  ['buildUnit', '공사비 단가 (필수)', '만 원/평', '연면적 1평을 짓는 데 드는 공사비. 시공사 견적 또는 인근 신축 사례 기준으로 넣을 것.', () => true],
+  ['buildUnit', '공사비 단가 (필수)', '원/평', '연면적 1평을 짓는 데 드는 공사비. 시공사 견적 또는 인근 신축 사례 기준으로 넣을 것.', () => true],
   ['designRate', '설계·감리비', '% (공사비 대비)', '건축사 설계·감리 비용을 공사비의 몇 %로 볼지.', () => true],
-  ['otherCost', '기타 비용', '만 원', '학교용지·광역교통시설·하수도 원인자 부담금, 측량·인입·철거 공사 등 따로 드는 돈.', () => true],
+  ['otherCost', '기타 비용', '원', '학교용지·광역교통시설·하수도 원인자 부담금, 측량·인입·철거 공사 등 따로 드는 돈.', () => true],
   ['contRate', '예비비', '% (공사비 대비)', '예상 못 한 추가 공사비에 대비한 여유분.', () => true],
   ['landTaxRate', '토지 취득세율', '%', FEAS_BASIS.landTaxRate, f => f.landMode === 'buy'],
   ['buildTaxRate', '건물 취득세율', '%', FEAS_BASIS.buildTaxRate, () => true],
   ['loanRatio', '대출 비율', '% (사업비 대비)', '사업비 중 대출로 조달하는 비율. 없으면 0.', () => true],
   ['loanRate', '대출 금리', '% (연)', '연 이자율.', () => true],
   ['months', '공사 기간', '개월', '대출 이자가 붙는 기간(설계·공사 합계).', () => true],
-  ['saleUnit', '분양가 단가 (필수)', '만 원/평', '분양 면적 1평당 받을 분양가(부가가치세 제외 금액).', f => f.mode === 'sale'],
+  ['saleUnit', '분양가 단가 (필수)', '원/평', '분양 면적 1평당 받을 분양가(부가가치세 제외 금액).', f => f.mode === 'sale'],
   ['saleRate', '분양률', '%', '전체 중 실제로 팔릴 비율. 100이면 전부 분양.', f => f.mode === 'sale'],
   ['saleCostRate', '분양 경비', '% (분양수입 대비)', '분양 대행·광고 등.', f => f.mode === 'sale'],
-  ['rentUnit', '월 임대료 단가 (필수)', '만 원/평·월', '임대 면적 1평당 한 달 임대료.', f => f.mode === 'lease'],
-  ['depositUnit', '보증금 단가', '만 원/평', '임대 면적 1평당 보증금.', f => f.mode === 'lease'],
+  ['rentUnit', '월 임대료 단가 (필수)', '원/평·월', '임대 면적 1평당 한 달 임대료.', f => f.mode === 'lease'],
+  ['depositUnit', '보증금 단가', '원/평', '임대 면적 1평당 보증금.', f => f.mode === 'lease'],
   ['vacancy', '공실률', '%', '비어 있을 것으로 보는 비율.', f => f.mode === 'lease'],
   ['opexRate', '운영비', '% (임대수입 대비)', '관리·수선·재산세 등.', f => f.mode === 'lease'],
   ['capRate', '환원율', '%', '건물 가치를 계산하는 기준 수익률(연 순수입 ÷ 환원율 = 건물 가치).', f => f.mode === 'lease'],
@@ -76,16 +76,17 @@ const FIELDS = [
   ['target', '목표 수익률', '%', '이 이상이면 "양호"로 판정. 분양은 이익률, 임대는 임대 수익률 기준.', f => f.mode !== 'own']
 ];
 const MONEY = new Set(['landCost', 'otherCost', 'buildUnit', 'saleUnit', 'rentUnit', 'depositUnit']);
-/* 입력 단위: 단가 = 만 원/평, 총액 = 만 원. 내부 계산은 원/㎡·원 (1평 = 400/121 ㎡) */
+/* 입력 단위: 단가 = 원/평, 총액 = 원. 내부 계산은 원/㎡·원 (1평 = 400/121 ㎡) */
 export const PY = 400 / 121;
 const PER_PY = new Set(['buildUnit', 'saleUnit', 'rentUnit', 'depositUnit']), TOTAL = new Set(['landCost', 'otherCost']);
-export const toUser = (k, v) => v == null ? null : PER_PY.has(k) ? v * PY / 1e4 : TOTAL.has(k) ? v / 1e4 : v;
-export const fromUser = (k, v) => v == null ? null : PER_PY.has(k) ? v * 1e4 / PY : TOTAL.has(k) ? v * 1e4 : v;
+export const toUser = (k, v) => v == null ? null : PER_PY.has(k) ? v * PY : v;
+export const fromUser = (k, v) => v == null ? null : PER_PY.has(k) ? v / PY : v;
 const nice = v => v == null || !Number.isFinite(v) ? '' : (Math.round(v * 100) / 100).toLocaleString('ko-KR', {maximumFractionDigits: 2});
+const niceK = (k, v) => v == null || !Number.isFinite(v) ? '' : MONEY.has(k) ? Math.round(v).toLocaleString('ko-KR') : nice(v);
 /* 회색 참고값(공식 근거 확인된 값만): {key: {v: 입력 단위 값, src: '출처·기준 시점'}} */
-/* 회색 예시값(계산에 쓰지 않음). 공식 발표값만 넣고 출처·기준일을 함께 표시. 값은 화면 단위(만 원/평, %). */
+/* 회색 예시값(계산에 쓰지 않음). 공식 발표값만 넣고 출처·기준일을 함께 표시. 값은 화면 단위(원/평, %). */
 export const FEAS_REF = {
-  buildUnit: {v: Math.round(232.8 * 400 / 121 * 10) / 10, src: '국토교통부 기본형건축비 2026. 9. 15. 고시 — ㎡당 232만 8천 원 (16~25층·전용 60~85㎡ 공동주택 기준, 다른 용도는 실제 공사비와 다를 수 있음)'},
+  buildUnit: {v: Math.round(2328000 * 400 / 121), src: '국토교통부 기본형건축비 2026. 9. 15. 고시 — ㎡당 232만 8천 원 (16~25층·전용 60~85㎡ 공동주택 기준, 다른 용도는 실제 공사비와 다를 수 있음)'},
   loanRate: {v: 4.4, src: '한국은행 예금은행 신규취급액 기준 전체 대출금리 2026년 8월 (2026. 9. 30. 발표)'}
 };
 const readOut = (k, v) => v == null ? '' : PER_PY.has(k) ? `= ㎡당 ${won(v)}원` : TOTAL.has(k) ? `= ${krw(v)}` : '';
@@ -109,9 +110,9 @@ export function renderFeas(p, onChange) {
     const need = vis.filter(([k]) => NEED.includes(k));
     const rest = vis.filter(([k]) => !NEED.includes(k));
     const field = ([k, label, unit, help]) => { const v = f[k], ref = FEAS_REF[k];
-      const placeholder = k === 'landCost' && a.landRef != null ? `비우면 ${nice(a.landRef / 1e4)} (공시지가 기준)` : k === 'gross' && a.gross != null ? `비우면 ${nice(a.gross)}` : k === 'otherCost' && a.levy > 0 ? `비우면 ${nice(a.levy / 1e4)} (농지보전부담금)` : ref ? `예: ${nice(ref.v)}` : '숫자만 입력';
+      const placeholder = k === 'landCost' && a.landRef != null ? `비우면 ${nice(Math.round(a.landRef))}` : k === 'gross' && a.gross != null ? `비우면 ${nice(a.gross)}` : k === 'otherCost' && a.levy > 0 ? `비우면 ${nice(Math.round(a.levy))}` : ref ? `예: ${nice(ref.v)}` : '숫자만 입력';
       const isDef = FEAS_DEFAULTS[k] != null && num(v) === FEAS_DEFAULTS[k];
-      return `<label class="feas-field"><span>${label}</span><div class="feas-in"><input data-fin="${k}" inputmode="decimal" autocomplete="off" value="${v == null ? '' : esc(nice(toUser(k, num(v))))}" placeholder="${esc(placeholder)}"${isDef ? ' class="uncertain"' : ''}><b>${unit}</b></div><em class="feas-read">${readOut(k, num(v))}</em>${ref ? `<small class="feas-ref uncertain">회색 예시 출처: ${esc(ref.src)}</small>` : ''}<small class="feas-help">${esc(help)}</small></label>`; };
+      return `<label class="feas-field"><span>${label}</span><div class="feas-in"><input data-fin="${k}" inputmode="decimal" autocomplete="off" value="${v == null ? '' : esc(niceK(k, toUser(k, num(v))))}" placeholder="${esc(placeholder)}"${isDef ? ' class="uncertain"' : ''}><b>${unit}</b></div><em class="feas-read">${readOut(k, num(v))}</em><small class="feas-help">${esc(help)}${k === 'otherCost' && a.levy > 0 ? ' 비우면 농지보전부담금 자동 산정값을 씀.' : ''}</small>${ref ? `<small class="feas-ref uncertain">회색 예시 출처: ${esc(ref.src)}</small>` : ''}</label>`; };
     html += step(4, '단가를 넣으십시오 <small>(모르면 시공사·중개사무소에 물어볼 값)</small>', `<p class="feas-note">칸 안의 <span class="ph">회색 숫자</span>는 참고용 예시일 뿐 계산에 쓰이지 않습니다. 칸을 눌러 <b>숫자만 직접 입력</b>해야 계산됩니다.</p><div class="feas-grid">${need.map(field).join('')}</div>`);
     html += `<details class="feas-more"${f._open ? ' open' : ''}><summary>세부 값 (모르면 그대로 두십시오)</summary><div class="feas-grid">${rest.map(field).join('')}</div><p class="small"><span class="uncertain">빨간 칸</span> = 기본값(법령 세율 등). 바꾸면 검정으로 바뀝니다. 빈칸은 0으로 계산합니다.</p></details>`;
     html += resultHtml(x);
@@ -146,7 +147,7 @@ function resultHtml(x) {
   const table = `<table class="feas-table"><thead><tr><th>구분</th><th>금액(원)</th><th>읽기</th></tr></thead><tbody>${rows.map(([k, val]) => `<tr><td>${k}</td><td class="num">${won(val)}</td><td>${krw(val)}</td></tr>`).join('')}<tr class="sum"><td>총사업비</td><td class="num">${won(r.total)}</td><td>${krw(r.total)}</td></tr></tbody></table>`;
   const F = redFlags(x);
   let kpi = [['총사업비', krw(r.total), F.total]];
-  if (x.mode === 'sale') kpi.push(['예상 분양수입', krw(r.revenue), F.revenue], ['예상 이익', krw(r.profit), F.profit], ['이익률(사업비 대비)', pctS(r.margin), F.profit], ['자기자본 수익률', pctS(r.roe), F.profit || F.loan], ['손익분기 분양가', r.breakEvenUnit != null ? `${nice(toUser('saleUnit', r.breakEvenUnit))} 만 원/평` : '', F.total || F.area]);
+  if (x.mode === 'sale') kpi.push(['예상 분양수입', krw(r.revenue), F.revenue], ['예상 이익', krw(r.profit), F.profit], ['이익률(사업비 대비)', pctS(r.margin), F.profit], ['자기자본 수익률', pctS(r.roe), F.profit || F.loan], ['손익분기 분양가', r.breakEvenUnit != null ? `${Math.round(toUser('saleUnit', r.breakEvenUnit)).toLocaleString('ko-KR')} 원/평` : '', F.total || F.area]);
   else if (x.mode === 'lease') kpi.push(['연 순수입(NOI)', krw(r.noi), F.noi], ['임대 수익률', pctS(r.yield), F.noi || F.netInvest], ['보증금 합계', krw(r.deposit), F.deposit], ['투자금 회수 기간', r.payback != null ? r.payback.toFixed(1) + ' 년' : '', F.noi || F.netInvest], ['건물 가치(환원율 기준)', krw(r.value), F.value], ['내부수익률(IRR)', pctS(r.irr), F.irr]);
   else kpi.push(['㎡당 사업비', r.perM2 != null ? won(r.perM2) + ' 원/㎡' : '', F.total]);
   const s = sensitivity(x), lab = x.mode === 'sale' ? '분양가' : '임대료';

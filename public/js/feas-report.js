@@ -36,17 +36,17 @@ function inputRows(x) {
   add('연면적', `${fmt(x.gross, 2)} ㎡ (${fmt(x.gross * 0.3025, 2)} 평)`, grossIn ? '직접 입력값' : '05 계획 조건 기준 연면적(선택 층수 × 최대 건축면적, 법정 최대 이내) 적용 — 실제 설계 규모와 다를 수 있음', !grossIn);
   if (f.landMode === 'buy') {
     const ref = num(f._landRaw) == null;
-    add('토지 매입가', `${(Math.round(x.landCost / 1e4 * 100) / 100).toLocaleString('ko-KR')} 만 원 (${krw(x.landCost)})`, ref ? (a.multi ? '필지별 공시지가 × 필지별 면적 합계 참고값 — 실거래가·감정가와 다름' : '공시지가 × 대지면적 참고값 — 실거래가·감정가와 다름') : '직접 입력값', ref);
+    add('토지 매입가', `${Math.round(x.landCost).toLocaleString('ko-KR')} 원 (${krw(x.landCost)})`, ref ? (a.multi ? '필지별 공시지가 × 필지별 면적 합계 참고값 — 실거래가·감정가와 다름' : '공시지가 × 대지면적 참고값 — 실거래가·감정가와 다름') : '직접 입력값', ref);
     const T = x._trades;
-    if (T && T.n) add('토지 실거래가 참고', `평당 ${(Math.round(T.perPy * 10) / 10).toLocaleString('ko-KR')} 만 원 (㎡당 ${won(T.perM2)} 원)`, `${T.dong} 최근 12개월 토지 매매 ${T.n}건 중앙값 (국토교통부 실거래 신고, 해제·지분 거래 제외) · × 대지면적 = ${(Math.round(T.perM2 * (a.siteArea || 0) / 1e4)).toLocaleString('ko-KR')} 만 원 — 참고값`, true);
+    if (T && T.n) add('토지 실거래가 참고', `평당 ${Math.round(T.perPy).toLocaleString('ko-KR')} 원 (㎡당 ${won(T.perM2)} 원)`, `${T.dong} 최근 12개월 토지 매매 ${T.n}건 중앙값 (국토교통부 실거래 신고, 해제·지분 거래 제외) · × 대지면적 = ${Math.round(T.perM2 * (a.siteArea || 0)).toLocaleString('ko-KR')} 원 — 참고값`, true);
   }
   const nice = v => (Math.round(v * 100) / 100).toLocaleString('ko-KR', {maximumFractionDigits: 2});
-  const unit = (k, label, u, desc) => { const v = num(f[k]); const txt = v == null ? '미입력 (0으로 계산)' : u === '원' ? `${nice(toUser(k, v))} 만 원 (${krw(v)})` : `${nice(toUser(k, v))} 만 원/평${u.includes('월') ? '·월' : ''} (${won(v)} ${u})`; add(label, txt, desc, v == null || def(k)); };
+  const unit = (k, label, u, desc) => { const v = num(f[k]); const txt = v == null ? '미입력 (0으로 계산)' : u === '원' ? `${Math.round(toUser(k, v)).toLocaleString('ko-KR')} 원 (${krw(v)})` : `${Math.round(toUser(k, v)).toLocaleString('ko-KR')} 원/평${u.includes('월') ? '·월' : ''} (${won(v)} ${u})`; add(label, txt, desc, v == null || def(k)); };
   const rate = (k, label, desc) => { const v = num(f[k]); add(label, v == null ? '미입력 (0으로 계산)' : `${v} %`, desc, v == null || def(k)); };
   if (f.mode !== 'own') { const v = num(f.netRatio); add('분양·임대 면적 비율', v == null ? '미입력 (100%로 계산)' : `${v} %`, '연면적 중 실제 분양·임대 가능 면적 (주차장·공용부 제외)', v == null); }
   unit('buildUnit', '공사비 단가', '원/㎡', '연면적 1평당 공사비');
   rate('designRate', '설계·감리비', '공사비 대비');
-  if (f._otherAuto) add('기타 비용', `${(Math.round(f.otherCost / 1e4 * 100) / 100).toLocaleString('ko-KR')} 만 원 (${krw(f.otherCost)})`, '농지보전부담금 자동 산정값(공시지가 기준, 전용 면적 = 대지 전체 가정) — 다른 부담금·비용 미포함', true);
+  if (f._otherAuto) add('기타 비용', `${Math.round(f.otherCost).toLocaleString('ko-KR')} 원 (${krw(f.otherCost)})`, '농지보전부담금 자동 산정값(공시지가 기준, 전용 면적 = 대지 전체 가정) — 다른 부담금·비용 미포함', true);
   else unit('otherCost', '기타 비용', '원', '학교용지·광역교통·하수도 원인자 부담금, 측량·인입·철거 공사 등');
   rate('contRate', '예비비', '공사비 대비');
   if (f.landMode === 'buy') rate('landTaxRate', '토지 취득세율', FEAS_BASIS.landTaxRate);
@@ -71,7 +71,7 @@ function summary(x, R) {
   const v = R.verdict, F = redFlags(x);
   const color = {good: '168C46', mid: ORANGE, bad: 'E00000'}[v.level] || GRAY;
   let cells = [['총사업비', krw(R.total), F.total]];
-  if (x.mode === 'sale') cells.push(['예상 분양수입', krw(R.revenue), F.revenue], ['예상 이익', krw(R.profit), F.profit], ['이익률 (사업비 대비)', pc(R.margin), F.profit], ['자기자본 수익률', pc(R.roe), F.profit || F.loan], ['손익분기 분양가', R.breakEvenUnit != null ? `${(Math.round(toUser('saleUnit', R.breakEvenUnit) * 100) / 100).toLocaleString('ko-KR')} 만 원/평` : '', F.total || F.area]);
+  if (x.mode === 'sale') cells.push(['예상 분양수입', krw(R.revenue), F.revenue], ['예상 이익', krw(R.profit), F.profit], ['이익률 (사업비 대비)', pc(R.margin), F.profit], ['자기자본 수익률', pc(R.roe), F.profit || F.loan], ['손익분기 분양가', R.breakEvenUnit != null ? `${Math.round(toUser('saleUnit', R.breakEvenUnit)).toLocaleString('ko-KR')} 원/평` : '', F.total || F.area]);
   else if (x.mode === 'lease') cells.push(['연 순수입 (NOI)', krw(R.noi), F.noi], ['임대 수익률', pc(R.yield), F.noi || F.netInvest], ['투자금 회수 기간', R.payback != null ? R.payback.toFixed(1) + ' 년' : '', F.noi || F.netInvest], ['건물 가치 (환원율 기준)', krw(R.value), F.value], ['내부수익률 (IRR)', pc(R.irr), F.irr]);
   else cells.push(['연면적', `${fmt(x.gross, 2)} ㎡`, F.gross], ['㎡당 사업비', R.perM2 != null ? won(R.perM2) + ' 원/㎡' : '', F.total]);
   const Wc = Math.floor(BODY_W / 3), rows = [];
@@ -124,7 +124,7 @@ function income(x, R) {
     ['예상 이익', '분양수입 − 총사업비', won(R.profit), krw(R.profit), F.profit],
     ['이익률', '예상 이익 ÷ 총사업비', pc(R.margin), '', F.profit],
     ['자기자본 수익률', '예상 이익 ÷ (총사업비 − 대출금)', pc(R.roe), '', F.profit || F.loan],
-    ['손익분기 분양가', '이익이 0이 되는 분양 면적 평당 분양가', R.breakEvenUnit != null ? `${(Math.round(toUser('saleUnit', R.breakEvenUnit) * 100) / 100).toLocaleString('ko-KR')} 만 원/평` : '', R.breakEvenUnit != null ? `${won(R.breakEvenUnit)} 원/㎡` : '', F.total || F.area]];
+    ['손익분기 분양가', '이익이 0이 되는 분양 면적 평당 분양가', R.breakEvenUnit != null ? `${Math.round(toUser('saleUnit', R.breakEvenUnit)).toLocaleString('ko-KR')} 원/평` : '', R.breakEvenUnit != null ? `${won(R.breakEvenUnit)} 원/㎡` : '', F.total || F.area]];
   else if (x.mode === 'lease') rows = [
     ['연 임대수입', '월 임대료 단가 × 임대 면적 × 12 × (1 − 공실률)', won(R.grossRent), krw(R.grossRent), F.rent],
     ['운영비', '연 임대수입 × 운영비율', won(R.opex), krw(R.opex), F.opex],

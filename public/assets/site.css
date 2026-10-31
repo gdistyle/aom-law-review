@@ -274,3 +274,4 @@ body{background:#F3F3F1}
 .duty-table thead th:nth-child(2){width:84px}.duty-table thead th:nth-child(1){width:20%}.duty-table thead th:nth-child(5){width:18%}
 .law-sum{margin:0 0 6px;font-size:13.5px;line-height:1.5}.law-raw summary{font-size:12px;color:#6b6e73;cursor:pointer}
 .three-max{margin:6px 0 4px;padding-left:20px;line-height:1.7;font-size:13.5px}.three-max b{font-weight:700}.three-note{margin:0 0 8px}
+.feas-field{display:flex;flex-direction:column;justify-content:flex-start}.feas-field>span{min-height:1.4em}.feas-field .feas-read{display:block;min-height:1.3em}.feas-field .feas-help{order:4}.feas-field .feas-ref{order:5;margin-top:4px}

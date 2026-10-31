@@ -11,8 +11,8 @@ test('중앙값', () => { assert.equal(median([3, 1, 2]), 2); assert.equal(media
 test('단가 환산: 1억(1만 만원) / 330.58㎡', () => {
   const u = unitOf({amount: 10000, area: 330.58});
   assert.ok(Math.abs(u.perM2 - 100000000 / 330.58) < 1e-6);
-  assert.ok(Math.abs(u.perPy - 10000 / 330.58 * 400 / 121) < 1e-9);
-  assert.ok(Math.abs(u.perPy - 100.0) < 0.01);     // 100평 ≈ 330.58㎡ → 평당 100만 원
+  assert.ok(Math.abs(u.perPy - 100000000 / 330.58 * 400 / 121) < 1e-6);
+  assert.ok(Math.abs(u.perPy - 1000000) < 100);     // 100평 ≈ 330.58㎡ → 평당 100만 원 = 1,000,000원
   assert.ok(Math.abs(PY - 3.305785) < 1e-6);
 });
 test('같은 동 판정', () => { assert.ok(sameDong('감이동', '감이동')); assert.ok(sameDong('삼성면 양덕리', '양덕리')); assert.ok(!sameDong('감일동', '감이동')); });
