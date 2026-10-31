@@ -74,7 +74,7 @@ function cover(P, logo) {
     + p_(r('건축 사전 검토 자료 (초안)', {sz: 30, color: GRAY}), {after: 360, line: ORANGE})
     + p_(r(displayDate(P.date), {sz: 22, b: true}) + (P.author ? r(`   ·   작성 ${P.author}`, {sz: 20, color: GRAY}) : ''), {after: 3300})
     + (logo ? p_(picture('rIdLogo', 9001, logo.w, logo.h, 2600), {after: 120}) : p_(r('A.O.M', {sz: 48, b: true, color: ORANGE})))
-    + p_(r('A.O.M 종합건축사사무소', {sz: 20, b: true}), {after: 60})
+    + p_(r('A.O.M 종합건축사사무소', {sz: 20, b: true}) + r('   |   경기도 하남시 대청로22번길 17, 206호 (신장동)   ·   031-791-2536', {sz: 18, color: GRAY}), {after: 60})
     + p_(r('본 자료는 공개 자료를 기반으로 자동 작성한 초안으로 참고 자료로만 사용함. 최종 판단은 건축사 검토 및 인허가권자 협의에 따름.', {sz: 16, red: true}), {after: 0});
 }
 function p_(c, o) { return p(c, o); }
