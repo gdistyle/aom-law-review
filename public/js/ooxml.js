@@ -56,7 +56,7 @@ function coverPage(xml,p){const b=xml.indexOf('<w:body>')+8,brk=xml.indexOf('<w:
   +para(run('{{TITLE}}',36,{color:'222222'}),{jc:'right',before:1100,after:120})
   +para(run('건축 사전 검토 자료 (초안)',36,{color:'222222'}),{jc:'right',after:0})
   +para(run('{{DATE}}',20,{bold:true,color:'222222'}),{jc:'right',before:360})
-  +para(run(`조회 ${esc(kstTime(p.queriedAt))}${p.author?` · 작성 ${esc(p.author)}`:''}`,15,{color:'8A8A8A'}),{jc:'right',before:80})
+  +(p.author?para(run(`작성 ${esc(p.author)}`,15,{color:'8A8A8A'}),{jc:'right',before:80}):'')
   +para(logo,{before:1000,after:80})
   +para(run('Copyright © 2020 by AOM Architects &amp; Developers Co.,Ltd All. RIGHTS RESERVED.',12,{color:g}))
   +para(run('No part of this publication may be reproduced, stored in a retrieval system, or transmitted in any form or by any means — electronic, mechanical, photocopying, recording, or otherwise — without the permission of AOM A&amp;D.',12,{color:g}))
@@ -78,7 +78,7 @@ export async function exportWord(p){
  // 쪽 앞 나눔 직전의 빈 문단은 표가 쪽 끝에 닿으면 빈 쪽을 만들므로 제거
  xml=xml.replace(/<w:p>(?:(?!<\/w:p>).)*?<w:t[^>]*>\s*<\/w:t><\/w:r><\/w:p>(?=<w:p><w:pPr>(?:(?!<\/w:pPr>).)*<w:pageBreakBefore\/>)/gs,m=>/<w:t[^>]*>[^<\s]/.test(m)||/<w:drawing|<w:br/.test(m)?m:'');
  zip.file('word/document.xml',xml);
- let core=await zip.file('docProps/core.xml').async('string');for(const name of ['dc:creator','cp:lastModifiedBy']){const reg=new RegExp(`<${name}(?:\\s[^>]*)?>[\\s\\S]*?<\\/${name}>`);if(reg.test(core))core=core.replace(reg,`<${name}>${esc(p.author)}</${name}>`);else core=core.replace('</cp:coreProperties>',`<${name}>${esc(p.author)}</${name}></cp:coreProperties>`);}zip.file('docProps/core.xml',core);
+ let core=await zip.file('docProps/core.xml').async('string');for(const name of ['dc:creator','cp:lastModifiedBy']){const reg=new RegExp(`<${name}(?:\\s[^>]*)?>[\\s\\S]*?<\\/${name}>`);if(reg.test(core))core=core.replace(reg,`<${name}>${esc(p.author)}</${name}>`);else core=core.replace('</cp:coreProperties>',`<${name}>${esc(p.author)}</${name}></cp:coreProperties>`);}core=/<dc:title>/.test(core)?core.replace(/<dc:title>[\s\S]*?<\/dc:title>/,'<dc:title>건축 사전 검토 자료 (초안)</dc:title>'):core.replace('</cp:coreProperties>','<dc:title>건축 사전 검토 자료 (초안)</dc:title></cp:coreProperties>');zip.file('docProps/core.xml',core);
  return zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',compression:'DEFLATE'});
 }
 function cellRegex(address){return new RegExp(`<c\\b(?=[^>]*\\br="${address}")[^>]*?(?:\\/>|>[\\s\\S]*?<\\/c>)`);}
