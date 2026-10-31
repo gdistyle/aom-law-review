@@ -3,7 +3,13 @@ import {exportWord,exportExcel} from './ooxml.js';
 import {landPDF,buildingPDF} from './pdf.js';
 import {dxfBytes,volumeDAE,terrainDAE} from './cad.js';
 import {buildModels} from './geometry.js';
-export function download(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);}
+/* 내려받기: 자동 저장을 시도하고, 휴대폰·앱 안 브라우저처럼 자동 저장이 막히는 경우를 위해 '저장하기' 버튼을 화면에 남긴다(누르면 새 손가락 동작으로 저장). */
+export function download(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);try{a.click();}catch{}a.remove();
+ let box=document.getElementById('dlReady');if(!box){box=document.createElement('div');box.id='dlReady';box.className='dl-ready';document.body.append(box);}
+ const item=document.createElement('div');item.className='dl-item';const size=blob.size>1048576?(blob.size/1048576).toFixed(1)+' MB':Math.max(1,Math.round(blob.size/1024))+' KB';
+ item.innerHTML=`<span>${name.replace(/[<>&"]/g,'')} <small>(${size})</small></span>`;const link=document.createElement('a');link.href=url;link.download=name;link.textContent='저장하기';link.className='dl-save';const x=document.createElement('button');x.type='button';x.textContent='✕';x.setAttribute('aria-label','닫기');x.onclick=()=>{item.remove();if(!box.children.length)box.remove();URL.revokeObjectURL(url);};
+ item.append(link,x);box.prepend(item);while(box.children.length>4)box.lastChild.remove();
+ setTimeout(()=>{if(item.isConnected){item.remove();if(!box.children.length)box.remove();}URL.revokeObjectURL(url);},10*60*1000);}
 export function sourceList(p){const rows=[`A.O.M 종합건축사사무소 / ${p.address}`,`작성자: ${p.author}`,`작성일: ${p.date}`,`조회일시: ${kstTime(p.queriedAt)}`,'','자료 출처'];for(const s of p.sources)rows.push(`${s.name}\n${s.url||''}\n조회일시: ${kstTime(s.retrievedAt)}\n`);rows.push('법령·조례 조문');const seen=new Set();for(const r of [...p.review.rows,...p.review.sanctions])for(const ref of r.refs){if(seen.has(ref.url))continue;seen.add(ref.url);rows.push(`${ref.name} ${ref.article}\n시행일: ${ref.effectiveDate||''}\n${ref.url}\n`);}rows.push('실제 현행 원문 수신 여부는 사이트와 시행일로 구분. 링크 존재만으로 본문 대조 완료를 의미하지 않음.');return rows.join('\n');}
 export function notes(p,result){return[TERRAIN_NOTE,'',MASS_NOTE,...(result.notes||[]),result.message,'',`경계 자료: ${result.site?'수록':'미수신'}`,`지형 자료: ${p.model.terrain?'수록':'미수신'}`,`건축물대장: ${p.building.status}`,'숫자 공란은 미수집·미판정 항목이며 0이 아님.','DXF: 대상 필지 중심 WGS84 ENU, 단위 m. EPSG 법정 평면직각좌표 산출물이 아님.','DAE 지형은 공개 DEM 절대표고, 경계는 최근접 화소 높이에 투영. 볼륨은 z=0 가정 기준.','일부 자료가 없으면 해당 DAE/DXF는 빈 장면·빈 레이어로 보존하며 예시 지형·대지·건물을 대입하지 않음.',p.parcels.length>2?'원본 엑셀의 합계 E15는 첫 두 필지 참조. 3필지 이상은 원본 수식 검토 대상.':'','출처 URL은 출처목록.txt에만 수록. 워드·엑셀·PDF에는 미수록.'].filter(Boolean).join('\n');}
 export async function generateFile(kind,p,result=buildModels(p)){

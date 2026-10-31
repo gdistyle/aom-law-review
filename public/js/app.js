@@ -18,6 +18,7 @@ import {combineZones,parcelRows} from './multiparcel.js';
 import {permitSteps} from './permits.js';
 import {charges} from './charges.js';
 import {zonePlain} from './zoneplain.js';
+let tradeState={pnu:''};   // render()보다 먼저 선언(초기화 전 참조 오류 방지)
 
 hangulInput(document.getElementById('address'));const LOAD={};let usesKey='';let guidePages=null,guideName='';
 const $=id=>document.getElementById(id);let p=blankProject(),config={services:{}},epoch=0,controller=new AbortController(),busy=0,modelResult={models:[],site:null},mapLoaded=null;
@@ -132,7 +133,7 @@ try{const c=document.createElement('canvas').getContext('2d'),s='가나다라마
 const DEFAULT_ADDRESS='하남시 대청로 22-17';
 
 /* 토지 실거래가: 버튼을 누를 때만 조회(기관 일일 호출량 절약). 12개월 × 1회, 결과는 서버 캐시. */
-let tradeState={pnu:''};
+
 function tradeRender(){if(tradeState.pnu!==p.pnu){tradeState={pnu:p.pnu};p.trades=null;}tradeState.siteArea=totalArea(p);renderTrades($('tradeBox'),p,tradeState,loadTrades);}
 async function loadTrades(){const st=tradeState,project=p;if(st.loading||!project.pnu)return;st.loading=true;st.done=0;st.error='';tradeRender();
  const now=new Date(Date.now()+9*3600e3),months=recentMonths(new Date(now.getUTCFullYear(),now.getUTCMonth(),1)),lawd=project.pnu.slice(0,5);const all=[];let failed=0,auth=false;
