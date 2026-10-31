@@ -6,6 +6,8 @@
 const WALK = 80; // 도보 m/분 (보행속도 가정치, 화면에 가정으로 표기)
 const DIRS = ['북', '북동', '동', '남동', '남', '남서', '서', '북서'];
 
+const hasBatchim = w => { const c = String(w).trim().slice(-1).charCodeAt(0); return c >= 0xAC00 && c <= 0xD7A3 ? (c - 0xAC00) % 28 !== 0 : /[0-9LMNlmn]$/.test(String(w).trim()); };
+const josa = (w, a, b) => `${w}${hasBatchim(w.replace(/\([^)]*\)$/, '')) ? a : b}`;
 const nearest = (items, kind) => items.filter(o => o.kind === kind).sort((a, b) => a.distance - b.distance)[0] || null;
 const walkMin = m => Math.max(1, Math.round(m / WALK));
 const fmtM = m => `${Math.round(m).toLocaleString('ko-KR')}m`;
@@ -99,9 +101,9 @@ export function siteContext({ zone = '', places = [], buildings = [], terrainPoi
   const parts = [];
   if (zone) parts.push(`${zone} 대지로서${st ? ` ${st.name}에서 도보 약 ${walkMin(st.distance)}분 거리에 위치함` : ' 위치함'}.`);
   const env = [park && `${park.name}(${fmtM(park.distance)})`, river && `${river.name}(${fmtM(river.distance)})`].filter(Boolean);
-  if (env.length) parts.push(`주변에 ${env.join(', ')}이(가) 있어 녹지·조망 자원을 활용할 수 있음.`);
+  if (env.length) parts.push(`주변에 ${josa(env.join(', '), '이', '가')} 있어 녹지·조망 자원을 활용할 수 있음.`);
   if (t) parts.push(t.slope < 2 ? '대지는 거의 평탄함.' : `대지는 ${t.down}쪽으로 낮아지는 약 ${t.slope.toFixed(1)}% 경사지임.`);
-  if (concepts.length) parts.push(`${concepts.slice(0, 2).join(', ')}을(를) 중심으로 계획하는 것이 적합함.`);
+  if (concepts.length) parts.push(`${josa(concepts.slice(0, 2).join(', '), '을', '를')} 중심으로 계획하는 것이 적합함.`);
   const story = parts.join(' ');
 
   return { facts, signature, character, concepts, cautions, story, assumptions: [`도보 시간은 분당 ${WALK}m 가정치`, '지형은 공개 수치표고(약 10m 화소) 기반 개략값', '거리는 대지 중심점 기준 직선거리'] };

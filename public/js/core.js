@@ -28,7 +28,7 @@ export function splitPNU(pnu) {
 }
 export function datum(value = null, source = '', uncertain = true) { return {value, source, uncertain}; }
 export function blankProject() {
-  return {version:1,address:'',pnu:'',author:'이오상',date:kstToday(),purpose:'',floors:null,operation:'신축',
+  return {version:1,address:'',pnu:'',author:'',date:kstToday(),purpose:'',floors:null,operation:'신축',
     location:null,parcels:[],land:{area:datum(),category:datum(),price:datum(),priceDate:datum(),road:datum(),zones:[],zone:datum()},
     building:{status:'unavailable',titles:[],recaps:[],floors:[],exclusive:[],changes:[],selected:0},
     laws:[],sources:[],geometry:{parcels:[],buildings:[]},judgments:{},issue:'',
