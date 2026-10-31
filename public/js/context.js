@@ -161,7 +161,7 @@ export function directionSentence(dirs) {
 }
 
 const hash = s => { let h = 0; for (const c of String(s || '')) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; };
-const CAT = u => /단독주택/.test(u) ? 'house' : /공동주택/.test(u) ? 'apt' : /근린생활/.test(u) ? 'shop' : /업무/.test(u) ? 'office' : /문화|집회|종교|관광|숙박/.test(u) ? 'culture' : /공장|창고/.test(u) ? 'work' : 'etc';
+const CAT = u => /단독주택/.test(u) ? 'house' : /공동주택/.test(u) ? 'apt' : /근린생활|판매/.test(u) ? 'shop' : /업무/.test(u) ? 'office' : /문화|집회|종교|관광|숙박/.test(u) ? 'culture' : /공장|창고/.test(u) ? 'work' : /의료|교육|노유자|수련|운동/.test(u) ? 'care' : 'etc';
 const T = {
   house: [
     v => `${v.view ? `${v.view}을(를) 바라보는 ` : ''}${v.slopeTxt}가족의 집. ${v.parkTxt}낮에는 빛이 깊이 드는 거실과 마당이, 저녁에는 동네의 고요함이 머무는 집으로 계획함.`,
@@ -182,6 +182,10 @@ const T = {
   culture: [
     v => `${v.view ? `${v.view}의 풍경이 머무는 ` : ''}사람들이 찾아와 오래 머무는 장소. ${v.attrTxt}${v.slopeTxt2}경관을 향해 열린 라운지와 테라스가 공간의 중심이 됨.`,
     v => `${v.attrTxt}지역의 이야기를 담는 문화 공간. ${v.parkTxt}방문객의 동선을 따라 풍경이 차례로 펼쳐지는 구성이 어울림.`
+  ],
+  care: [
+    v => `${v.parkTxt}${v.stationTxt}이용하는 사람의 하루를 편안하게 하는 시설. ${v.slopeTxt2}${v.view ? `${v.view}을(를) 향해 열린 휴게·대기 공간을 두고, ` : ''}밝고 쉽게 찾을 수 있는 동선을 중심으로 계획함.`,
+    v => `지역 주민이 매일 찾는 생활 시설. ${v.parkTxt}${v.slopeTxt2}채광과 환기가 고른 실 배치와 안전한 출입 동선이 핵심임.`
   ],
   work: [v => `차량 동선과 작업 동선을 분리한 생산·보관 공간. ${v.slopeTxt2}하역·주차 공간을 대지 전면에 확보하는 배치가 핵심임.`],
   etc: [v => `대지의 조건을 존중하는 건축. ${v.parkTxt}${v.slopeTxt2}주변 맥락과 어울리는 규모로 계획함.`]
