@@ -271,3 +271,4 @@ body{background:#F3F3F1}
 .trade-box .nw{white-space:nowrap;font-weight:400}
 @media (max-width:560px){.feas-kv,.feas-kv tbody{display:block}.feas-kv tr{display:grid;grid-template-columns:7.5em 1fr}.feas-kv th,.feas-kv td{display:flex;align-items:center;width:auto;word-break:keep-all;margin:0 0 -1px -1px}.feas-kv th{justify-content:center}}
 .duty-box{margin-top:18px}.duty-table th,.duty-table td{word-break:keep-all}.duty-table td.c{text-align:center;white-space:nowrap}.duty-table .duty-yes{color:var(--accent,#F37021);font-weight:700}.duty-table .duty-no{color:#6b6e73}.duty-table .duty-unknown{color:var(--uncertain,#E00000)}.duty-table{min-width:620px}
+.duty-table thead th:nth-child(2){width:84px}.duty-table thead th:nth-child(1){width:20%}.duty-table thead th:nth-child(5){width:18%}
