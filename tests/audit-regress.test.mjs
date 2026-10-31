@@ -70,3 +70,8 @@ test('reviewProject에서 대지 안의 공지 결론 문구까지 연결', () =
   assert.equal(r.limits.setback.multi[2].line, 1);
   assert.match(r.rows.find(x => x.id === 'setback').summary, /다세대 건축선 1 m 이상/);
 });
+test('대지 안의 공지: 공개공지 서식(별지)은 무시', () => {
+  const t = ['[별표 3] 대지 안의 공지 기준', '1. 그 밖의 건축물', '모든 지역', '1미터 이상', '모든 건축선', '1미터 이상', '인접 대지경계선'].join('\n');
+  const law = {current: true, name: 'x', articles: [], annexes: [{title: '[별지 제2호서식] 공개공지 안내 표지판', text: '공개공지 안내'}, {title: '[별표 3] 대지 안의 공지 기준(제31조 관련)', text: t}]};
+  assert.equal(ordinanceSetback(law, '제2종 근린생활시설', 300, '').line, 1);
+});

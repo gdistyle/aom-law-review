@@ -158,7 +158,7 @@ export function ordinanceParking(law,purpose){
 /** 건축조례 별표 「대지 안의 공지 기준」 표(첨부 HWP·HWPX 글자)에서 용도별 띄울 거리(m). 하남시 등 '번호. 용도 → 거리 → 모든 건축선 / 인접 대지경계선' 형식. 못 읽으면 null. */
 export function ordinanceSetback(law,purpose,gross,zone){
  if(!law?.current||!purpose)return null;
- const an=law.annexes.find(a=>/공지/.test(a.title||'')&&a.text);if(!an)return null;
+ const an=law.annexes.find(a=>/대지안의공지/.test(norm(a.title||''))&&!/별지|서식/.test(a.title||'')&&a.text);if(!an)return null;
  const rows=[];let want=1,cur=null;
  for(const line of an.text.split('\n')){const m=line.match(/^\s*(\d+)\.\s*\S/);if(m&&+m[1]===want){cur={no:want,lines:[line]};rows.push(cur);want++;continue;}if(cur)cur.lines.push(line);}
  if(!rows.length)return null;
