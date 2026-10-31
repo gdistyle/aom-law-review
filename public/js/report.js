@@ -193,7 +193,9 @@ function maxScale(P) {
     ['지하 층수', bs ? `${bs} 층` : '없음', '', false]
   ].filter(x => x[1]);
   return h1('Ⅱ', '계획 조건 및 법정 최대 규모') + h2('계획 조건') + table([3000, 3600, BODY_W - 6600], ['항 목', '적용', '비 고'], plan.map(([k, v, f, red]) => [{t: k, b: true, jc: 'center'}, {t: v, b: true, red, jc: 'center'}, {t: f, sz: 16, color: GRAY, red}]), {zebra: true})
-    + h2('법정 최대 규모') + table([3000, 3600, BODY_W - 6600], ['항 목', '산정 결과', '산정 근거'], rows.map(([k, v, f, red]) => [{t: k, b: true, jc: 'center'}, {t: v, b: true, red, jc: 'center'}, {t: f, sz: 16, color: GRAY}]), {zebra: true})
+    + h2('법정 최대 규모')
+    + p(r('건폐율 최대 ', {b: true}) + r(`${fmt(l.bcr?.value)} % → 건축면적 ${fmt(l.maxFootprint, 2)} ㎡`) + r('   ·   용적률 최대 ', {b: true}) + r(`${fmt(l.far?.value)} % → 지상 연면적 ${fmt(l.maxGross, 2)} ㎡`) + r('   ·   높이 최대 ', {b: true}) + r(L.floorsByRatio ? (SM ? `법정 제한 없음 (정북 일조 사선만 적용 시 이론상 ${fmt(SM.height, 1)} m)` : '법정 제한 없음') : `${L.floors ?? '-'}층 이하 (법령 층수 제한)`, {red: !!L.floorsByRatio}), {sz: 18, after: 80, keep: true})
+    + table([3000, 3600, BODY_W - 6600], ['항 목', '산정 결과', '산정 근거'], rows.map(([k, v, f, red]) => [{t: k, b: true, jc: 'center'}, {t: v, b: true, red, jc: 'center'}, {t: f, sz: 16, color: GRAY}]), {zebra: true})
     + (() => { const PS = permitSteps(P); const c = [900, 3800, 3800]; c.push(BODY_W - c.reduce((a2, b2) => a2 + b2, 0));
       return h2('인허가 절차 (일반 순서)') + table(c, ['순서', '절 차', '해당 조건', '비고 · 근거'], PS.steps.map(s => [{t: String(s.no), jc: 'center'}, {t: s.step, b: true, red: s.red}, {t: s.when, sz: 16}, {t: [s.note, s.refs.map(x => `${shortLaw(x.name)} ${x.article}`).join(' · ')].filter(Boolean).join('\n'), sz: 15, color: GRAY, red: s.red}]), {sz: 16, pad: 40})
         + p('※ ' + PS.note, {red: true, sz: 16, after: 60}); })()
