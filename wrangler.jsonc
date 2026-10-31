@@ -18,7 +18,7 @@
     "VWORLD_BUILDING_LAYER": "LT_C_SPBD",
     "VWORLD_BUILDING_HEIGHT_FIELD": "",
     "VWORLD_BUILDING_FLOORS_FIELD": "gro_flo_co",
-    "EUM_PARCEL_URL_TEMPLATE": "",
+    "EUM_PARCEL_URL_TEMPLATE": "https://www.eum.go.kr/web/ar/lu/luLandDet.jsp?pnu={pnu}&mode=search&isNoScr=script&selGbn=umd",
     "MAX_PAGE_SIZE": "100",
     "MAX_RESPONSE_BYTES": "4000000",
     "UPSTREAM_TIMEOUT_MS": "15000"

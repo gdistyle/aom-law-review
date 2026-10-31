@@ -40,7 +40,7 @@ export function wordBody(p,imgs=null){
  if(rows.length){xml+=para('. 설계 개요 (법정 최대 규모)',{bold:true,keep:true})+wordTable(['항 목','내 용'],rows.map(r=>[{text:r[0],align:'center',fill:'F2F2F2'},{text:r[1],red:r[2]}]),[4300,8501]);}}}
  if(p.issue)xml+=h('판단 내용')+para(p.issue,{red:true});
  xml+=h('Ⅳ. 법적 제재 유의사항')+wordTable(['위반 유형','근거 조문 및 내용'],p.review.sanctions.map(s=>[{text:s.item,align:'center'},{text:s.text,red:/현행 원문 미수신/.test(s.text)}]),[3300,9501]);
- xml+=para('A.O.M 종합건축사사무소  |  경기도 건축문화상 금상 수상',{bold:true,size:22,keep:true})+para('건축사 상담 : 010-9239-2532   ·   홈페이지 : https://aomand.com',{size:20});
+ xml+=para('A.O.M 종합건축사사무소  |  경기도 건축문화상 금상 수상',{bold:true,size:22,keep:true})+para('신축 · 증축 · 용도변경 · 대수선 · 리모델링 · 인허가 상담 : 010-9239-2532   ·   홈페이지 : https://aomand.com',{size:20});
  xml+=para('※ 본 검토서는 공개 자료(토지이음·건축물대장·법제처 현행 법령)를 기반으로 자동 작성한 초안으로, 참고 자료로만 사용함. 지구단위계획·조례·현장 여건 등에 따라 실제와 다를 수 있으므로, 최종 판단은 건축사 검토 및 인허가권자 협의에 따름.',{size:17,red:true});
  return xml;
 }
