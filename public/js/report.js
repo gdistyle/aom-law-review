@@ -185,14 +185,14 @@ function context(P) {
   if (c.dirSentence) rows.unshift(['동서남북', stripMarks(c.dirSentence)]);
   let x = h1('Ⅴ', '대지 특성 · 건축 컨셉 (참고)') + table([3000, BODY_W - 3000], null, rows.map(([k, v]) => [{t: k, b: true, fill: 'F2F2F0', jc: 'center'}, v]));
   if (c.stories?.length) {
-    x += h2('용도별 건축 이야기');
-    for (const st of c.stories) {
-      x += p(r(st.use, {sz: 20, b: true, color: ORANGE}) + (st.allowed === false ? r('  허용 용도 아님', {sz: 16, red: true}) : c.usesFromFallback ? r('  허용 여부 대조 대상', {sz: 16, red: true}) : ''), {keep: true, before: 120, after: 40});
-      x += p(stripMarks(st.story), {sz: 19, lh: 300, keep: true, after: 40});
-      if (st.requirements?.length) x += p(r('건축 요건  ', {sz: 16, b: true, color: ORANGE}) + r(st.requirements.join(' · '), {sz: 16, color: GRAY}), {keep: !!st.change, after: 40});
-      if (st.change) x += p(r('용도변경  ', {sz: 16, b: true, color: ORANGE}) + r(st.change, {sz: 16, red: true}), {after: 60});
-    }
+    const reqW = 5200, useW = 2400, storyW = BODY_W - useW - reqW;
+    x += h2('용도별 건축 이야기 · 건축 요건') + table([useW, storyW, reqW], ['용 도', '건축 이야기', '건축 요건'], c.stories.map(st => [
+      {t: st.use + (st.allowed === false ? '\n(허용 용도 아님)' : c.usesFromFallback ? '\n(허용 여부 대조 대상)' : ''), b: true, jc: 'center', red: st.allowed === false || c.usesFromFallback},
+      {t: stripMarks(st.story), sz: 18},
+      {t: (st.requirements || []).map(q => '· ' + q).join('\n') + (st.change ? '\n· 용도변경: ' + st.change : ''), sz: 16, red: true}
+    ]), {zebra: true});
   }
+
   if (c.story) x += h2('요약') + p(c.story, {sz: 19, lh: 300});
   if (c.cautions?.length) x += note(c.cautions.map(s => '· ' + s).join('\n'), true);
   if (c.assumptions?.length) x += note('※ ' + c.assumptions.join(' · '));
@@ -209,8 +209,7 @@ function sanctions(P) {
 
 function closing() {
   const box = (t, o = {}) => p(t, {shd: SOFT, ind: 200, indR: 200, keep: true, ...o});
-  return p('', {keep: true, after: 200})
-    + box(r('건축 상담', {sz: 18, b: true, color: ORANGE}), {before: 160, after: 40})
+  return box(r('건축 상담', {sz: 18, b: true, color: ORANGE}), {before: 240, after: 40})
     + box(r('A.O.M 종합건축사사무소', {sz: 24, b: true}), {after: 60})
     + box(r('신축 · 증축 · 용도변경 · 대수선 · 리모델링 · 인허가', {sz: 18}), {after: 40})
     + box(r('전화 031-791-2536   ·   https://aomand.com   ·   경기도 하남시 대청로22번길 17, 206호 (신장동)', {sz: 18, color: GRAY}), {after: 160})

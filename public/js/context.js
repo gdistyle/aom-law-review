@@ -130,6 +130,14 @@ const clean = n => String(n).replace(/\s*(정상|입구|주차장|산책로|둘�
 
 /** «이름» 표시는 화면에서 강조색, 문서·텍스트에서는 그대로 이름만 남긴다. */
 export const stripMarks = s => String(s || '').replace(/[«»]/g, '');
+const batchim = ch => { const c = ch.charCodeAt(0); return c >= 0xAC00 && c <= 0xD7A3 ? (c - 0xAC00) % 28 !== 0 : /[0-9]/.test(ch) ? /[013678]/.test(ch) : /[lmnr]/i.test(ch); };
+/** '…산»을(를)', '…(1.2km)이(가)' 같은 겸용 조사를 받침에 맞게 확정 */
+export function fixJosa(t) {
+  return String(t || '').replace(/([가-힣A-Za-z0-9])(»?)((?:\([^()]*\))?)(을\(를\)|이\(가\)|은\(는\)|과\(와\))/g, (m, ch, mk, paren, j) => {
+    const b = batchim(ch), pick = {'을(를)': b ? '을' : '를', '이(가)': b ? '이' : '가', '은(는)': b ? '은' : '는', '과(와)': b ? '과' : '와'}[j];
+    return ch + mk + paren + pick;
+  });
+}
 
 export function siteDirections(items = [], regions = [], here = null) {
   const out = [];
@@ -148,14 +156,14 @@ export function directionSentence(dirs) {
   const reg = dirs.filter(d => d.region).map(d => `${d.dir}쪽은 «${d.region}»`);
   const a = land.length ? `${land.join(', ')}이(가) 자리함.` : '';
   const b = reg.length ? ` 생활권은 ${reg.join(', ')} 일대와 맞닿음.` : '';
-  return (a + b).trim();
+  return fixJosa((a + b).trim());
 }
 
 const hash = s => { let h = 0; for (const c of String(s || '')) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; };
 const CAT = u => /단독주택/.test(u) ? 'house' : /공동주택/.test(u) ? 'apt' : /근린생활/.test(u) ? 'shop' : /업무/.test(u) ? 'office' : /문화|집회|종교|관광|숙박/.test(u) ? 'culture' : /공장|창고/.test(u) ? 'work' : 'etc';
 const T = {
   house: [
-    v => `${v.view ? `${v.view}을(를) 바라보는 ` : ''}${v.slopeTxt}가족의 집. ${v.parkTxt}${v.openTxt}낮에는 빛이 깊이 드는 거실과 마당이, 저녁에는 동네의 고요함이 머무는 집으로 계획함.`,
+    v => `${v.view ? `${v.view}을(를) 바라보는 ` : ''}${v.slopeTxt}가족의 집. ${v.parkTxt}낮에는 빛이 깊이 드는 거실과 마당이, 저녁에는 동네의 고요함이 머무는 집으로 계획함.`,
     v => `${v.view ? `«${stripMarks(v.view)}»의 풍경을 일상으로 들이는 ` : '동네의 결을 닮은 '}단독주택. ${v.slopeTxt2}${v.parkTxt}작은 마당과 테라스를 중심으로 가족의 시간이 이어지는 구성이 어울림.`
   ],
   apt: [
@@ -199,7 +207,7 @@ export function useStories({uses = [], dirs = [], ctx = {}, terrain = null, pnu 
     attrTxt: sig ? `«${sig.name}» 등 주변 문화 자원과 이어지는 ` : ''
   };
   return uses.map((u, i) => {
-    const list = T[CAT(u)] || T.etc, story = list[(hash(pnu) + i) % list.length](v).replace(/\s+/g, ' ').trim();
+    const list = T[CAT(u)] || T.etc, story = fixJosa(list[(hash(pnu) + i) % list.length](v).replace(/\s+/g, ' ').trim());
     return {use: u, story, requirements: req(u), change: change(u), allowed: allowed ? allowed.has(u) : null};
   });
 }
