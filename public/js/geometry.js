@@ -54,3 +54,13 @@ export function modelTriangles(model){return model.layers.flatMap(l=>l.pieces.fl
 function worldPixel(lon,lat,z){const n=256*2**z;return[(lon+180)/360*n,(1-Math.asinh(Math.tan(lat*rad))/Math.PI)/2*n];}
 function pixelWorld(x,y,z){const n=256*2**z;return[x/n*360-180,Math.atan(Math.sinh(Math.PI*(1-2*y/n)))/rad];}
 export async function fetchTerrain(site,fetcher=fetch){if(!site)throw new Error('대상 필지 경계 자료 없음.');const z=14,center=worldPixel(...site.origin,z),radius=24,step=1,tiles=new Map(),points=[];for(let j=-radius;j<=radius;j+=step)for(let i=-radius;i<=radius;i+=step){const px=Math.floor(center[0])+i,py=Math.floor(center[1])+j,tx=Math.floor(px/256),ty=Math.floor(py/256),key=`${tx}/${ty}`;if(!tiles.has(key)){const r=await fetcher(`/api/terrain/${z}/${tx}/${ty}.png`);if(!r.ok)throw new Error('수치표고 타일 수신 실패.');const image=await createImageBitmap(await r.blob()),canvas=document.createElement('canvas');canvas.width=canvas.height=256;const ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.drawImage(image,0,0);tiles.set(key,ctx.getImageData(0,0,256,256).data);image.close();}const data=tiles.get(key),k=((py%256)*256+px%256)*4;if(data[k+3]!==255)throw new Error('수치표고 미수록 화소.');const h=data[k]*256+data[k+1]+data[k+2]/256-32768,coord=pixelWorld(px+.5,py+.5,z),xy=site.project(coord);points.push([...xy,h]);}const width=radius*2+1,faces=[];for(let y=0;y<width-1;y++)for(let x=0;x<width-1;x++){const a=y*width+x;faces.push([points[a],points[a+1],points[a+width+1]],[points[a],points[a+width+1],points[a+width]]);}return{points,faces,origin:site.origin,note:TERRAIN_NOTE,source:'AWS Terrain Tiles / Terrarium',retrievedAt:new Date().toISOString(),zoom:z};}
+
+/* 법정 층수 제한이 없는 전용·일반주거지역의 이론상 최대 층수 — 정북 방향 일조 사선(높이 10 m 초과 부분은 정북 인접 대지경계선에서 높이의 1/2 이상 이격) 기준.
+   대지 남북 길이 D 안에서 가장 남쪽 지점의 허용 높이 = 2D. 층고 1층 4.3 m, 2층 이상 3.3 m 가정. 북쪽이 도로·공원 등이면 완화될 수 있음. */
+export function sunlightMaxFloors(p){
+ const zone=String(p.land?.zone?.value||'');if(!/전용주거|일반주거/.test(zone))return null;
+ let site=null;try{site=siteGeometry(p);}catch{}if(!site?.rings?.length)return null;
+ const ys=site.rings.flat().map(q=>q[1]);const D=Math.max(...ys)-Math.min(...ys);if(!(D>0))return null;
+ const H=2*D;let n=0,h=0;while(n<200){const fh=n?3.3:4.3;if(h+fh>H+1e-9)break;h+=fh;n++;}
+ return {depth:D,height:H,floors:n,used:h};
+}
