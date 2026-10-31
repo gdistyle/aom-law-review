@@ -35,10 +35,15 @@ function cfb(bytes) {
   return {map, get};
 }
 
+/* raw deflate 해제. 크롬은 압축 끝 뒤에 남는 바이트가 있으면 스트림 오류를 내므로, 오류 전까지 나온 결과를 모아 쓴다. */
 async function inflateRaw(data) {
   const ds = new DecompressionStream('deflate-raw');
-  const buf = await new Response(new Blob([data]).stream().pipeThrough(ds)).arrayBuffer();
-  return new Uint8Array(buf);
+  const writer = ds.writable.getWriter(), reader = ds.readable.getReader();
+  writer.write(data).catch(() => {}); writer.close().catch(() => {});
+  const chunks = []; let n = 0;
+  try { for (;;) { const {value, done} = await reader.read(); if (done) break; chunks.push(value); n += value.length; } } catch (e) { if (!n) throw e; }
+  const out = new Uint8Array(n); let at = 0; for (const c of chunks) { out.set(c, at); at += c.length; }
+  return out;
 }
 
 const EXT = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]);
