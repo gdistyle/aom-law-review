@@ -27,3 +27,12 @@ test('의무 판정: 주택 내진, 다중이용 범위', () => {
   assert.equal(D('업무시설', 10, 6000).find(x => x.item.startsWith('다중')).result, 'no');
 });
 test('같은 동 판정 경계', () => { assert.ok(sameDong('삼성면 양덕리', '양덕리')); assert.ok(!sameDong('신덕소리', '덕소리')); });
+import {ordinanceParking} from '../public/js/legal.js';
+test('조례 부설주차장 설치기준 표(첨부 HWP 글자) — 하남시 형식', () => {
+  const t = ['[별표 2] 부설주차장설치기준(제17조제1항 관련)', '시 설 물', '설 치 기 준', ' 1. 위락시설', '  시설면적 70㎡당 1대', '2. 문화 및 집회시설(관람장은 제외한다), 종교 시설, 판매시설, 업무시설(외국공관 및 오피스텔은 제외한다)', '  시설면적 100㎡당 1대', ' 3. 제1종 근린생활시설(건축법시행령 별표1 ', '   제3호 바목 및 사목을 제외한다), 제2종 ', '   근린생활시설, 숙박시설', '  시설면적 134㎡당 1대 [시설면적 / 134㎡]', '  다만, 숙박시설 중 생활숙박시설은 시설면적 ', '  100㎡당 1대로 한다.', ' 4. 단독주택(다가구 주택을 제외한다)', ' ․ 시설면적 50㎡ 초과 134㎡ 이하 : 1대', ' ․ 시설면적이 134㎡ 초과 : 1대에 134㎡를 초과하는 ', '    81㎡ 당 1대를 더한 대수', ' 5. 창고시설', '  시설면적 300㎡당 1대 이상', ' 〔비고〕', ' 1. 기계식주차장...'].join('\n');
+  const law = {current: true, name: '하남시 주차장 조례', articles: [], annexes: [{title: '[별표 2] 부설주차장설치기준(제17조제1항 관련)', text: t}]};
+  assert.equal(ordinanceParking(law, '제2종 근린생활시설').unit, 134);
+  assert.equal(ordinanceParking(law, '판매시설').unit, 100);
+  assert.deepEqual(ordinanceParking(law, '단독주택').house, {min: 50, base: 134, step: 81});
+  assert.equal(ordinanceParking(law, '창고시설').unit, 300);
+});

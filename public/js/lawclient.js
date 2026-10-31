@@ -51,5 +51,22 @@ export async function fetchLawDirect(oc, name, kind = 'law') {
   const payload = await getJSON(d);
   const law = normalizeLaw(payload, {kind, name, effectiveDate: chosen.시행일자, current: true});
   if (!law.current || norm(law.name) !== norm(name)) return {ok: false, code: 'NO_CURRENT_TEXT', message: '현행 원문 수신 없음', name};
+  if (kind === 'ordin') await fillAnnexFiles(law);
   return {ok: true, law, source: {name: '국가법령정보센터 ' + name, url: `https://www.law.go.kr/${kind === 'ordin' ? '자치법규' : '법령'}/${encodeURIComponent(norm(name))}`, retrievedAt: new Date().toISOString()}};
+}
+
+/* 자치법규 별표 중 표가 첨부 HWP로만 공개된 것(부설주차장 설치기준·조경 등)은 사이트 서버를 거쳐 받아 글자를 읽는다. 실패하면 그대로 둠. */
+async function fillAnnexFiles(law) {
+  const targets = (law.annexes || []).filter(a => !String(a.text || '').trim() && /flSeq=\d+/.test(a.file || '') && /주차|조경|설치기준/.test(a.title || '')).slice(0, 4);
+  if (!targets.length) return;
+  const {hwpParagraphs} = await import('./hwp5.js');
+  await Promise.all(targets.map(async a => {
+    try {
+      const seq = a.file.match(/flSeq=(\d+)/)[1];
+      const r = await fetch('/api/annexfile?flSeq=' + seq);
+      if (!r.ok) return;
+      const paras = await hwpParagraphs(new Uint8Array(await r.arrayBuffer()));
+      if (paras.length) { a.text = paras.join('\n'); a.fromFile = true; }
+    } catch (e) { console.warn('별표 첨부 읽기 실패', a.title, e); }
+  }));
 }
