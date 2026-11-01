@@ -1,7 +1,7 @@
 /* 사업성 결과 분석·결론 — 계산 결과에서 정해진 규칙으로 문장을 만든다(추정·창작 없음).
    각 문장은 근거 숫자를 함께 적고, 가정값에서 나온 문장은 red=true (빨간 글씨). */
 import {feasibility, sensitivity} from './feasibility.js';
-import {redFlags} from './feas-flags.js';
+import {redFlags, blankItems} from './feas-flags.js';
 
 const PY = 400 / 121;
 const won = v => v == null || !Number.isFinite(v) ? '-' : Math.round(v).toLocaleString('ko-KR');
@@ -41,7 +41,7 @@ export function analyze(x) {
   } else {
     add(`연면적 1평당 사업비 ${won(R.total / (x.gross || 1) * PY)}원 (㎡당 ${won(R.perM2)}원).`, F.total);
   }
-  const blanks = ['designRate', 'contRate', 'loanRatio', 'loanRate', 'months', ...(x.mode === 'sale' ? ['saleCostRate'] : []), ...(x.mode === 'lease' ? ['vacancy', 'opexRate'] : [])].filter(k => num(x[k]) == null && !(k === 'otherCost' && x._otherAuto)).length;
+  const blanks = blankItems(x).length;
   if (blanks) add(`비어 있는 항목 ${blanks}개가 0으로 계산되어 결과가 실제보다 유리하게 나왔을 수 있음.`, true);
 
   // 결론

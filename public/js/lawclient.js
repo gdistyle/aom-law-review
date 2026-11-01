@@ -57,7 +57,7 @@ export async function fetchLawDirect(oc, name, kind = 'law') {
 
 /* 자치법규 별표 중 표가 첨부 HWP로만 공개된 것(부설주차장 설치기준·조경 등)은 사이트 서버를 거쳐 받아 글자를 읽는다. 실패하면 그대로 둠. */
 async function fillAnnexFiles(law) {
-  const targets = (law.annexes || []).filter(a => !String(a.text || '').trim() && /flSeq=\d+/.test(a.file || '') && !/별지|서식/.test(a.title || '') && /주차장설치기준|부설주차장|조경|대지안의공지/.test((a.title || '').replace(/\s/g, ''))).slice(0, 4);
+  const targets = (law.annexes || []).filter(a => !String(a.text || '').trim() && /flSeq=\d+/.test(a.file || '') && !/별지|서식/.test(a.title || '') && /주차장설치기준|부설주차장|조경|대지안의공지/.test((a.title || '').replace(/\s/g, ''))).slice(0, 8);
   if (!targets.length) return;
   const {hwpParagraphs} = await import('./hwp5.js');
   await Promise.all(targets.map(async a => {

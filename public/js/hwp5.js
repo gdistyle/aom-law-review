@@ -75,7 +75,7 @@ async function hwpxParagraphs(b) {
   for (const f of secs) {
     const start = f.lho + 30 + u16(b, f.lho + 26) + u16(b, f.lho + 28), raw = b.subarray(start, start + f.csize);
     const xml = new TextDecoder().decode(f.method === 8 ? await inflateRaw(raw) : raw);
-    for (const m of xml.split(/<\/hp:p>/)) { const t = [...m.matchAll(/<hp:t(?:\s[^>]*)?>([^<]*)<\/hp:t>/g)].map(x => x[1]).join('').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&amp;/g, '&'); if (t || /<hp:p[\s>]/.test(m)) out.push(t); }
+    for (const m of xml.split(/<\/hp:p>/)) { const t = [...m.matchAll(/<hp:t(?:\s[^>]*)?>([\s\S]*?)<\/hp:t>/g)].map(x => x[1].replace(/<hp:(?:tab|lineBreak)\b[^>]*\/?>/g, ' ').replace(/<[^>]+>/g, '')).join('').replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16))).replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(+d)).replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, '&'); if (t || /<hp:p[\s>]/.test(m)) out.push(t); }
   }
   return out;
 }

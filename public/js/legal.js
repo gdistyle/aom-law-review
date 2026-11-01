@@ -162,7 +162,7 @@ export function ordinanceSetback(law,purpose,gross,zone){
  const rows=[];let want=1,cur=null;
  for(const line of an.text.split('\n')){const m=line.match(/^\s*(\d+)\.\s*\S/);if(m&&+m[1]===want){cur={no:want,lines:[line]};rows.push(cur);want++;continue;}if(cur)cur.lines.push(line);}
  if(!rows.length)return null;
- const kn2=t=>String(t).replace(/(\d+)\s*천/g,(_,a)=>String(+a*1000)).replace(/(\d+)\s*백/g,(_,a)=>String(+a*100)).replace(/,/g,'');
+ const kn2=t=>String(t).replace(/(\d+)\s*천\s*(\d{1,3})?(?=\s*제곱|\s*㎡|\s*$|\D)/g,(_,a,b)=>String(+a*1000+(b?+b:0))).replace(/(\d+)\s*백/g,(_,a)=>String(+a*100)).replace(/,/g,'');
  const parse=r=>{const out={line:[],boundary:[],threshold:null,tiers:[]};let buf=[];
   for(const raw of r.lines.slice(1)){const l=kn2(raw).trim();const th=l.match(/^(\d+)\s*제곱미터\s*이상(?:\s*또는)?$/);if(th&&out.threshold==null){out.threshold=+th[1];continue;}
    const tier=l.match(/(\d+)\s*제곱미터\s*(이상|미만)\s*(\d+(?:\.\d+)?)\s*미터/);if(tier){out.tiers.push({area:+tier[1],op:tier[2],m:+tier[3]});continue;}
@@ -188,7 +188,7 @@ export function ordinanceSetback(law,purpose,gross,zone){
  return {line:L[0]??null,boundary:B[0]??null,row:row.no+'호',threshold:d.threshold};
 }
 /** 건축조례 조경 조항의 연면적 구간별 비율. 연면적은 법정 최대 연면적(가정)으로 판정. */
-export function landscapeTier(law,gross,site=null){if(!law?.current||gross==null)return null;for(const a of law.articles.filter(a=>/조경/.test(norm(a.title||'')))){const all=kn(norm(a.text));if(site!=null){for(const m of all.matchAll(/면적(\d+)제곱미터이상(\d+)제곱미터미만인대지에건축하는건축물의조경면적은대지면적의(\d+(?:\.\d+)?)(?:%|퍼센트)/g))if(site>=+m[1]&&site<+m[2])return{lo:0,hi:Infinity,value:+m[3],article:a,gross,small:[+m[1],+m[2]]};}const t=kn(norm(a.text).split('②')[0]);const tiers=[];for(const m of t.matchAll(/연면적(?:\([^)]*\))?(?:이)?(\d+)제곱미터(이상|미만)(?:(\d+)제곱미터미만)?인건축물:대지면적의(\d+(?:\.\d+)?)(?:%|퍼센트)/g)){const lo=m[2]==='이상'?+m[1]:0,hi=m[2]==='미만'?+m[1]:(m[3]?+m[3]:Infinity);tiers.push({lo,hi,value:+m[4]});}const hit=tiers.filter(x=>gross>=x.lo&&gross<x.hi);if(hit.length===1)return{...hit[0],article:a,gross,tiers};}return null;}
+export function landscapeTier(law,gross,site=null){if(!law?.current||gross==null)return null;for(const a of law.articles.filter(a=>/조경/.test(norm(a.title||'')))){const all=kn(norm(a.text));if(site!=null){for(const m of all.matchAll(/면적(\d+)제곱미터이상(\d+)제곱미터미만인대지에건축하는건축물의조경면적은대지면적의(\d+(?:\.\d+)?)(?:%|퍼센트)/g))if(site>=+m[1]&&site<+m[2])return{lo:0,hi:Infinity,value:+m[3],article:a,gross,small:[+m[1],+m[2]]};}const t=kn(norm(String(a.text).split('②')[0]));const tiers=[];for(const m of t.matchAll(/연면적(?:\([^)]*\))?(?:이)?(\d+)제곱미터(이상|미만)(?:(\d+)제곱미터미만)?인건축물:대지면적의(\d+(?:\.\d+)?)(?:%|퍼센트)/g)){const lo=m[2]==='이상'?+m[1]:0,hi=m[2]==='미만'?+m[1]:(m[3]?+m[3]:Infinity);tiers.push({lo,hi,value:+m[4]});}const hit=tiers.filter(x=>gross>=x.lo&&gross<x.hi);if(hit.length===1)return{...hit[0],article:a,gross,tiers};}return null;}
 const boxClean=t=>String(t||'').replace(/[┃│┠┨─┼━┏┓┗┛┯┷╂┿┣┫├┤]/g,' ');
 /** 법령 원문에서 층수·연면적 상한 추출(개발제한구역 시행령 별표2, 용도지역별 건축제한 별표 머리글). */
 export function legalHeight(p,purpose){const out=[];const zones=p.land.zones.map(z=>z.name).join(' ');
@@ -218,7 +218,7 @@ function addSummaries(p,rows,L){
  const S={
   bcr:()=>L.bcr?.value!=null?(L.maxFootprint!=null?`건폐율 ${L.bcr.value}% 이하 → 건축면적 최대 ${F(L.maxFootprint)} ㎡ (대지 ${F(L.area)} ㎡ × ${L.bcr.value}%)`:`건폐율 ${L.bcr.value}% 이하 (대지면적 미수집으로 면적 산정 불가)`):'건폐율 산정 불가 — 용도지역 또는 조례 수치 미확인',
   far:()=>{if(L.far?.value==null)return '용적률 산정 불가 — 용도지역 또는 조례 수치 미확인';const byFar=L.area!=null?L.area*L.far.value/100:null;return L.grossCapped&&byFar!=null&&L.maxGross!=null&&L.maxGross<byFar-0.01?`용적률 ${L.far.value}% 이하 (용적률만으로는 ${F(byFar)} ㎡) · ${L.grossCapReason||'별도 연면적 상한'} 적용 → 지상 연면적 최대 ${F(L.maxGross)} ㎡`:`용적률 ${L.far.value}% 이하 → 지상 연면적 최대 ${F(L.maxGross)} ㎡${L.area!=null?` (대지 ${F(L.area)} ㎡ × ${L.far.value}%)`:''}`;},
-  use:r=>r.text?`${p.purpose} : 허용 용도 목록에 있음${r.uncertain?' (조건부 — 조건 대조)':''}`:`${p.purpose||'주용도'} : 허용 여부를 별표에서 판정하지 못함`,
+  use:r=>r.banList?(r.banCls===1?`${p.purpose} : 건축할 수 없는 건축물 목록에 있음 → 건축 불가${r.uncertain?' (세부 조건 대조)':''}`:r.banCls===2?`${p.purpose} : 도시·군계획조례로 금지할 수 있는 목록에 있음 → 조례 대조`:`${p.purpose||'주용도'} : 건축할 수 없는 건축물 목록에 직접 기재되지 않음 (세부 용도 대조)`):r.text?`${p.purpose} : 허용 용도 목록에 있음${r.uncertain?' (조건부 — 조건 대조)':''}`:`${p.purpose||'주용도'} : 허용 여부를 별표에서 판정하지 못함`,
   road:()=>`너비 4 m 이상 도로에 2 m 이상 접해야 함 (연면적 2,000 ㎡ 이상은 6 m 도로에 4 m 이상)${road?` · 현황 : ${road}`:''}`,
   deadend:()=>'막다른 도로 길이 10 m 미만 → 너비 2 m, 10~35 m → 3 m, 35 m 이상 → 6 m (도시지역 밖 읍·면 4 m)',
   buildingLine:()=>rw!=null?(rw<4?`도로 너비 ${rw} m (4 m 미만) → 도로 중심선에서 2 m 후퇴한 선이 건축선 (대지 쪽 ${F(2-rw/2)} m 후퇴)`:`도로 너비 ${rw} m (4 m 이상) → 대지와 도로의 경계선이 건축선`):'도로 너비 4 m 이상이면 도로 경계선이 건축선, 4 m 미만이면 도로 중심선에서 2 m 후퇴한 선이 건축선',
@@ -251,7 +251,9 @@ export function reviewProject(p){
    const line=head.split('\n').find(s=>norm(s).includes(norm(purpose)));
    if(line){text=line;uncertain=/제외|한정|이하|이상|미만|초과|경우|조례|범위/.test(line)||!!limits.district||p.land.zone.uncertain;}
   }
-  add('use','허용 용도',[R(DECREE,71),local('plan',/건축.*제한|용도지역/)],text,purpose,uncertain,{annex:an?.number||APPENDIX_BY_ZONE[p.land.zone.value]||''});
+  let ban2='';if(!text&&an?.text&&(/할수없는/.test(norm(an.title||''))||/^\s*1\.\s*건축할\s*수\s*없는/.test(an.text))){const rest=an.text.split(/\n\s*2\.?\s*도시/).slice(1).join('\n');ban2=rest.split('\n').find(s=>norm(s).includes(norm(purpose)))||'';}
+  const banList=/할수없는/.test(norm(an?.title||''))||/^\s*1\.\s*건축할\s*수\s*없는/.test(an?.text||'');const banCls=banList?(text?1:ban2?2:0):0;
+  add('use','허용 용도',[R(DECREE,71),local('plan',/건축.*제한|용도지역/)],text,purpose,uncertain,{annex:an?.number||APPENDIX_BY_ZONE[p.land.zone.value]||'',banList,banCls});
  }
  add('road','대지와 도로의 관계',[R(BLD,44)],articleText(BLD,44),[p.land.road.value,number(p.manual.frontage)!==null?`입력 접도길이 ${p.manual.frontage}m`:''].filter(Boolean).join(' / '),true);
  if(p.land.road.value?.includes('맹지'))rows.at(-1).text='도로에 접하지 않는 대지. '+rows.at(-1).text;

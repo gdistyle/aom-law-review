@@ -181,9 +181,9 @@ async function trades(u,env){
  if(!configured(env,'DATA_GO_KR_KEY'))return missing('trade');
  const lawd=checkQuery(u,'lawd',/^\d{5}$/),ym=checkQuery(u,'ym',/^20\d{2}(0[1-9]|1[0-2])$/);
  const url=new URL('https://apis.data.go.kr/1613000/RTMSDataSvcLandTrade/getRTMSDataSvcLandTrade');
- for(const [k,v]of Object.entries({serviceKey:decodeKey(env.DATA_GO_KR_KEY),LAWD_CD:lawd,DEAL_YMD:ym,numOfRows:'1000',pageNo:'1'}))url.searchParams.set(k,v);
- const r=await upstream(url,env),xml=new TextDecoder().decode(r.bytes);
- const {items,total}=parseTrades(xml);
+ const page=async no=>{const q=new URL(url);for(const [k,v]of Object.entries({serviceKey:decodeKey(env.DATA_GO_KR_KEY),LAWD_CD:lawd,DEAL_YMD:ym,numOfRows:'1000',pageNo:String(no)}))q.searchParams.set(k,v);const r=await upstream(q,env);return parseTrades(new TextDecoder().decode(r.bytes));};
+ const first=await page(1),items=[...first.items],total=first.total;
+ for(let no=2;no<=5&&total>items.length&&items.length>=(no-1)*1000;no++){try{items.push(...(await page(no)).items);}catch{break;}}  // 1,000건 넘는 달은 다음 쪽까지(최대 5,000건)
  return json({ok:true,lawd,ym,items,total,source:publicSource('국토교통부 토지 매매 실거래가 자료','https://www.data.go.kr/data/15126466/openapi.do')});
 }
 

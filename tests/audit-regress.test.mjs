@@ -75,3 +75,27 @@ test('대지 안의 공지: 공개공지 서식(별지)은 무시', () => {
   const law = {current: true, name: 'x', articles: [], annexes: [{title: '[별지 제2호서식] 공개공지 안내 표지판', text: '공개공지 안내'}, {title: '[별표 3] 대지 안의 공지 기준(제31조 관련)', text: t}]};
   assert.equal(ordinanceSetback(law, '제2종 근린생활시설', 300, '').line, 1);
 });
+
+/* 2026-11-01 독립 감사 회귀 */
+import {landscapeTier, ordinanceSetback as osb, normalizeLaw, DECREE} from '../public/js/legal.js';
+import {datum} from '../public/js/core.js';
+test('감사: 조경 ②항(공장) 구간이 ①항과 섞이지 않음', () => {
+  const law = {current: true, articles: [{number: '24', branch: '', title: '대지의 조경', text: '① 조경 면적은 다음과 같다.\n1. 연면적 2천제곱미터 이상인 건축물: 대지면적의 15퍼센트 이상\n2. 연면적 1천제곱미터 이상 2천제곱미터 미만인 건축물: 대지면적의 10퍼센트 이상\n3. 연면적 1천제곱미터 미만인 건축물: 대지면적의 5퍼센트 이상\n② 공장의 경우 다음과 같다.\n1. 연면적 1천제곱미터 이상 2천제곱미터 미만인 건축물: 대지면적의 7퍼센트 이상'}], annexes: []};
+  assert.equal(landscapeTier(law, 1500)?.value, 10);
+  assert.equal(landscapeTier(law, 500)?.value, 5);
+});
+test('감사: 대지 안의 공지 「1천500제곱미터」 = 1,500', () => {
+  const t = ['[별표 3] 대지 안의 공지 기준', '1. 판매시설', '모든 지역', '1천500제곱미터 이상', '적용 대상', '3미터 이상', '모든 건축선', '2미터 이상', '인접 대지경계선', '2. 그 밖의 건축물', '모든 지역', '1미터 이상', '모든 건축선', '1천500제곱미터 이상 1.5미터 이상', '인접 대지경계선', '1천500제곱미터 미만 0.5미터 이상'].join('\n');
+  const law = {current: true, name: 'x', articles: [], annexes: [{title: '[별표 3] 대지 안의 공지 기준', text: t}]};
+  const a = osb(law, '판매시설', 2000, ''), b = osb(law, '업무시설', 2000, '');
+  assert.equal(a.threshold, 1500); assert.equal(a.boundary, 2); assert.equal(b.boundary, 1.5);
+});
+test('감사: 금지 목록 별표의 용도는 "허용"으로 요약하지 않음', () => {
+  const L = (name, arts, annexes) => normalizeLaw({법령: {기본정보: {법령명_한글: name, 시행일자: '20240528'}, 조문: {조문단위: arts.map(([no, title, hang]) => ({조문번호: String(no), 조문가지번호: '0', 조문여부: '조문', 조문제목: title, 조문내용: `제${no}조(${title})`, 항: hang.map(t => ({항내용: t}))}))}, 별표: {별표단위: annexes.map(([no, title, text]) => ({별표번호: String(no).padStart(4, '0'), 별표가지번호: '00', 별표제목: title, 별표내용: text}))}}}, {kind: 'law', name, current: true});
+  for (const [purpose, want] of [['위락시설', /건축 불가/], ['공장', /조례 대조/]]) {
+    const p = blankProject(); p.address = '경기도 하남시 감이동 440-2'; p.location = {region1: '경기도', region2: '하남시'}; p.land.zone = datum('일반상업지역', '', false); p.land.area = datum(2374.1); p.purpose = purpose;
+    p.laws = [L(DECREE, [[84, '용도지역안에서의 건폐율', ['① 건폐율\n8. 일반상업지역 : 80퍼센트 이하']], [85, '용도지역 안에서의 용적률', ['① 용적률\n8. 일반상업지역 : 200퍼센트 이상 1천300퍼센트 이하']], [71, '용도지역안에서의 건축제한', ['① ...']]], [[9, '일반상업지역안에서 건축할 수 없는 건축물', '1. 건축할 수 없는 건축물\n가. 숙박시설 중 일반숙박시설\n나. 위락시설\n2. 도시ㆍ군계획조례로 정하는 바에 따라 건축할 수 없는 건축물\n가. 공장']])];
+    const u = reviewProject(p).rows.find(x => x.id === 'use');
+    assert.match(u.summary, want); assert.doesNotMatch(u.summary, /허용 용도 목록에 있음/);
+  }
+});

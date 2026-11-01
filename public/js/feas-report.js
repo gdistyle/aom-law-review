@@ -3,7 +3,7 @@ import {packDocx, W} from './report.js';
 import {feasibility, sensitivity, FEAS_NOTE} from './feasibility.js';
 import {FEAS_DEFAULTS, FEAS_BASIS, krw, toUser} from './feas-ui.js';
 import {displayDate, fmt} from './core.js';
-import {redFlags} from './feas-flags.js';
+import {redFlags, blankItems} from './feas-flags.js';
 import {analyze, costShares, eok} from './feas-analysis.js';
 export {redFlags};
 
@@ -81,8 +81,7 @@ function summary(x, R) {
     rows.push(g.map(([k]) => ({t: k, jc: 'center', color: GRAY, sz: 16, fill: 'F7F7F5'})));
     rows.push(g.map(([, val, red]) => ({t: val || (g.some(c => c[0]) ? '—' : ''), jc: 'center', b: true, sz: 24, red: !!red && !!val})));
   }
-  const zk = [...(x.mode !== 'own' ? [['netRatio', '분양·임대 면적 비율(100%로 계산)']] : []), ['designRate', '설계·감리비'], ['contRate', '예비비'], ['otherCost', '기타 비용'], ['loanRatio', '대출 비율'], ['loanRate', '대출 금리'], ['months', '공사 기간'], ...(x.mode === 'sale' ? [['saleCostRate', '분양 경비']] : []), ...(x.mode === 'lease' ? [['vacancy', '공실률'], ['opexRate', '운영비'], ['capRate', '환원율']] : [])];
-  const zeros = (x.mode === 'own' ? zk.slice(0, 6) : zk).filter(([k]) => num(x[k]) == null && !(k === 'otherCost' && x._otherAuto)).map(([, l]) => l);
+  const zeros = blankItems(x);
   const zeroLine = zeros.length ? p(r(`※ 비어 있는 항목 ${zeros.length}개 : ${zeros.join(' · ')} — 비용이 0원으로, 면적 비율이 100%로 잡혀 결과가 실제보다 유리하게 산출되었을 수 있음.`, {sz: 17, b: true, red: true}), {after: 100}) : '';
   return h1('', '한눈에 보기', true) + zeroLine
     + p(r('판정  ', {sz: 20, b: true, color: GRAY}) + r(v.label, {sz: 30, b: true, color}) + r('   ' + v.text, {sz: 19}), {shd: SOFT, ind: 200, indR: 200, before: 80, after: 160})
@@ -169,7 +168,7 @@ function sens(x) {
 }
 
 function verdictAndNotes(x, R) {
-  const terms = [['총사업비', '땅값·공사비·세금·설계비·이자 등 사업에 드는 돈 전체'], ['이익률', '번 돈(이익)이 들어간 돈(총사업비)의 몇 %인지'], ['자기자본 수익률', '대출을 뺀 내 돈 대비 이익의 비율'], ['손익분기 분양가', '이 값보다 비싸게 팔아야 이익이 남는 ㎡당 분양가'], ['연 순수입 (NOI)', '1년 임대수입에서 관리비·세금 등 운영비를 뺀 금액'], ['임대 수익률', '1년 순수입이 실제로 들어간 돈의 몇 %인지'], ['환원율', '임대 건물 가치를 매길 때 쓰는 기준 수익률 (낮을수록 건물 가치가 높게 계산됨)'], ['내부수익률 (IRR)', '투자 기간 전체를 연평균 수익률 하나로 나타낸 값'], ['순현재가치 (NPV)', '앞으로 들어올 돈을 오늘 가치로 바꿔 합친 값. 0보다 크면 할인율보다 나은 투자']]
+  const terms = [['총사업비', '땅값·공사비·세금·설계비·이자 등 사업에 드는 돈 전체'], ['이익률', '번 돈(이익)이 들어간 돈(총사업비)의 몇 %인지'], ['자기자본 수익률', '대출을 뺀 내 돈 대비 이익의 비율'], ['손익분기 분양가', '이 값보다 비싸게 팔아야 이익이 남는 분양 면적 평당 분양가'], ['연 순수입 (NOI)', '1년 임대수입에서 관리비·세금 등 운영비를 뺀 금액'], ['임대 수익률', '1년 순수입이 실제로 들어간 돈의 몇 %인지'], ['환원율', '임대 건물 가치를 매길 때 쓰는 기준 수익률 (낮을수록 건물 가치가 높게 계산됨)'], ['내부수익률 (IRR)', '투자 기간 전체를 연평균 수익률 하나로 나타낸 값'], ['순현재가치 (NPV)', '앞으로 들어올 돈을 오늘 가치로 바꿔 합친 값. 0보다 크면 할인율보다 나은 투자']]
     .filter(([k]) => x.mode === 'lease' ? !/이익률|자기자본|손익분기/.test(k) : x.mode === 'sale' ? !/NOI|임대|환원|IRR|NPV/.test(k) : k === '총사업비');
   const c1 = 3400;
   return h1('Ⅴ', '판정 및 유의사항', true)

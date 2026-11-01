@@ -31,3 +31,10 @@ export function redFlags(x) {
   F.npv = F.irr || miss('discountRate');
   return F;
 }
+
+/** 비워 두면 0·100%로 계산되는 선택 항목(화면 경고·워드·결과 분석 공통) */
+export function blankItems(x) {
+  const keys = [...(x.mode !== 'own' ? [['netRatio', '분양·임대 면적 비율(100%로 계산)']] : []), ['designRate', '설계·감리비'], ['contRate', '예비비'], ['otherCost', '기타 비용'], ['loanRatio', '대출 비율'], ['loanRate', '대출 금리'], ['months', '공사 기간'],
+    ...(x.mode === 'sale' ? [['saleCostRate', '분양 경비']] : []), ...(x.mode === 'lease' ? [['vacancy', '공실률'], ['opexRate', '운영비'], ['capRate', '환원율']] : [])];
+  return keys.filter(([k]) => num(x[k]) == null && !(k === 'otherCost' && x._otherAuto)).map(([, l]) => l);
+}

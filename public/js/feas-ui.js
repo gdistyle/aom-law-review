@@ -3,7 +3,7 @@ import {feasibility, sensitivity, FEAS_NOTE} from './feasibility.js';
 import {esc, totalArea} from './core.js';
 import {landRefSum} from './multiparcel.js';
 import {charges} from './charges.js';
-import {redFlags} from './feas-flags.js';
+import {redFlags, blankItems} from './feas-flags.js';
 import {analyze, analysisSVG} from './feas-analysis.js';
 
 /* 기본값: 법령으로 정해진 세율만 채우고, 근거가 확인되지 않은 단가는 비워 둔다(빨간 글씨 안내). */
@@ -72,7 +72,7 @@ const FIELDS = [
   ['vacancy', '공실률', '%', '비어 있을 것으로 보는 비율.', f => f.mode === 'lease'],
   ['opexRate', '운영비', '% (임대수입 대비)', '관리·수선·재산세 등.', f => f.mode === 'lease'],
   ['capRate', '환원율', '%', '건물 가치를 계산하는 기준 수익률(연 순수입 ÷ 환원율 = 건물 가치).', f => f.mode === 'lease'],
-  ['holdYears', '보유 기간', '년', '임대 후 팔 때까지의 기간(내부수익률 계산용).', f => f.mode === 'lease'],
+  ['holdYears', '보유 기간', '년', '임대 후 팔 때까지의 기간(내부수익률 계산용, 1~30년).', f => f.mode === 'lease'],
   ['discountRate', '할인율', '%', '미래 돈을 현재 가치로 바꿀 때 쓰는 기대 수익률(순현재가치 계산용).', f => f.mode === 'lease'],
   ['target', '목표 수익률', '%', '이 이상이면 "양호"로 판정. 분양은 이익률, 임대는 임대 수익률 기준.', f => f.mode !== 'own']
 ];
@@ -130,7 +130,7 @@ export function renderFeas(p, onChange) {
     finally { b.disabled = false; b.innerHTML = h; }
   });
   box.querySelectorAll('[data-fin]').forEach(inp => {
-    inp.onchange = () => { const k = inp.dataset.fin, raw = inp.value.trim(); f[k] = raw === '' ? null : fromUser(k, num(raw)); f._open = !!box.querySelector('.feas-more')?.open; renderFeas(p, onChange); onChange?.(); };
+    inp.onchange = () => { const k = inp.dataset.fin, raw = inp.value.trim(); f[k] = raw === '' ? null : fromUser(k, num(raw)); if (k === 'holdYears' && f[k] != null) f[k] = Math.min(30, Math.max(1, Math.round(f[k]))); f._open = !!box.querySelector('.feas-more')?.open; renderFeas(p, onChange); onChange?.(); };
     inp.oninput = () => { const k = inp.dataset.fin; if (MONEY.has(k)) { const r = inp.closest('.feas-field').querySelector('.feas-read'); if (r) r.textContent = readOut(k, fromUser(k, num(inp.value))); } };
   });
 }
@@ -139,9 +139,7 @@ function resultHtml(x) {
   const r = feasibility(x), v = r.verdict;
   const req = [num(x.buildUnit) == null && '공사비 단가', x.mode === 'sale' && num(x.saleUnit) == null && '분양가 단가', x.mode === 'lease' && num(x.rentUnit) == null && '월 임대료 단가'].filter(Boolean);
   if (req.length) return `<div class="feas-result"><p class="feas-warn"><b>필수 항목을 넣어야 계산됩니다</b> : ${req.join(' · ')}</p></div>`;
-  const zeroKeys = [...(x.mode !== 'own' ? [['netRatio', '분양·임대 면적 비율(100%로 계산)']] : []), ['designRate', '설계·감리비'], ['contRate', '예비비'], ['otherCost', '기타 비용'], ['loanRatio', '대출 비율'], ['loanRate', '대출 금리'], ['months', '공사 기간'],
-    ...(x.mode === 'sale' ? [['saleCostRate', '분양 경비']] : []), ...(x.mode === 'lease' ? [['vacancy', '공실률'], ['opexRate', '운영비'], ['capRate', '환원율']] : [])];
-  const zeros = zeroKeys.filter(([k]) => num(x[k]) == null && !(k === 'otherCost' && x._otherAuto)).map(([, l]) => l);
+  const zeros = blankItems(x);
   const zeroWarn = zeros.length ? `<p class="feas-warn"><b>비어 있는 항목 ${zeros.length}개</b> : ${zeros.join(' · ')} — 비워 두면 비용이 빠지거나(0원) 면적이 100%로 잡혀 결과가 실제보다 좋게 나옴. 채울 것.</p>` : '';
   const rows = [['토지비', r.land], ['토지 취득세', r.landTax], ['공사비', r.build], ['설계·감리비', r.design], ['건물 취득세', r.buildTax], ['기타 비용', r.other], ['예비비', r.cont], ['대출 이자', r.interest]];
   if (x.mode === 'sale') rows.push(['분양 경비', r.saleCost]);

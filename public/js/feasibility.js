@@ -69,7 +69,7 @@ export function feasibility(x = {}) {
     const deposit = z(x.depositUnit) * netArea * occ;
     const netInvest = total - deposit;
     const value = pct(x.capRate) > 0 ? noi / pct(x.capRate) : null;
-    const years = Math.max(0, Math.round(z(x.holdYears)));
+    const years = Math.min(30, Math.max(0, Math.round(z(x.holdYears))));  // 엑셀 계산표(현금흐름 30행)와 같게 최대 30년
     const cfs = netInvest > 0 && years > 0 ? [-netInvest, ...Array.from({length: years}, (_, i) => noi + (i === years - 1 && value != null ? value - deposit : 0))] : [];
     Object.assign(out, {total, grossRent, opex, noi, deposit, netInvest, value,
       devProfit: value != null ? value - total : null,
