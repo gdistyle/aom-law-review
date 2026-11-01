@@ -29,6 +29,7 @@
   }
 
   function paint() {
+    try { document.documentElement.classList.toggle('al-guest', !(user && st(KEY))); } catch (e) {}
     var slot = document.getElementById('aomLogin'), box = document.getElementById('myRecent');
     if (slot) {
       if (!user) { slot.innerHTML = '<button type="button" class="al-btn">로그인</button>'; slot.firstChild.onclick = function () { location.href = '/login'; }; }
