@@ -54,11 +54,39 @@
   function start() {
     try { user = JSON.parse(st(UKEY) || 'null'); } catch (e) { user = null; }
     paint();
+    try {
+      var pend = sessionStorage.getItem('aom_pending');
+      if (pend && st(KEY)) { sessionStorage.removeItem('aom_pending'); var inp = document.getElementById('address'), f = document.getElementById('searchForm'); if (inp && f) { inp.value = pend; window.__autoPick = pend; setTimeout(function () { f.requestSubmit(); }, 300); } }
+    } catch (e) {}
     if (!st(KEY)) return;
     api('me').then(function (j) { user = j.user; st(UKEY, JSON.stringify(user)); return api('data?app=' + APP); })
       .then(function (d) { list = (d && d.data && d.data.recent) || []; paint(); })
       .catch(function () { paint(); });
   }
+
+
+  // ---- 자료 받기는 로그인 후 ----
+  window.AOM_CAN_DOWNLOAD = function () { if (user && st(KEY)) return true; gate(); return false; };
+  function gate() {
+    var g = document.getElementById('aomGate');
+    if (!g) {
+      g = document.createElement('div'); g.id = 'aomGate'; g.className = 'al-gate';
+      g.innerHTML = '<div class="al-gate-box" role="dialog" aria-modal="true" aria-labelledby="alGateT"><b id="alGateT">자료 받기는 로그인 후 이용할 수 있습니다</b><p>조회·계산은 지금처럼 로그인 없이 이용하십시오.<br>워드·PDF·엑셀·CAD 파일 받기만 간편 로그인이 필요합니다.</p><div class="al-gate-row"><button type="button" class="primary" id="alGateGo">로그인하고 받기</button><button type="button" id="alGateNo">닫기</button></div></div>';
+      document.body.appendChild(g);
+      g.addEventListener('click', function (e) { if (e.target === g) g.hidden = true; });
+      g.querySelector('#alGateNo').onclick = function () { g.hidden = true; };
+      g.querySelector('#alGateGo').onclick = function () {
+        try { var a = document.getElementById('address'); if (a && a.value) sessionStorage.setItem('aom_pending', a.value); } catch (e) {}
+        location.href = '/login';
+      };
+    }
+    g.hidden = false; g.querySelector('#alGateGo').focus();
+  }
+  document.addEventListener('click', function (e) {
+    var t = e.target && e.target.closest && e.target.closest('[data-download],[data-feasdl],#downloadAll');
+    if (!t || (user && st(KEY))) return;
+    e.preventDefault(); e.stopImmediatePropagation(); gate();
+  }, true);
 
   window.addEventListener('aom:selected', function (e) {
     if (!user || !e.detail || !e.detail.address) return;

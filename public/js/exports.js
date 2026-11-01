@@ -4,7 +4,7 @@ import {landPDF,buildingPDF} from './pdf.js';
 import {dxfBytes,volumeDAE,terrainDAE} from './cad.js';
 import {buildModels} from './geometry.js';
 /* 내려받기: 자동 저장을 시도하고, 휴대폰·앱 안 브라우저처럼 자동 저장이 막히는 경우를 위해 '저장하기' 버튼을 화면에 남긴다(누르면 새 손가락 동작으로 저장). */
-export function download(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);try{a.click();}catch{}a.remove();
+export function download(blob,name){if(window.AOM_CAN_DOWNLOAD&&!window.AOM_CAN_DOWNLOAD())return;const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);try{a.click();}catch{}a.remove();
  let box=document.getElementById('dlReady');if(!box){box=document.createElement('div');box.id='dlReady';box.className='dl-ready';document.body.append(box);}
  const item=document.createElement('div');item.className='dl-item';const size=blob.size>1048576?(blob.size/1048576).toFixed(1)+' MB':Math.max(1,Math.round(blob.size/1024))+' KB';
  item.innerHTML=`<span>${name.replace(/[<>&"]/g,'')} <small>(${size})</small></span>`;const link=document.createElement('a');link.href=url;link.download=name;link.textContent='저장하기';link.className='dl-save';const x=document.createElement('button');x.type='button';x.textContent='✕';x.setAttribute('aria-label','닫기');x.onclick=()=>{item.remove();if(!box.children.length)box.remove();URL.revokeObjectURL(url);};
