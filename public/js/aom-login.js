@@ -6,7 +6,7 @@
     api: 'https://gaonlab.gdistyle.workers.dev/api/auth',
     google: '640982456943-vfboefbl245o7dserpbjti7erav1kvqr.apps.googleusercontent.com',
     naver: 'pGKSTRMNZ_oqxQ2OaOPv',
-    kakao: '' // 카카오 앱 등록 후 REST API 키
+    kakao: '9fd9a0365d0769f30aad86ed70665843' // 카카오 REST API 키(공개 식별값)
   };
   if (/\/login(\.html)?$/.test(location.pathname)) return; // 로그인 화면에서는 설정만 제공
 
