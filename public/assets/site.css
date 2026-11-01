@@ -301,3 +301,6 @@ body{background:#F3F3F1}
 .al-gate-box b{display:block;font-size:17px;margin-bottom:8px;word-break:keep-all}
 .al-gate-box p{font-size:13.5px;color:#595959;margin:0 0 18px;line-height:1.7;word-break:keep-all}
 .al-gate-row{display:flex;gap:8px;justify-content:center}
+.use-note{margin:6px 0 12px;padding:12px 14px;border:1px solid var(--aom-line);border-left:4px solid var(--aom);border-radius:6px;background:var(--aom-soft);word-break:keep-all}
+.use-note b{display:block;font-size:13.5px;margin-bottom:4px}
+.use-note ul{margin:0;padding-left:17px;font-size:12.5px;line-height:1.7;color:#4a4a4a}
