@@ -308,4 +308,4 @@ body{background:#F3F3F1}
 .lock-note{display:none;margin:2px 0 10px;font-size:12.5px;color:#595959;background:var(--aom-soft);border:1px solid var(--aom-line);border-radius:6px;padding:8px 10px;word-break:keep-all}
 .al-guest .lock-note{display:block}
 .al-guest .tools .fmt:not(.fmt-link)::before{content:"🔒";margin-right:4px;font-size:10px}
-.al-guest .al-gate-row .primary::before,.al-guest #downloadAll::before{content:"🔒 ";}
+.al-guest #downloadAll::before{content:"🔒 ";}
